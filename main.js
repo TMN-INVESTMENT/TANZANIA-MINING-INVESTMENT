@@ -1283,11 +1283,11 @@ function closeModal(modalId) {
                 <h4>Maelekezo ya Vodacom M-Pesa:</h4>
                 <ol>
                     <li>Nenda kwenye M-Pesa kwenye simu yako</li>
-                    <li>Chagua "Lipa kwa M-Pesa"</li>
-                    <li>Chagua "Weka kiasi"</li>
-                    <li>Weka namba ya simu: <strong>0753928102</strong></li>
+                    <li>Chagua "Lipa kwa halopesa"</li>
+                    <li>Weka lipa namba: <strong>23898109</strong></li>
                     <li>Weka kiasi unachotaka kuweka</li>
                     <li>Weka nenosiri la M-Pesa</li>
+                    <li>Jina la kampuni: <strong>TMN INVESTMENT</strong></li>
                     <li>Subiri kupokea ujumbe wa uthibitisho</li>
                 </ol>
             `,
@@ -1295,10 +1295,11 @@ function closeModal(modalId) {
                 <h4>Maelekezo ya Tigo Pesa:</h4>
                 <ol>
                     <li>Nenda kwenye Tigo Pesa kwenye simu yako</li>
-                    <li>Chagua "Send Money"</li>
-                    <li>Weka namba ya simu: <strong>0657843291</strong></li>
+                    <li>Chagua lipa kwa simu</li>
+                    <li>lipa kwa halopesa <strong>23898109</strong></li>
                     <li>Weka kiasi unachotaka kuweka</li>
                     <li>Weka nenosiri la Tigo Pesa</li>
+                    <li>Jina la kampuni: <strong>TMN INVESTMENT</strong></li>
                     <li>Subiri kupokea ujumbe wa uthibitisho</li>
                 </ol>
             `,
@@ -1306,10 +1307,11 @@ function closeModal(modalId) {
                 <h4>Maelekezo ya Airtel Money:</h4>
                 <ol>
                     <li>Nenda kwenye Airtel Money kwenye simu yako</li>
-                    <li>Chagua "Send Money"</li>
-                    <li>Weka namba ya simu: <strong>0784561230</strong></li>
+                    <li>Chagua "Lipa kwa simu"</li>
+                    <li>Weka lipa namba<strong>23898109</strong></li>
                     <li>Weka kiasi unachotaka kuweka</li>
                     <li>Weka nenosiri la Airtel Money</li>
+                    <li>Jina la kampuni: <strong>TMN INVESTMENT</strong></li>
                     <li>Subiri kupokea ujumbe wa uthibitisho</li>
                 </ol>
             `,
@@ -1322,6 +1324,7 @@ function closeModal(modalId) {
                     <li>Weka lipa namba: <strong>23898109</strong></li>
                     <li>Weka kiasi unachotaka kuweka</li>
                     <li>Weka nenosiri la Halopesa</li>
+                    <li>Jina la kampuni: <strong>TMN INVESTMENT</strong></li>
                     <li>Subiri kupokea ujumbe wa uthibitisho</li>
                 </ol>
             `,
@@ -1330,9 +1333,9 @@ function closeModal(modalId) {
                 <ol>
                     <li>Nenda kwenye kituo cha CRDB Bank au tumia CRDB Mobile Banking</li>
                     <li>Chagua "Transfer Funds"</li>
-                    <li>Chagua "To Another CRDB Account"</li>
-                    <li>Weka namba ya akaunti: <strong>01520234567800</strong></li>
-                    <li>Weka jina la akaunti: <strong>TANZANIA MINING INVESTMENT</strong></li>
+                    <li>Chagua "To halopesa lipa"</li>
+                    <li>Weka namba ya akaunti: <strong>23898109</strong></li>
+                    <li>Weka jina la akaunti: <strong>TMN INVESTMENT</strong></li>
                     <li>Weka kiasi unachotaka kuweka</li>
                     <li>Kamilisha muamala</li>
                 </ol>
@@ -1342,9 +1345,9 @@ function closeModal(modalId) {
                 <ol>
                     <li>Nenda kwenye kituo cha NMB Bank au tumia NMB Mobile Banking</li>
                     <li>Chagua "Transfer"</li>
-                    <li>Chagua "To NMB Account"</li>
-                    <li>Weka namba ya akaunti: <strong>20910012345</strong></li>
-                    <li>Weka jina la akaunti: <strong>TANZANIA MINING INVESTMENT</strong></li>
+                    <li>Chagua "To halopesa lipa"</li>
+                    <li>Weka namba ya akaunti: <strong>23898109</strong></li>
+                    <li>Weka jina la akaunti: <strong>TMN INVESTMENT</strong></li>
                     <li>Weka kiasi unachotaka kuweka</li>
                     <li>Kamilisha muamala</li>
                 </ol>
@@ -1353,10 +1356,11 @@ function closeModal(modalId) {
                 <h4>Maelekezo ya Ezy Pesa:</h4>
                 <ol>
                     <li>Nenda kwenye Ezy Pesa kwenye simu yako</li>
-                    <li>Chagua "Send Money"</li>
-                    <li>Weka namba ya simu: <strong>0741122334</strong></li>
+                    <li>Chagua "Send Money to halopesa lipa"</li>
+                    <li>Namba ya lipa: <strong>23898109</strong></li>
                     <li>Weka kiasi unachotaka kuweka</li>
                     <li>Weka nenosiri la Ezy Pesa</li>
+                    <li>Jina la kampuni: <strong>TMN INVESTMENT</strong></li>
                     <li>Subiri kupokea ujumbe wa uthibitisho</li>
                 </ol>
             `
@@ -1378,69 +1382,7 @@ function closeModal(modalId) {
                     showUserDashboard();
                 }
             }
-        });
-        
-        // Add debug panel to your page
-function addDebugPanel() {
-    const debugPanel = document.createElement('div');
-    debugPanel.id = 'debug-panel';
-    debugPanel.style.cssText = `
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        background: #2c3e50;
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        z-index: 10000;
-        max-width: 300px;
-        max-height: 200px;
-        overflow: auto;
-    `;
-    
-    debugPanel.innerHTML = `
-        <div style="margin-bottom: 10px;">
-            <strong>Debug Panel</strong>
-            <button onclick="refreshDebugInfo()" style="margin-left: 10px; padding: 2px 5px;">Refresh</button>
-            <button onclick="clearDatabase()" style="margin-left: 5px; padding: 2px 5px; background: #e74c3c;">Clear DB</button>
-        </div>
-        <div id="debug-info"></div>
-    `;
-    
-    document.body.appendChild(debugPanel);
-    refreshDebugInfo();
-}
-
-function refreshDebugInfo() {
-    const debugInfo = document.getElementById('debug-info');
-    if (!debugInfo) return;
-    
-    const users = db.getUsers();
-    const currentUser = db.currentUser;
-    
-    debugInfo.innerHTML = `
-        <div>Users: ${users.length}</div>
-        <div>Current User: ${currentUser ? currentUser.username : 'None'}</div>
-        <div>LocalStorage: ${localStorage.getItem('mining_users') ? 'Exists' : 'Empty'}</div>
-        <div>Next ID: ${localStorage.getItem('mining_next_id') || 'Not set'}</div>
-    `;
-}
-
-function clearDatabase() {
-    if (confirm('Clear all database data?')) {
-        localStorage.removeItem('mining_users');
-        localStorage.removeItem('mining_next_id');
-        localStorage.removeItem('mining_next_transaction_id');
-        location.reload();
-    }
-}
-
-// Add to your DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
-    addDebugPanel();
-    console.log('🔧 Debug panel added');
-});
+        })
 
         // Login Tabs
         function initLoginTabs() {
