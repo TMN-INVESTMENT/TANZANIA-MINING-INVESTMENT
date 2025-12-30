@@ -27029,3 +27029,186 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 });
+
+// In your JavaScript, add an event listener for this button:
+document.getElementById('open-top-investors-btn').addEventListener('click', function() {
+    openTopInvestorsModal();
+});
+
+// Then create the function to open the modal:
+function openTopInvestorsModal() {
+    // Create modal if it doesn't exist
+    if (!document.getElementById('top-investors-modal')) {
+        createTopInvestorsModal();
+    }
+    
+    // Load top investors data
+    loadTopInvestorsData();
+    
+    // Show modal
+    const modal = document.getElementById('top-investors-modal');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+// Function to create the modal
+function createTopInvestorsModal() {
+    const modal = document.createElement('div');
+    modal.id = 'top-investors-modal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-trophy"></i> Top Investors Leaderboard</h3>
+                <button class="close-modal" onclick="closeTopInvestorsModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-period="weekly">Weekly</button>
+                    <button class="tab-btn" data-period="monthly">Monthly</button>
+                    <button class="tab-btn" data-period="yearly">Yearly</button>
+                </div>
+                
+                <div class="top-investors-content">
+                    <div id="weekly-investors" class="investors-period active">
+                        <h4>Weekly Top Investors</h4>
+                        <div class="loading-indicator">Loading weekly data...</div>
+                    </div>
+                    <div id="monthly-investors" class="investors-period">
+                        <h4>Monthly Top Investors</h4>
+                        <div class="loading-indicator">Loading monthly data...</div>
+                    </div>
+                    <div id="yearly-investors" class="investors-period">
+                        <h4>Yearly Top Investors</h4>
+                        <div class="loading-indicator">Loading yearly data...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeTopInvestorsModal()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add tab switching functionality
+    modal.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const period = this.getAttribute('data-period');
+            switchTopInvestorsTab(period);
+        });
+    });
+}
+
+// Function to close the modal
+function closeTopInvestorsModal() {
+    const modal = document.getElementById('top-investors-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Function to switch tabs
+function switchTopInvestorsTab(period) {
+    // Update active tab
+    document.querySelectorAll('#top-investors-modal .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-period') === period) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Update active content
+    document.querySelectorAll('#top-investors-modal .investors-period').forEach(content => {
+        content.classList.remove('active');
+        if (content.id === `${period}-investors`) {
+            content.classList.add('active');
+        }
+    });
+}
+
+// Function to load top investors data
+async function loadTopInvestorsData() {
+    try {
+        if (!db) {
+            console.error('Database not initialized');
+            return;
+        }
+        
+        const topInvestors = await db.getTopInvestors();
+        
+        // Update each period section
+        ['weekly', 'monthly', 'yearly'].forEach(period => {
+            const container = document.getElementById(`${period}-investors`);
+            if (container) {
+                const investors = topInvestors[period] || [];
+                
+                if (investors.length === 0) {
+                    container.innerHTML = `
+                        <h4>${capitalizeFirstLetter(period)} Top Investors</h4>
+                        <div class="no-data">No ${period} investment data available</div>
+                    `;
+                    return;
+                }
+                
+                let html = `
+                    <h4>${capitalizeFirstLetter(period)} Top Investors</h4>
+                    <div class="investors-list">
+                `;
+                
+                investors.forEach((investor, index) => {
+                    html += `
+                        <div class="investor-item">
+                            <div class="investor-rank">${index + 1}</div>
+      
+                            <div class="investor-info">
+                                <div class="investor-name">${investor.username}</div>
+                            </div>
+                            <div class="investor-stats">
+                                <div class="investor-amount">
+                                    <strong>TZS ${Math.round(investor.totalInvested).toLocaleString()}</strong>
+                                    <small>Total Invested</small>
+                                </div>
+                                <div class="investor-profit">
+                                    <strong>TZS ${Math.round(investor.totalProfit).toLocaleString()}</strong>
+                                    <small>Total Profit</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+                container.innerHTML = html;
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error loading top investors data:', error);
+        
+        // Show error in all sections
+        ['weekly', 'monthly', 'yearly'].forEach(period => {
+            const container = document.getElementById(`${period}-investors`);
+            if (container) {
+                container.innerHTML = `
+                    <h4>${capitalizeFirstLetter(period)} Top Investors</h4>
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Failed to load ${period} data
+                    </div>
+                `;
+            }
+        });
+    }
+}
+
+// Helper function
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
