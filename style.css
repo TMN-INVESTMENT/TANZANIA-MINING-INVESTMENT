@@ -35660,4 +35660,1263 @@ code {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== RESPONSIVE STYLES FOR HEADER-LOGO AND AVATAR-CONTAINER ===== */
+
+/* Base Mobile Styles (already in your code) */
+.header-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-right: 15px;
+}
+
+.avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar-container img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
+.profile-container .avatar-container img {
+    width: 50px;
+    height: 50px;
+}
+
+/* Small Mobile Devices (up to 360px) */
+@media (max-width: 360px) {
+    .header-logo {
+        font-size: 1.2rem;
+        margin-right: 10px;
+    }
+    
+    .avatar-container img {
+        width: 35px;
+        height: 35px;
+        border-width: 1px;
+    }
+    
+    .profile-container .avatar-container img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .change-avatar-btn {
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
+        bottom: -3px;
+        right: -3px;
+    }
+}
+
+/* Mobile Devices (361px to 480px) */
+@media (min-width: 361px) and (max-width: 480px) {
+    .header-logo {
+        font-size: 1.3rem;
+        margin-right: 12px;
+    }
+    
+    .avatar-container img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .profile-container .avatar-container img {
+        width: 45px;
+        height: 45px;
+    }
+}
+
+/* Tablets and Small Screens (481px to 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .header-logo {
+        font-size: 1.6rem;
+        margin-right: 20px;
+    }
+    
+    .avatar-container img {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .profile-container .avatar-container img {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .change-avatar-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+        bottom: -5px;
+        right: -5px;
+    }
+}
+
+/* Desktop and Larger Tablets (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header-logo {
+        font-size: 1.7rem;
+        margin-right: 25px;
+    }
+    
+    .avatar-container img {
+        width: 55px;
+        height: 55px;
+        border-width: 2px;
+    }
+    
+    .profile-container .avatar-container img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .change-avatar-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        bottom: -6px;
+        right: -6px;
+    }
+}
+
+/* Large Desktops (1025px and above) */
+@media (min-width: 1025px) {
+    .header-logo {
+        font-size: 1.8rem;
+        margin-right: 30px;
+    }
+    
+    .avatar-container img {
+        width: 60px;
+        height: 60px;
+        border-width: 3px;
+    }
+    
+    .profile-container .avatar-container img {
+        width: 65px;
+        height: 65px;
+    }
+    
+    .change-avatar-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 13px;
+        bottom: -8px;
+        right: -8px;
+    }
+}
+
+/* Orientation-specific adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+    .header-logo {
+        font-size: 1.4rem;
+        margin-right: 12px;
+    }
+    
+    .avatar-container img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .profile-container .avatar-container img {
+        width: 45px;
+        height: 45px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .avatar-container {
+        min-width: 45px;
+        min-height: 45px;
+    }
+    
+    .avatar-container img {
+        min-width: 45px;
+        min-height: 45px;
+    }
+    
+    .change-avatar-btn {
+        min-width: 20px;
+        min-height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .avatar-container img,
+    .change-avatar-btn {
+        transition: none;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .avatar-container img {
+        border-color: #555;
+    }
+    
+    .change-avatar-btn {
+        background: #3498db;
+        color: white;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .avatar-container img {
+        border: 3px solid #000;
+    }
+    
+    .change-avatar-btn {
+        border: 2px solid #000;
+    }
+}
+
+/* Print styles */
+@media print {
+    .avatar-container img {
+        border: 1px solid #ccc;
+        filter: grayscale(100%);
+    }
+    
+    .change-avatar-btn {
+        display: none;
+    }
+}
+
+/* ===== ENHANCED AVATAR CONTAINER STYLES ===== */
+
+/* Hover effects for non-touch devices */
+@media (hover: hover) and (pointer: fine) {
+    .avatar-container:hover img {
+        transform: scale(1.05);
+        border-color: #3498db;
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+    
+    .avatar-container:hover .change-avatar-btn {
+        transform: scale(1.1);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Loading state */
+.avatar-container.loading img {
+    opacity: 0.6;
+    filter: grayscale(50%);
+}
+
+.avatar-container.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Avatar with status indicator */
+.avatar-container.with-status {
+    position: relative;
+}
+
+.avatar-status {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    z-index: 1;
+}
+
+.avatar-status.online {
+    background: #27ae60;
+}
+
+.avatar-status.offline {
+    background: #95a5a6;
+}
+
+.avatar-status.busy {
+    background: #e74c3c;
+}
+
+.avatar-status.away {
+    background: #f39c12;
+}
+
+/* Avatar sizes for different contexts */
+.avatar-container.small img {
+    width: 30px;
+    height: 30px;
+}
+
+.avatar-container.medium img {
+    width: 50px;
+    height: 50px;
+}
+
+.avatar-container.large img {
+    width: 80px;
+    height: 80px;
+}
+
+.avatar-container.xlarge img {
+    width: 100px;
+    height: 100px;
+}
+
+/* Avatar with badge */
+.avatar-container.with-badge::before {
+    content: attr(data-badge);
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    z-index: 1;
+}
+
+/* Avatar with initials fallback */
+.avatar-fallback {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* Responsive adjustments for avatar fallback */
+@media (max-width: 360px) {
+    .avatar-fallback {
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .avatar-fallback {
+        font-size: 22px;
+    }
+}
+
+/* Avatar group (multiple avatars) */
+.avatar-group {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-group .avatar-container {
+    margin-right: -10px;
+}
+
+.avatar-group .avatar-container img {
+    border: 2px solid white;
+}
+
+.avatar-group .avatar-container:last-child {
+    margin-right: 0;
+}
+
+/* More avatars indicator */
+.avatar-more {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid white;
+}
+
+/* ===== ENHANCED HEADER LOGO STYLES ===== */
+
+/* Header logo with icon */
+.header-logo.with-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-logo-icon {
+    font-size: 1.8em;
+    color: #ffd700;
+    animation: logoSpin 3s ease-in-out infinite;
+}
+
+@keyframes logoSpin {
+    0% {
+        transform: rotateY(0deg) scale(1);
+    }
+    50% {
+        transform: rotateY(180deg) scale(1.05);
+    }
+    100% {
+        transform: rotateY(360deg) scale(1);
+    }
+}
+
+/* Header logo variations */
+.header-logo.gradient {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-logo.outline {
+    color: transparent;
+    -webkit-text-stroke: 1px #256f8a;
+}
+
+/* Logo with tagline */
+.header-logo-with-tagline {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-tagline {
+    font-size: 0.6em;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-top: -5px;
+}
+
+/* Responsive adjustments for logo tagline */
+@media (max-width: 768px) {
+    .logo-tagline {
+        display: none;
+    }
+}
+
+/* Logo click effects */
+.header-logo.clickable {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .header-logo.clickable:hover {
+        transform: scale(1.05);
+    }
+}
+
+/* Logo loading state */
+.header-logo.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.header-logo.loading::after {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid #256f8a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+/* ===== RESPONSIVE MINIMIZATION FOR SMALL DEVICES ===== */
+
+/* Base - Mobile First (0-360px) - Ultra Compact */
+@media (max-width: 360px) {
+    /* Dashboard Header - Ultra Compact */
+ 
+    .topbar-left span h1 {
+        font-size: 0.9rem;
+        max-width: 120px;
+        letter-spacing: -0.5px;
+    }
+    
+    .topbar-left span i {
+        font-size: 0.9rem;
+    }
+    
+    .hamburger-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    /* Dashboard Navigation - When Active */
+    .dashboard-nav.active {
+        padding: 6px 8px;
+        height: 50px;
+        top: 50px;
+    }
+    
+    /* Logo - Minimize to icon only */
+    .dashboard-nav .header-left {
+        gap: 5px;
+    }
+    
+    .dashboard-nav .header-logo {
+        width: 36px;
+        height: 36px;
+        font-size: 1.1rem;
+        border-radius: 8px;
+    }
+    
+    /* Hide full logo, show only TMN */
+    .dashboard-nav .logo {
+        display: none;
+    }
+    
+    /* User Profile - Compact Mode */
+    .dashboard-nav .header-user {
+        gap: 8px;
+    }
+    
+    .dashboard-nav .user-profile {
+        gap: 6px;
+        min-width: 0;
+    }
+    
+    .dashboard-nav .avatar-container {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+        border-width: 1px;
+    }
+    
+    /* Profile Info - Stack vertically and minimize */
+    .dashboard-nav .profile-info {
+        display: none !important; /* Hide all profile info on ultra small */
+    }
+    
+    /* Alternative: Show only username (very compact) */
+    .dashboard-nav .profile-info.compact {
+        display: flex !important;
+        flex-direction: column;
+        gap: 1px;
+    }
+    
+    .dashboard-nav .profile-info.compact span {
+        font-size: 0.7rem;
+        line-height: 1.1;
+    }
+    
+    .dashboard-nav #username-display {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .dashboard-nav #dashboard-balance {
+        font-size: 0.65rem;
+        color: #2ecc71; /* Brighter for visibility */
+    }
+    
+    /* Hide user role completely */
+    .dashboard-nav .user-role {
+        display: none;
+    }
+    
+    /* Logout Button - Icon Only */
+    .dashboard-nav .header-right button {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        min-width: 36px;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .dashboard-nav .header-right button i {
+        margin-right: 0;
+    }
+    
+    .dashboard-nav .header-right button span {
+        display: none; /* Hide text, show only icon */
+    }
+    
+    /* Balance separator - hide */
+    .dashboard-nav .profile-info span:nth-child(2) {
+        display: none;
+    }
+}
+
+/* Mobile (361px to 480px) - Compact Mode */
+@media (min-width: 361px) and (max-width: 480px) {
+    
+    /* Logo - Minimized */
+    .dashboard-nav .header-left {
+        gap: 8px;
+    }
+    
+    .dashboard-nav .header-logo {
+        width: 40px;
+        height: 40px;
+        font-size: 1.3rem;
+    }
+    
+    /* Logo text can be shown/hidden based on space */
+    .dashboard-nav .logo {
+        display: none;
+    }
+    
+    /* User Profile - Semi-Compact */
+    .dashboard-nav .user-profile {
+        gap: 8px;
+    }
+    
+    .dashboard-nav .avatar-container {
+        width: 36px;
+        height: 36px;
+    }
+    
+    /* Profile Info - Show only essential */
+    .dashboard-nav .profile-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .dashboard-nav .profile-info span {
+        font-size: 0.8rem;
+        line-height: 1.1;
+    }
+    
+    .dashboard-nav #username-display {
+        max-width: 100px;
+    }
+    
+    .dashboard-nav #dashboard-balance {
+        font-size: 0.75rem;
+    }
+    
+    /* User role - show as badge */
+    .dashboard-nav .user-role {
+        font-size: 0.65rem;
+        padding: 1px 4px;
+        display: none; /* Hide on mobile */
+    }
+    
+    /* Logout Button - Compact */
+    .dashboard-nav .header-right button {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+    
+    .dashboard-nav .header-right button span {
+        display: inline;
+    }
+    
+    /* Balance separator - minimal */
+    .dashboard-nav .profile-info span:nth-child(2) {
+        display: none;
+    }
+}
+
+/* Mobile (up to 480px) - Common Minimizations */
+@media (max-width: 480px) {
+    /* Alternative Layout: Stack user info vertically */
+    .dashboard-nav .profile-info.vertical {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1px;
+    }
+    
+    /* Hide separators */
+    .dashboard-nav .profile-info span:nth-child(2),
+    .profile-info span::after {
+        display: none;
+    }
+    
+    /* Show user role as small badge */
+    .dashboard-nav .user-role.mobile-badge {
+        display: inline-block;
+        background: #3498db;
+        color: white;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-size: 0.6rem;
+        margin-top: 2px;
+    }
+    
+    /* Balance as prominent feature */
+    .dashboard-nav #dashboard-balance.highlight {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #27ae60;
+        background: rgba(39, 174, 96, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-top: 2px;
+    }
+    
+    /* Username with ellipsis */
+    .dashboard-nav #username-display.truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+}
+
+/* Tablet (481px to 768px) - Semi-Minimized */
+@media (min-width: 481px) and (max-width: 768px) {
+    /* Logo - Normal size */
+    .dashboard-nav .header-logo {
+        width: 45px;
+        height: 45px;
+        font-size: 1.5rem;
+    }
+    
+    /* Show logo text if available */
+    .dashboard-nav .logo {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    /* User Profile - Compact Desktop */
+    .dashboard-nav .user-profile {
+        gap: 10px;
+    }
+    
+    .dashboard-nav .avatar-container {
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* Profile Info - Inline with separators */
+    .dashboard-nav .profile-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .dashboard-nav .profile-info span {
+        font-size: 0.85rem;
+    }
+    
+    /* Separator styling */
+    .dashboard-nav .profile-info span:nth-child(2) {
+        color: #bbb;
+        font-size: 0.7rem;
+        margin: 0 2px;
+    }
+    
+    /* User role */
+    .dashboard-nav .user-role {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        display: inline-block;
+    }
+    
+    /* Logout Button */
+    .dashboard-nav .header-right button {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Desktop (769px to 1024px) - Normal Size */
+@media (min-width: 769px) and (max-width: 1024px) {
+    
+    .dashboard-nav .header-logo {
+        width: 50px;
+        height: 50px;
+        font-size: 1.8rem;
+    }
+    
+    .dashboard-nav .avatar-container {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .dashboard-nav .profile-info span {
+        font-size: 0.9rem;
+    }
+    
+    .dashboard-nav .user-role {
+        font-size: 0.75rem;
+    }
+}
+
+/* Large Desktop (1025px and above) - Full Size */
+@media (min-width: 1025px) {
+    .dashboard-nav .header-logo {
+        width: 55px;
+        height: 55px;
+        font-size: 2rem;
+    }
+    
+    .dashboard-nav .avatar-container {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .dashboard-nav .profile-info span {
+        font-size: 1rem;
+    }
+    
+    .dashboard-nav .user-role {
+        font-size: 0.8rem;
+    }
+}
+
+/* ===== PROGRESSIVE MINIMIZATION TECHNIQUES ===== */
+
+/* 1. Dynamic Hiding Based on Container Width */
+.header-user.dynamic {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Hide elements when container gets smaller */
+@media (max-width: 480px) {
+    .header-user.dynamic .separator,
+    .header-user.dynamic .user-role {
+        display: none;
+    }
+    
+    .header-user.dynamic .profile-info {
+        flex-direction: column;
+        gap: 2px;
+    }
+}
+
+/* 2. Collapsible Elements with Max-Width */
+.profile-info.collapsible {
+    display: flex;
+    gap: 4px;
+    transition: all 0.3s ease;
+}
+
+.profile-info.collapsible span {
+    white-space: nowrap;
+    overflow: hidden;
+    transition: max-width 0.3s ease;
+}
+
+/* Collapse on mobile */
+@media (max-width: 480px) {
+    .profile-info.collapsible {
+        max-width: 150px;
+    }
+    
+    .profile-info.collapsible span {
+        max-width: 120px;
+    }
+    
+    .profile-info.collapsible .user-role {
+        max-width: 60px;
+    }
+}
+
+/* 3. Stack Layout for Very Small Screens */
+@media (max-width: 320px) {
+    .dashboard-nav .header-right {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-end;
+    }
+    
+    .dashboard-nav .header-user {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px;
+    }
+    
+    .dashboard-nav .user-profile {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px;
+    }
+    
+    .dashboard-nav .profile-info {
+        align-items: flex-end;
+    }
+}
+
+/* 4. Text Priority System */
+/* Priority 1 - Always visible */
+.priority-1 {
+    display: block;
+}
+
+/* Priority 2 - Visible on medium+ */
+.priority-2 {
+    display: none;
+}
+
+@media (min-width: 481px) {
+    .priority-2 {
+        display: inline;
+    }
+}
+
+/* Priority 3 - Visible on large+ */
+.priority-3 {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    .priority-3 {
+        display: inline;
+    }
+}
+
+/* Apply to profile elements */
+#username-display.priority-1 { display: inline; }
+#dashboard-balance.priority-2 { display: none; }
+.user-role.priority-3 { display: none; }
+
+@media (min-width: 361px) {
+    #dashboard-balance.priority-2 { display: inline; }
+}
+
+@media (min-width: 769px) {
+    .user-role.priority-3 { display: inline-block; }
+}
+
+/* ===== TOUCH-FRIENDLY MINIMIZATION ===== */
+
+/* Ensure minimum touch targets even when minimized */
+@media (max-width: 480px) {
+    .hamburger-btn,
+    .avatar-container,
+    .dashboard-nav .header-right button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .hamburger-btn i,
+    .dashboard-nav .header-right button i {
+        font-size: 1.2rem;
+    }
+}
+
+/* ===== ALTERNATIVE MINIMIZED LAYOUTS ===== */
+
+/* Layout A: Icon-only on mobile */
+.layout-a.mobile {
+    .dashboard-nav .profile-info span:not(:first-child) {
+        display: none;
+    }
+    
+    .dashboard-nav .header-right button span {
+        display: none;
+    }
+}
+
+/* Layout B: Stacked info */
+.layout-b.mobile {
+    .dashboard-nav .user-profile {
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    
+    .dashboard-nav .profile-info {
+        text-align: center;
+    }
+}
+
+/* Layout C: Hidden until hover */
+@media (max-width: 480px) {
+    .layout-c.mobile .profile-info {
+        opacity: 0;
+        max-width: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .layout-c.mobile .header-user:hover .profile-info {
+        opacity: 1;
+        max-width: 200px;
+    }
+}
+
+/* ===== CONDITIONAL CLASSES FOR JAVASCRIPT CONTROL ===== */
+
+/* Add these classes via JavaScript based on screen size */
+.dashboard-minimized .profile-info {
+    display: none;
+}
+
+.dashboard-minimized .header-logo {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+}
+
+.dashboard-minimized .avatar-container {
+    width: 32px;
+    height: 32px;
+}
+
+.dashboard-ultra-compact .profile-info span:nth-child(2),
+.dashboard-ultra-compact .user-role {
+    display: none;
+}
+
+/* ===== FALLBACK FOR NON-JAVASCRIPT USERS ===== */
+
+/* Without JS, use media queries only */
+.no-js .dashboard-nav .profile-info {
+    display: flex;
+    gap: 4px;
+}
+
+.no-js .dashboard-nav .profile-info span {
+    font-size: clamp(0.7rem, 2vw, 0.9rem);
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+/* Containment for better paint performance */
+
+/* Will-change for smoother transitions */
+@media (max-width: 480px) {
+    .profile-info,
+    .avatar-container,
+    .header-logo {
+        will-change: transform, opacity;
+    }
+}
+
+/* ===== DARK MODE MINIMIZATION ===== */
+@media (prefers-color-scheme: dark) and (max-width: 480px) {
+    .dashboard-nav.active {
+        background: #1a1a1a;
+        border-bottom: 1px solid #333;
+    }
+    
+    .dashboard-nav .profile-info span {
+        color: #ccc;
+    }
+    
+    .dashboard-nav #dashboard-balance {
+        color: #4ade80;
+    }
+    
+    /* Make sure minimized text is still readable */
+    .dashboard-nav .profile-info.compact span {
+        color: #ddd;
+        font-weight: 500;
+    }
+}
+
+/* ===== UTILITY CLASSES FOR MINIMIZATION ===== */
+
+/* Hide on specific breakpoints */
+.hide-on-mobile { display: none; }
+.show-on-mobile { display: block; }
+
+@media (min-width: 481px) {
+    .hide-on-mobile { display: block; }
+    .show-on-mobile { display: none; }
+}
+
+/* Text size utilities */
+.text-xs { font-size: 0.7rem; }
+.text-sm { font-size: 0.8rem; }
+.text-md { font-size: 0.9rem; }
+.text-lg { font-size: 1rem; }
+
+/* Spacing utilities for compact mode */
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+
+.p-1 { padding: 4px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+
+/* Truncation utilities */
+.truncate { 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.truncate-1 { max-width: 50px; }
+.truncate-2 { max-width: 100px; }
+.truncate-3 { max-width: 150px; }
+
+/* Flex utilities for compact layouts */
+.flex-compact {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.flex-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+/* Icon-only mode */
+.icon-only {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-only span {
+    display: none;
+}
+
+/* Show text on hover for icon-only buttons */
+@media (min-width: 769px) {
+    .icon-only:hover span {
+        display: inline;
+        margin-left: 5px;
+    }
+}
+
+/* ===== MEDIA QUERY FOR ORIENTATION ===== */
+@media (max-width: 768px) and (orientation: landscape) {
+    
+    /* More horizontal space in landscape */
+    .dashboard-nav .profile-info {
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+    }
+    
+    .dashboard-nav .profile-info span {
+        font-size: 0.8rem;
+    }
+    
+    .dashboard-nav #username-display {
+        max-width: 100px;
+    }
+}
+
+/* ===== RESPONSIVE JAVASCRIPT HOOKS ===== */
+/* These classes can be added/removed via JavaScript */
+
+/* When screen width is very small */
+.screen-small .dashboard-nav .profile-info span:nth-child(2),
+.screen-small .dashboard-nav .user-role {
+    display: none;
+}
+
+/* When screen width is medium */
+.screen-medium .dashboard-nav .profile-info {
+    flex-direction: row;
+    gap: 6px;
+}
+
+/* When screen width is large */
+.screen-large .dashboard-nav .profile-info {
+    gap: 8px;
+}
+
+/* ===== SMOOTH TRANSITIONS ===== */
+.dashboard-nav .profile-info,
+.dashboard-nav .avatar-container,
+.dashboard-nav .header-logo,
+.dashboard-nav .header-right button {
+    transition: all 0.3s ease;
+}
+
+/* ===== ACCESSIBILITY CONSIDERATIONS ===== */
+@media (max-width: 480px) {
+    /* Ensure text contrast when minimized */
+    .dashboard-nav .profile-info span {
+        color: #333;
+        font-weight: 500;
+    }
+    
+    /* Maintain focus states */
+    .avatar-container:focus,
+    .header-right button:focus {
+        outline: 2px solid #256f8a;
+        outline-offset: 2px;
+    }
+}
+
+/* ===== CUSTOM PROPERTY OVERRIDES ===== */
+:root {
+    --mobile-gap: 4px;
+    --mobile-padding: 6px;
+    --mobile-font-size: 0.8rem;
+}
+
+@media (max-width: 360px) {
+    :root {
+        --mobile-gap: 2px;
+        --mobile-padding: 4px;
+        --mobile-font-size: 0.7rem;
+    }
+}
    
