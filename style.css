@@ -17438,7 +17438,7 @@ input:checked + .toggle-slider:before {
 
 .nav-icon i {
     font-size: 18px;
-    color: var(--primary-dark);
+    color: white;
     transition: all 0.3s ease;
 }
 
