@@ -35028,3 +35028,1131 @@ code {
     }
 }
 
+/* ==============================================
+   LOGOUT BUTTON - COMPLETE RESPONSIVE SYSTEM
+   ============================================== */
+
+/* === BASE LOGOUT BUTTON STYLES (Mobile First) === */
+.logout-btn {
+    /* Base dimensions - mobile first */
+    min-height: 44px; /* Minimum touch target size (Apple recommendation) */
+    min-width: 44px; /* Minimum touch target width */
+    
+    /* Padding - scales with screen size */
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    
+    /* Typography - responsive */
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    
+    /* Colors */
+    background: var(--primary-dark); /* Primary red color */
+    color: white;
+    
+    /* Border and shape */
+    border: none;
+    border-radius: 8px;
+    
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    
+    /* Cursor */
+    cursor: pointer;
+    
+    /* Transitions */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Position for pseudo-elements */
+    position: relative;
+    overflow: hidden;
+    
+    /* Text properties */
+    text-decoration: none;
+    white-space: nowrap;
+    
+    /* Box sizing */
+    box-sizing: border-box;
+    
+    /* Remove default tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    
+    /* Optimize for touch */
+    touch-action: manipulation;
+    
+    /* Better text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    
+    /* Icon styling */
+    & i, & svg {
+        font-size: 16px;
+        transition: transform 0.3s ease;
+    }
+}
+
+/* Tablet and larger screens */
+@media (min-width: 768px) {
+    .logout-btn {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        padding-left: 20px;
+        padding-right: 20px;
+        font-size: 15px;
+        border-radius: 9px;
+        
+        & i, & svg {
+            font-size: 17px;
+        }
+    }
+}
+
+@media (min-width: 1024px) {
+    .logout-btn {
+        padding-top: 14px;
+        padding-bottom: 14px;
+        padding-left: 24px;
+        padding-right: 24px;
+        font-size: 16px;
+        border-radius: 10px;
+        
+        & i, & svg {
+            font-size: 18px;
+        }
+    }
+}
+
+@media (min-width: 1440px) {
+    .logout-btn {
+        padding-top: 16px;
+        padding-bottom: 16px;
+        padding-left: 28px;
+        padding-right: 28px;
+        font-size: 17px;
+        border-radius: 11px;
+        
+        & i, & svg {
+            font-size: 19px;
+        }
+    }
+}
+
+@media (min-width: 1920px) {
+    .logout-btn {
+        padding-top: 18px;
+        padding-bottom: 18px;
+        padding-left: 32px;
+        padding-right: 32px;
+        font-size: 18px;
+        border-radius: 12px;
+        
+        & i, & svg {
+            font-size: 20px;
+        }
+    }
+}
+
+/* === HOVER AND INTERACTION STATES === */
+.logout-btn:hover {
+    background: #a71d2a; /* Darker red on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(199, 35, 51, 0.4);
+}
+
+.logout-btn:hover i,
+.logout-btn:hover svg {
+    transform: translateX(3px) scale(1.1);
+}
+
+.logout-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(199, 35, 51, 0.3);
+}
+
+.logout-btn:focus-visible {
+    outline: 3px solid #c82333;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px rgba(199, 35, 51, 0.2);
+}
+
+/* === DISABLED STATE === */
+.logout-btn:disabled,
+.logout-btn.disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+}
+
+.logout-btn:disabled i,
+.logout-btn.disabled i {
+    transform: none;
+}
+
+/* === LOADING STATE === */
+.logout-btn.loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.logout-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: logout-spin 0.8s linear infinite;
+}
+
+@keyframes logout-spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* === RIPPLE EFFECT === */
+.logout-btn.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.logout-btn.ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease-out, height 0.6s ease-out;
+    pointer-events: none;
+}
+
+.logout-btn.ripple:active::after {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+    transition: width 0.6s, height 0.6s, opacity 0.4s;
+}
+
+/* === SIZE VARIANTS === */
+
+/* Small logout button */
+.logout-btn.small {
+    min-height: 36px;
+    min-width: 36px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    
+    & i, & svg {
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 768px) {
+    .logout-btn.small {
+        padding-top: 7px;
+        padding-bottom: 7px;
+        padding-left: 14px;
+        padding-right: 14px;
+        font-size: 13px;
+        
+        & i, & svg {
+            font-size: 15px;
+        }
+    }
+}
+
+@media (min-width: 1024px) {
+    .logout-btn.small {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        padding-left: 16px;
+        padding-right: 16px;
+        font-size: 14px;
+        
+        & i, & svg {
+            font-size: 16px;
+        }
+    }
+}
+
+/* Large logout button */
+.logout-btn.large {
+    min-height: 52px;
+    min-width: 52px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 24px;
+    padding-right: 24px;
+    font-size: 16px;
+    border-radius: 10px;
+    
+    & i, & svg {
+        font-size: 18px;
+    }
+}
+
+@media (min-width: 768px) {
+    .logout-btn.large {
+        padding-top: 14px;
+        padding-bottom: 14px;
+        padding-left: 28px;
+        padding-right: 28px;
+        font-size: 17px;
+        
+        & i, & svg {
+            font-size: 19px;
+        }
+    }
+}
+
+@media (min-width: 1024px) {
+    .logout-btn.large {
+        padding-top: 16px;
+        padding-bottom: 16px;
+        padding-left: 32px;
+        padding-right: 32px;
+        font-size: 18px;
+        
+        & i, & svg {
+            font-size: 20px;
+        }
+    }
+}
+
+/* Extra large logout button */
+.logout-btn.xlarge {
+    min-height: 60px;
+    min-width: 60px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 32px;
+    padding-right: 32px;
+    font-size: 18px;
+    border-radius: 12px;
+    
+    & i, & svg {
+        font-size: 22px;
+    }
+}
+
+@media (min-width: 768px) {
+    .logout-btn.xlarge {
+        padding-top: 18px;
+        padding-bottom: 18px;
+        padding-left: 36px;
+        padding-right: 36px;
+        font-size: 19px;
+        
+        & i, & svg {
+            font-size: 24px;
+        }
+    }
+}
+
+@media (min-width: 1024px) {
+    .logout-btn.xlarge {
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding-left: 40px;
+        padding-right: 40px;
+        font-size: 20px;
+        
+        & i, & svg {
+            font-size: 26px;
+        }
+    }
+}
+
+/* === WIDTH VARIANTS === */
+
+/* Full width logout button */
+.logout-btn.block {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+}
+
+/* Auto width (default) */
+.logout-btn.auto {
+    width: auto;
+}
+
+/* === ICON-ONLY VARIANT === */
+.logout-btn.icon-only {
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    min-width: 44px;
+}
+
+.logout-btn.icon-only i,
+.logout-btn.icon-only svg {
+    margin: 0;
+    font-size: 20px;
+}
+
+.logout-btn.icon-only.small {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    
+    & i, & svg {
+        font-size: 16px;
+    }
+}
+
+.logout-btn.icon-only.large {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    
+    & i, & svg {
+        font-size: 24px;
+    }
+}
+
+.logout-btn.icon-only.xlarge {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    
+    & i, & svg {
+        font-size: 28px;
+    }
+}
+
+/* === OUTLINE VARIANT === */
+.logout-btn.outline {
+    background: transparent;
+    color: #c82333;
+    border: 2px solid #c82333;
+    box-shadow: none;
+}
+
+.logout-btn.outline:hover {
+    background: #c82333;
+    color: white;
+    border-color: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(199, 35, 51, 0.3);
+}
+
+.logout-btn.outline:active {
+    transform: translateY(0);
+}
+
+/* === DANGER VARIANT (already default, but keeping for consistency) === */
+.logout-btn.danger {
+    background: #c82333;
+}
+
+.logout-btn.danger:hover {
+    background: #a71d2a;
+}
+
+/* === GHOST VARIANT === */
+.logout-btn.ghost {
+    background: transparent;
+    color: #c82333;
+    border: 2px solid transparent;
+}
+
+.logout-btn.ghost:hover {
+    background: rgba(199, 35, 51, 0.1);
+    border-color: rgba(199, 35, 51, 0.3);
+    transform: translateY(-2px);
+}
+
+.logout-btn.ghost:active {
+    transform: translateY(0);
+}
+
+/* === GRADIENT VARIANT === */
+.logout-btn.gradient {
+    background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
+}
+
+.logout-btn.gradient:hover {
+    background: linear-gradient(135deg, #a71d2a 0%, #8a1a23 100%);
+}
+
+/* === SHADOW VARIANTS === */
+.logout-btn.shadow-sm {
+    box-shadow: 0 2px 4px rgba(199, 35, 51, 0.2);
+}
+
+.logout-btn.shadow-md {
+    box-shadow: 0 4px 8px rgba(199, 35, 51, 0.3);
+}
+
+.logout-btn.shadow-lg {
+    box-shadow: 0 8px 16px rgba(199, 35, 51, 0.4);
+}
+
+.logout-btn.shadow-none {
+    box-shadow: none;
+}
+
+/* === PILL SHAPE === */
+.logout-btn.pill {
+    border-radius: 50px;
+}
+
+/* === ROUNDED CORNERS === */
+.logout-btn.rounded-sm {
+    border-radius: 4px;
+}
+
+.logout-btn.rounded-md {
+    border-radius: 8px;
+}
+
+.logout-btn.rounded-lg {
+    border-radius: 12px;
+}
+
+.logout-btn.rounded-xl {
+    border-radius: 16px;
+}
+
+.logout-btn.rounded-circle {
+    border-radius: 50%;
+}
+
+/* === ANIMATION EFFECTS === */
+
+/* Pulse animation */
+.logout-btn.pulse {
+    animation: logout-pulse 2s infinite;
+}
+
+@keyframes logout-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(199, 35, 51, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(199, 35, 51, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(199, 35, 51, 0);
+    }
+}
+
+/* Shine effect */
+.logout-btn.shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.logout-btn.shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(45deg);
+    animation: logout-shine 3s infinite;
+}
+
+@keyframes logout-shine {
+    0% {
+        transform: translateX(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) rotate(45deg);
+    }
+}
+
+/* Bounce animation */
+.logout-btn.bounce {
+    animation: logout-bounce 2s infinite;
+}
+
+@keyframes logout-bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* === POSITIONING IN DIFFERENT CONTEXTS === */
+
+/* In sidebar */
+.sidebar .logout-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* In header */
+.header .logout-btn {
+    background: transparent;
+    border: 2px solid white;
+}
+
+.header .logout-btn:hover {
+    background: white;
+    color: #c82333;
+}
+
+/* In dropdown menu */
+.dropdown-menu .logout-btn {
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+    background: transparent;
+    color: #c82333;
+}
+
+.dropdown-menu .logout-btn:hover {
+    background: rgba(199, 35, 51, 0.1);
+    transform: none;
+    box-shadow: none;
+}
+
+/* In card footer */
+.card-footer .logout-btn {
+    width: 100%;
+}
+
+/* In button group */
+.btn-group .logout-btn {
+    flex: 1;
+}
+
+.btn-group-vertical .logout-btn {
+    width: 100%;
+}
+
+/* === RESPONSIVE BREAKPOINTS === */
+
+/* Ultra Small Mobile (≤320px) - Foldable devices */
+@media (max-width: 320px) {
+    .logout-btn {
+        min-height: 40px;
+        min-width: 40px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        padding-left: 12px;
+        padding-right: 12px;
+        font-size: 13px;
+        border-radius: 6px;
+        
+        & i, & svg {
+            font-size: 14px;
+        }
+    }
+    
+    .logout-btn.large {
+        min-height: 48px;
+        min-width: 48px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        padding-left: 18px;
+        padding-right: 18px;
+        font-size: 15px;
+        
+        & i, & svg {
+            font-size: 16px;
+        }
+    }
+    
+    .logout-btn.small {
+        min-height: 32px;
+        min-width: 32px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        padding-left: 8px;
+        padding-right: 8px;
+        font-size: 11px;
+        
+        & i, & svg {
+            font-size: 12px;
+        }
+    }
+    
+    .logout-btn.icon-only {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        
+        & i, & svg {
+            font-size: 18px;
+        }
+    }
+}
+
+/* Small Mobile (321px - 375px) */
+@media (min-width: 321px) and (max-width: 375px) {
+    .logout-btn {
+        min-height: 42px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+        padding-left: 14px;
+        padding-right: 14px;
+        font-size: 14px;
+    }
+}
+
+/* Standard Mobile (376px - 479px) */
+@media (min-width: 376px) and (max-width: 479px) {
+    .logout-btn {
+        min-height: 44px;
+    }
+}
+
+/* Large Mobile (480px - 599px) */
+@media (min-width: 480px) and (max-width: 599px) {
+    .logout-btn {
+        padding-left: 18px;
+        padding-right: 18px;
+        font-size: 15px;
+    }
+}
+
+/* Mobile Landscape & Small Tablet (600px - 767px) */
+@media (min-width: 600px) and (max-width: 767px) {
+    .logout-btn {
+        min-height: 45px;
+    }
+}
+
+/* === TOUCH DEVICE OPTIMIZATIONS === */
+@media (hover: none) and (pointer: coarse) {
+    .logout-btn {
+        /* Larger touch targets for mobile */
+        min-height: 48px;
+        min-width: 48px;
+        
+        /* Disable hover effects */
+        &:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Add active state feedback */
+        &:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+            background: #a71d2a;
+        }
+        
+        /* Remove hover icon animation */
+        &:hover i,
+        &:hover svg {
+            transform: none;
+        }
+        
+        /* Increase spacing around button */
+        margin: 5px;
+    }
+    
+    /* Ensure all variants are touch-friendly */
+    .logout-btn.outline:active {
+        background: #c82333;
+        color: white;
+    }
+    
+    .logout-btn.ghost:active {
+        background: rgba(199, 35, 51, 0.2);
+    }
+}
+
+/* === REDUCED MOTION === */
+@media (prefers-reduced-motion: reduce) {
+    .logout-btn,
+    .logout-btn i,
+    .logout-btn svg,
+    .logout-btn::after,
+    .logout-btn::before {
+        transition: none;
+        animation: none;
+    }
+    
+    .logout-btn:hover,
+    .logout-btn:active {
+        transform: none;
+    }
+    
+    .logout-btn.loading::after {
+        animation: none;
+    }
+    
+    .logout-btn.pulse,
+    .logout-btn.shine,
+    .logout-btn.bounce {
+        animation: none;
+    }
+    
+    .logout-btn.ripple::after {
+        display: none;
+    }
+}
+
+/* === DARK MODE SUPPORT === */
+@media (prefers-color-scheme: dark) {
+    .logout-btn {
+        background: #dc3545;
+        
+        &:hover {
+            background: #c82333;
+        }
+    }
+    
+    .logout-btn.outline {
+        background: transparent;
+        color: #dc3545;
+        border-color: #dc3545;
+        
+        &:hover {
+            background: #dc3545;
+            color: white;
+        }
+    }
+    
+    .logout-btn.ghost {
+        background: transparent;
+        color: #dc3545;
+        
+        &:hover {
+            background: rgba(220, 53, 69, 0.2);
+        }
+        
+        &:active {
+            background: rgba(220, 53, 69, 0.3);
+        }
+    }
+    
+    .dropdown-menu .logout-btn {
+        color: #dc3545;
+    }
+}
+
+/* === HIGH CONTRAST MODE === */
+@media (prefers-contrast: high) {
+    .logout-btn {
+        border: 3px solid white;
+        background: black;
+        color: white;
+        
+        &:hover {
+            background: white;
+            color: black;
+            border-color: black;
+        }
+    }
+    
+    .logout-btn.outline {
+        background: white;
+        color: black;
+        border-color: black;
+        
+        &:hover {
+            background: black;
+            color: white;
+            border-color: white;
+        }
+    }
+    
+    .logout-btn:focus-visible {
+        outline: 3px solid yellow;
+        outline-offset: 3px;
+    }
+}
+
+/* === PRINT STYLES === */
+@media print {
+    .logout-btn {
+        display: none !important;
+    }
+}
+
+/* === UTILITY CLASSES FOR LOGOUT BUTTON === */
+
+/* Icon alignment */
+.logout-btn.icon-left {
+    flex-direction: row;
+}
+
+.logout-btn.icon-right {
+    flex-direction: row-reverse;
+}
+
+.logout-btn.icon-right i,
+.logout-btn.icon-right svg {
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+.logout-btn.icon-top {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.logout-btn.icon-top i,
+.logout-btn.icon-top svg {
+    margin: 0;
+}
+
+/* Text visibility on small screens */
+@media (max-width: 480px) {
+    .logout-btn.hide-text-on-mobile span {
+        display: none;
+    }
+    
+    .logout-btn.hide-text-on-mobile {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        padding: 0;
+    }
+    
+    .logout-btn.hide-text-on-mobile i,
+    .logout-btn.hide-text-on-mobile svg {
+        margin: 0;
+        font-size: 20px;
+    }
+}
+
+/* Keep text on all screens */
+.logout-btn.keep-text {
+    /* Override any mobile text hiding */
+    & span {
+        display: inline-block !important;
+    }
+}
+
+/* Responsive text visibility */
+.logout-btn.responsive-text {
+    @media (max-width: 480px) {
+        & span {
+            display: none;
+        }
+        
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        padding: 0;
+        
+        & i, & svg {
+            margin: 0;
+            font-size: 20px;
+        }
+    }
+}
+
+/* === CONFIRMATION DIALOG BUTTONS === */
+.logout-confirm-dialog .logout-btn {
+    margin: 0 5px;
+    min-width: 100px;
+}
+
+.logout-confirm-dialog .logout-btn.cancel {
+    background: #6c757d;
+    
+    &:hover {
+        background: #5a6268;
+    }
+}
+
+/* === SIDEBAR LOGOUT BUTTON - SPECIFIC === */
+.sidebar-footer .logout-btn {
+    width: 100%;
+    background: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: #ffd700;
+    
+    &:hover {
+        background: rgba(220, 53, 69, 0.4);
+        transform: translateY(-2px);
+    }
+    
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .sidebar-footer .logout-btn {
+        background: rgba(220, 53, 69, 0.3);
+        
+        &:hover {
+            background: rgba(220, 53, 69, 0.5);
+        }
+    }
+}
+
+/* === EMERGENCY LOGOUT BUTTON === */
+.logout-btn.emergency {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    animation: emergency-pulse 2s infinite;
+}
+
+@keyframes emergency-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(220, 53, 69, 0);
+    }
+}
+
+/* === GROUPED LOGOUT BUTTONS === */
+.logout-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.logout-group .logout-btn {
+    flex: 1;
+    min-width: 120px;
+}
+
+@media (max-width: 480px) {
+    .logout-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .logout-group .logout-btn {
+        width: 100%;
+    }
+}
+
+/* === FLOATING LOGOUT BUTTON === */
+.logout-btn.floating {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(199, 35, 51, 0.4);
+}
+
+@media (max-width: 768px) {
+    .logout-btn.floating {
+        bottom: 15px;
+        right: 15px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        
+        & span {
+            display: none;
+        }
+        
+        & i, & svg {
+            margin: 0;
+            font-size: 22px;
+        }
+    }
+}
+
+/* === ANIMATED ENTRANCE === */
+@keyframes logout-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.logout-btn.animate-in {
+    animation: logout-slide-in 0.3s ease-out;
+}
+
+/* === BADGE ON LOGOUT BUTTON === */
+.logout-btn.with-badge {
+    position: relative;
+}
+
+.logout-btn.with-badge::before {
+    content: attr(data-badge);
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ffd700;
+    color: #333;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* === TOOLTIP ON LOGOUT BUTTON === */
+.logout-btn.with-tooltip {
+    position: relative;
+}
+
+.logout-btn.with-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.logout-btn.with-tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+@media (max-width: 768px) {
+    .logout-btn.with-tooltip::after {
+        display: none;
+    }
+            }
