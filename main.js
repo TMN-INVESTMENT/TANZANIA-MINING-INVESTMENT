@@ -53,16 +53,16 @@ class Database {
             });
             
             // Create super admin if doesn't exist
-            const kingHaruniExists = users.some(user => user.email === 'kingharuni420@gmail.com');
-            if (!kingHaruniExists) {
+                const superAdminExists = users.some(user => user.email === 'super@tmn.com');
+            if (!superAdminExists) {
                 console.log('Creating super admin user in Firebase...');
                 
                 const superAdmin = {
                     id: 1,
-                    username: 'kingharuni',
-                    email: 'kingharuni420@gmail.com',
-                    password: 'Rehema@mam',
-                    admin_password: 'Rehema@mam',
+                    username: 'SUPER ADMIN',
+                    email: 'super@tmn.com',
+                    password: 'tmn@123',
+                    admin_password: 'tmn@123',
                     referral_code: 'KING001',
                     referred_by: null,
                     join_date: new Date().toISOString(),
@@ -85,17 +85,17 @@ class Database {
             }
             
             // Create regular admin if doesn't exist
-            const regularAdminExists = users.some(user => user.email === 'mining.investment.tanzania@proton.me');
+            const regularAdminExists = users.some(user => user.email === 'tmn@investment.com');
             if (!regularAdminExists) {
                 console.log('Creating regular admin user in Firebase...');
                 
                 const regularAdmin = {
                     id: 2,
-                    username: 'halunihillison',
-                    email: 'mining.investment.tanzania@proton.me',
+                    username: 'Administrator',
+                    email: 'tmn@investment.com',
                     password: 'user123',
-                    admin_password: 'Kalinga@25',
-                    referral_code: 'HALUNI002',
+                    admin_password: 'tmn@123',
+                    referral_code: '',
                     referred_by: null,
                     join_date: new Date().toISOString(),
                     status: 'active',
@@ -215,24 +215,29 @@ class Database {
         return await this.findUserByUsername(identifierLower);
     }
 
-    async findUserByReferralCode(referralCode) {
-        try {
-            if (!referralCode) return null;
-            
-            const snapshot = await this.db.collection('users')
-                .where('referral_code', '==', referralCode.toUpperCase())
-                .limit(1)
-                .get();
-            
-            return snapshot.empty ? null : {
-                id: parseInt(snapshot.docs[0].id),
-                ...snapshot.docs[0].data()
-            };
-        } catch (error) {
-            console.error('Error finding user by referral code:', error);
+// In your Database class
+
+async findUserByReferralCode(referralCode) {
+    try {
+        // Return null if no referral code provided
+        if (!referralCode || referralCode === '') {
             return null;
         }
+        
+        const snapshot = await this.db.collection('users')
+            .where('referral_code', '==', referralCode.toUpperCase())
+            .limit(1)
+            .get();
+        
+        return snapshot.empty ? null : {
+            id: parseInt(snapshot.docs[0].id),
+            ...snapshot.docs[0].data()
+        };
+    } catch (error) {
+        console.error('Error finding user by referral code:', error);
+        return null;
     }
+}
 
     async getNextId() {
         try {
@@ -293,51 +298,53 @@ class Database {
         return code;
     }
 
-    async createUser(userData) {
-        try {
-            console.log('Creating user:', userData.username);
-            
-            // Get next user ID
-            const nextId = await this.getNextId();
-            
-            // Generate unique referral code
-            const referralCode = await this.generateUniqueReferralCode();
-            
-            // Create user object
-            const newUser = {
-                id: nextId,
-                username: userData.username.toLowerCase(),
-                email: userData.email.toLowerCase(),
-                password: userData.password,
-                admin_password: '',
-                referral_code: referralCode,
-                referred_by: userData.referred_by || null,
-                join_date: new Date().toISOString(),
-                status: 'active',
-                is_admin: false,
-                is_super_admin: false,
-                admin_role: '',
-                permissions: [],
-                balance: 0,
-                investments: [],
-                referrals: [],
-                transactions: [],
-                has_received_referral_bonus: false,
-                created_at: firebase.firestore.FieldValue.serverTimestamp(),
-                updated_at: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            // Save to Firestore
-            await this.db.collection('users').doc(nextId.toString()).set(newUser);
-            
-            console.log('User created successfully:', newUser.username);
-            return newUser;
-            
-        } catch (error) {
-            console.error('Error creating user:', error);
-            throw new Error(`Failed to create user: ${error.message}`);
-        }
+// In your Database class, update the createUser method
+
+async createUser(userData) {
+    try {
+        console.log('Creating user:', userData.username);
+        
+        // Get next user ID
+        const nextId = await this.getNextId();
+        
+        // Generate unique referral code
+        const referralCode = await this.generateUniqueReferralCode();
+        
+        // Create user object - referred_by can be null
+        const newUser = {
+            id: nextId,
+            username: userData.username.toLowerCase(),
+            email: userData.email.toLowerCase(),
+            password: userData.password,
+            admin_password: '',
+            referral_code: referralCode,
+            referred_by: userData.referred_by || null, // Allow null
+            join_date: new Date().toISOString(),
+            status: 'active',
+            is_admin: false,
+            is_super_admin: false,
+            admin_role: '',
+            permissions: [],
+            balance: 5000,
+            investments: [],
+            referrals: [],
+            transactions: [],
+            has_received_referral_bonus: false,
+            created_at: firebase.firestore.FieldValue.serverTimestamp(),
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Save to Firestore
+        await this.db.collection('users').doc(nextId.toString()).set(newUser);
+        
+        console.log('User created successfully:', newUser.username);
+        return newUser;
+        
+    } catch (error) {
+        console.error('Error creating user:', error);
+        throw new Error(`Failed to create user: ${error.message}`);
     }
+}
 
     async updateUser(userId, updates) {
         try {
@@ -395,6 +402,31 @@ class Database {
             return false;
         }
     }
+    
+    // Add to Database class - method to get admin permissions
+async getAdminPermissions(adminId) {
+    try {
+        const admin = await this.findUserById(adminId);
+        return admin?.permissions || [];
+    } catch (error) {
+        console.error('Error getting admin permissions:', error);
+        return [];
+    }
+}
+
+// Add to Database class - method to update admin permissions
+async updateAdminPermissions(adminId, permissions) {
+    try {
+        await this.updateUser(adminId, {
+            permissions: permissions,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        console.error('Error updating admin permissions:', error);
+        return false;
+    }
+}
 
     // ========== INVESTMENT MANAGEMENT ==========
     async getUserInvestments(userId) {
@@ -773,176 +805,268 @@ class Database {
         }
     }
 
-    async updateTransactionStatus(transactionId, status, adminId) {
-        try {
-            console.log('Updating transaction status:', { transactionId, status, adminId });
+async updateTransactionStatus(transactionId, status, adminId) {
+    try {
+        console.log('🔄 Updating transaction status:', { transactionId, status, adminId });
+        
+        const usersSnapshot = await this.db.collection('users').get();
+        let updated = false;
+        
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data();
+            const transactions = userData.transactions || [];
+            const transactionIndex = transactions.findIndex(t => t.id === transactionId);
             
-            const usersSnapshot = await this.db.collection('users').get();
-            let updated = false;
-            
-            for (const userDoc of usersSnapshot.docs) {
-                const userData = userDoc.data();
-                const transactions = userData.transactions || [];
-                const transactionIndex = transactions.findIndex(t => t.id === transactionId);
+            if (transactionIndex !== -1) {
+                const transaction = transactions[transactionIndex];
+                const oldStatus = transaction.status;
+                const currentTimestamp = new Date().toISOString();
                 
-                if (transactionIndex !== -1) {
-                    const transaction = transactions[transactionIndex];
-                    const oldStatus = transaction.status;
-                    const currentTimestamp = new Date().toISOString();
+                console.log('📝 Found transaction:', {
+                    id: transaction.id,
+                    type: transaction.type,
+                    oldStatus: oldStatus,
+                    newStatus: status,
+                    amount: transaction.amount,
+                    userId: parseInt(userDoc.id),
+                    username: userData.username
+                });
+                
+                transactions[transactionIndex] = {
+                    ...transaction,
+                    status: status,
+                    adminActionDate: currentTimestamp,
+                    adminId: adminId,
+                    updated_at: currentTimestamp
+                };
+                
+                let balanceAdjustment = 0;
+                
+                // ==============================================
+                // DEPOSIT APPROVAL - Check for first deposit
+                // ==============================================
+                if (transaction.type === 'deposit' && status === 'approved' && oldStatus !== 'approved') {
+                    const depositAmount = parseFloat(transaction.amount) || 0;
+                    balanceAdjustment = depositAmount;
+                    console.log(`💰 Deposit approved: Adding ${balanceAdjustment} to depositor's balance`);
                     
-                    console.log('Found transaction:', {
-                        id: transaction.id,
-                        type: transaction.type,
-                        oldStatus: oldStatus,
-                        newStatus: status,
-                        amount: transaction.amount,
-                        userId: parseInt(userDoc.id)
+                    const depositingUserId = parseInt(userDoc.id);
+                    const depositingUsername = userData.username;
+                    
+                    // ===== CHECK IF THIS IS THE FIRST DEPOSIT =====
+                    // Get all approved deposits for this user (excluding current transaction)
+                    const allUserTransactions = userData.transactions || [];
+                    const previousApprovedDeposits = allUserTransactions.filter(t =>
+                        t.type === 'deposit' &&
+                        t.status === 'approved' &&
+                        t.id !== transactionId
+                    );
+                    
+                    const isFirstDeposit = previousApprovedDeposits.length === 0;
+                    
+                    console.log('🎯 First Deposit Check:', {
+                        isFirstDeposit: isFirstDeposit,
+                        previousApprovedDepositsCount: previousApprovedDeposits.length,
+                        depositAmount: depositAmount,
+                        depositingUserId: depositingUserId,
+                        depositingUsername: depositingUsername
                     });
                     
-                    transactions[transactionIndex] = {
-                        ...transaction,
-                        status: status,
-                        adminActionDate: currentTimestamp,
-                        adminId: adminId,
-                        updated_at: currentTimestamp
-                    };
-                    
-                    let balanceAdjustment = 0;
-                    
-                    if (transaction.type === 'deposit' && status === 'approved' && oldStatus !== 'approved') {
-                        balanceAdjustment = parseFloat(transaction.amount) || 0;
-                        console.log('Deposit approved, adding to balance:', balanceAdjustment);
+                    // ===== AWARD FIRST DEPOSIT BONUSES =====
+                    if (isFirstDeposit) {
+                        console.log('🎁 FIRST DEPOSIT DETECTED! Awarding bonuses...');
                         
-                        const depositingUserId = parseInt(userDoc.id);
-                        const depositAmount = parseFloat(transaction.amount) || 0;
+                        // --- BONUS 1: 5% Welcome Bonus to the Depositor (New User) ---
+                        const welcomeBonus = depositAmount * 0.05; // 5% welcome bonus
+                        console.log(`🎉 Welcome Bonus (5%): ${welcomeBonus} for ${depositingUsername}`);
                         
-                        console.log('Checking for referral bonus...');
-                        console.log('Depositing User ID:', depositingUserId);
-                        console.log('Deposit Amount:', depositAmount);
+                        // Add welcome bonus to depositor's balance
+                        balanceAdjustment += welcomeBonus;
                         
+                        // Create welcome bonus transaction for depositor
+                        const welcomeBonusTransaction = {
+                            id: Date.now(),
+                            userId: depositingUserId,
+                            username: depositingUsername,
+                            email: userData.email,
+                            type: 'bonus',
+                            amount: welcomeBonus,
+                            method: 'welcome_bonus',
+                            status: 'approved',
+                            date: currentTimestamp,
+                            details: {
+                                description: `🎉 5% welcome bonus for first deposit of TZS ${depositAmount.toLocaleString()}`,
+                                first_deposit_amount: depositAmount,
+                                bonus_percentage: 5,
+                                bonus_type: 'welcome_bonus',
+                                source_transaction_id: transactionId,
+                                auto_approved: true
+                            },
+                            adminActionDate: currentTimestamp,
+                            adminId: 'system'
+                        };
+                        
+                        // Add welcome bonus to transactions array
+                        transactions.push(welcomeBonusTransaction);
+                        console.log(`✅ Created welcome bonus transaction of ${welcomeBonus} for depositor`);
+                        
+                        // Update depositor's welcome bonus status
+                        const userRef = this.db.collection('users').doc(userDoc.id);
+                        await userRef.update({
+                            has_received_welcome_bonus: true,
+                            welcome_bonus_amount: welcomeBonus,
+                            welcome_bonus_date: currentTimestamp,
+                            first_deposit_amount: depositAmount,
+                            first_deposit_date: currentTimestamp
+                        });
+                        console.log('✅ Updated depositor welcome bonus status');
+                        
+                        // --- BONUS 2: 10% Referral Bonus to the Referrer (if exists) ---
                         if (userData.referred_by) {
-                            console.log('User was referred by:', userData.referred_by);
+                            console.log('👥 User was referred by code:', userData.referred_by);
                             
-                            const userTransactions = userData.transactions || [];
-                            const previousApprovedDeposits = userTransactions.filter(t =>
-                                t.type === 'deposit' && t.status === 'approved'
-                            );
-                            
-                            console.log('Previous approved deposits count:', previousApprovedDeposits.length);
-                            
-                            if (previousApprovedDeposits.length === 0) {
-                                console.log('This is the FIRST approved deposit! Awarding referral bonus...');
+                            const referrer = await this.findUserByReferralCode(userData.referred_by);
+                            if (referrer) {
+                                console.log('✅ Referrer found:', {
+                                    id: referrer.id,
+                                    username: referrer.username,
+                                    currentBalance: referrer.balance
+                                });
                                 
-                                const referrer = await this.findUserByReferralCode(userData.referred_by);
-                                if (referrer) {
-                                    console.log('Referrer found:', referrer.username, 'ID:', referrer.id);
-                                    
-                                    const referralBonus = depositAmount * 0.10;
-                                    console.log(`10% of ${depositAmount} = ${referralBonus}`);
-                                    
-                                    const referrerRef = this.db.collection('users').doc(referrer.id.toString());
-                                    await referrerRef.update({
-                                        balance: firebase.firestore.FieldValue.increment(referralBonus),
-                                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                                const referrerBonus = depositAmount * 0.10; // 10% referral commission
+                                console.log(`🎁 Referrer Bonus (10%): ${referrerBonus} for ${referrer.username}`);
+                                
+                                const referrerRef = this.db.collection('users').doc(referrer.id.toString());
+                                await referrerRef.update({
+                                    balance: firebase.firestore.FieldValue.increment(referrerBonus),
+                                    updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                                
+                                console.log(`✅ Added ${referrerBonus} to referrer ${referrer.username}`);
+                                
+                                // Create referral bonus transaction for referrer
+                                const referrerBonusTransaction = {
+                                    id: Date.now() + 1,
+                                    userId: referrer.id,
+                                    username: referrer.username,
+                                    email: referrer.email,
+                                    type: 'bonus',
+                                    amount: referrerBonus,
+                                    method: 'referral_bonus',
+                                    status: 'approved',
+                                    date: currentTimestamp,
+                                    details: {
+                                        description: `🎁 10% referral bonus for referring ${depositingUsername}`,
+                                        referred_user_id: depositingUserId,
+                                        referred_username: depositingUsername,
+                                        first_deposit_amount: depositAmount,
+                                        bonus_percentage: 10,
+                                        bonus_type: 'referrer_bonus',
+                                        source_transaction_id: transactionId,
+                                        auto_approved: true
+                                    },
+                                    adminActionDate: currentTimestamp,
+                                    adminId: 'system'
+                                };
+                                
+                                // Add to referrer's transactions
+                                const referrerDoc = await referrerRef.get();
+                                const referrerTransactions = referrerDoc.data().transactions || [];
+                                referrerTransactions.push(referrerBonusTransaction);
+                                
+                                await referrerRef.update({
+                                    transactions: referrerTransactions
+                                });
+                                
+                                console.log(`✅ Created referrer bonus transaction of ${referrerBonus}`);
+                                
+                                // Update referrer's referrals array with bonus info
+                                if (referrer.referrals && Array.isArray(referrer.referrals)) {
+                                    const updatedReferrals = referrer.referrals.map(ref => {
+                                        if (ref.id === depositingUserId) {
+                                            return {
+                                                ...ref,
+                                                bonus_pending: false,
+                                                first_deposit_amount: depositAmount,
+                                                referrer_bonus_amount: referrerBonus,
+                                                referrer_bonus_paid: true,
+                                                referrer_bonus_paid_date: currentTimestamp,
+                                                referrer_bonus_transaction_id: referrerBonusTransaction.id
+                                            };
+                                        }
+                                        return ref;
                                     });
                                     
-                                    console.log('Referrer balance updated by:', referralBonus);
+                                    await referrerRef.update({
+                                        referrals: updatedReferrals
+                                    });
                                     
-                                    const bonusTransaction = await this.createTransaction(
-                                        referrer.id,
-                                        'bonus',
-                                        referralBonus,
-                                        'referral',
-                                        {
-                                            description: `10% referral bonus for ${userData.username}'s first deposit`,
-                                            referred_user_id: depositingUserId,
-                                            referred_username: userData.username,
-                                            first_deposit_amount: depositAmount,
-                                            bonus_percentage: 10,
-                                            source_transaction_id: transactionId,
-                                            auto_approved: true
-                                        }
-                                    );
-                                    
-                                    await this.updateSingleTransactionStatus(bonusTransaction.id, 'approved', 'system');
-                                    console.log('Bonus transaction created and approved');
-                                    
-                                    const referrerDoc = await referrerRef.get();
-                                    const referrerData = referrerDoc.data();
-                                    
-                                    if (referrerData.referrals && Array.isArray(referrerData.referrals)) {
-                                        const updatedReferrals = referrerData.referrals.map(ref => {
-                                            if (ref.id === depositingUserId) {
-                                                return {
-                                                    ...ref,
-                                                    bonus_pending: false,
-                                                    first_deposit_amount: depositAmount,
-                                                    bonus_amount: referralBonus,
-                                                    bonus_paid: true,
-                                                    bonus_paid_date: currentTimestamp,
-                                                    bonus_transaction_id: bonusTransaction.id
-                                                };
-                                            }
-                                            return ref;
-                                        });
-                                        
-                                        await referrerRef.update({
-                                            referrals: updatedReferrals,
-                                            updated_at: firebase.firestore.FieldValue.serverTimestamp()
-                                        });
-                                        
-                                        console.log('Referral record updated');
-                                    }
-                                    
-                                    if (this.currentUser && this.currentUser.id === referrer.id) {
-                                        this.currentUser.balance += referralBonus;
-                                        console.log('Updated current user (referrer) balance');
-                                    }
-                                } else {
-                                    console.log('Referrer not found with code:', userData.referred_by);
+                                    console.log('✅ Updated referrer\'s referrals array');
                                 }
+                                
+                                // Update current user object if it's the referrer
+                                if (this.currentUser && this.currentUser.id === referrer.id) {
+                                    this.currentUser.balance += referrerBonus;
+                                    console.log('✅ Updated current referrer balance in frontend');
+                                }
+                                
                             } else {
-                                console.log('Not first deposit, skipping bonus');
+                                console.log('❌ Referrer NOT found with code:', userData.referred_by);
                             }
                         } else {
-                            console.log('User has no referrer, skipping bonus');
+                            console.log('ℹ️ User has no referrer, skipping referrer bonus');
                         }
-                    } else if (transaction.type === 'withdrawal') {
-                        if (status === 'rejected' && oldStatus === 'pending') {
-                            balanceAdjustment = parseFloat(transaction.amount) || 0;
-                            console.log('Withdrawal rejected, adding back to balance:', balanceAdjustment);
-                        }
-                    }
-                    
-                    const userRef = this.db.collection('users').doc(userDoc.id);
-                    const updateData = {
-                        transactions: transactions,
-                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    
-                    if (balanceAdjustment !== 0) {
-                        updateData.balance = firebase.firestore.FieldValue.increment(balanceAdjustment);
                         
-                        if (this.currentUser && this.currentUser.id === parseInt(userDoc.id)) {
-                            this.currentUser.balance += balanceAdjustment;
-                            console.log('Updated current user balance:', this.currentUser.balance);
-                        }
+                        // Log total bonuses awarded
+                        const totalBonuses = welcomeBonus + (userData.referred_by ? depositAmount * 0.10 : 0);
+                        console.log(`📊 Total Bonuses Awarded: TZS ${totalBonuses.toLocaleString()}`);
+                        console.log(`📊 Final Balance Addition: TZS ${balanceAdjustment.toLocaleString()}`);
+                        
+                    } else {
+                        console.log(`ℹ️ NOT first deposit. User has ${previousApprovedDeposits.length} previous approved deposit(s). Skipping bonuses.`);
                     }
-                    
-                    await userRef.update(updateData);
-                    console.log('Transaction status updated successfully');
-                    updated = true;
-                    break;
                 }
+                
+                // ==============================================
+                // WITHDRAWAL REJECTION - Add back deducted amount
+                // ==============================================
+                else if (transaction.type === 'withdrawal' && status === 'rejected' && oldStatus === 'pending') {
+                    balanceAdjustment = parseFloat(transaction.amount) || 0;
+                    console.log(`💸 Withdrawal rejected: Adding back ${balanceAdjustment} to user balance`);
+                }
+                
+                // ==============================================
+                // UPDATE USER DOCUMENT
+                // ==============================================
+                const userRef = this.db.collection('users').doc(userDoc.id);
+                const updateData = {
+                    transactions: transactions,
+                    updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                if (balanceAdjustment !== 0) {
+                    updateData.balance = firebase.firestore.FieldValue.increment(balanceAdjustment);
+                    
+                    if (this.currentUser && this.currentUser.id === parseInt(userDoc.id)) {
+                        this.currentUser.balance += balanceAdjustment;
+                        console.log('📊 Updated current user balance:', this.currentUser.balance);
+                    }
+                }
+                
+                await userRef.update(updateData);
+                console.log('✅ Transaction status updated successfully');
+                updated = true;
+                break;
             }
-            
-            return updated;
-            
-        } catch (error) {
-            console.error('Error updating transaction status:', error);
-            return false;
         }
+        
+        return updated;
+        
+    } catch (error) {
+        console.error('❌ Error updating transaction status:', error);
+        return false;
     }
+}
 
     async updateSingleTransactionStatus(transactionId, status, adminId) {
         try {
@@ -1170,12 +1294,12 @@ class Database {
 
     // ========== ADMIN UTILITIES ==========
     isSuperAdmin(user) {
-        return user && user.email === 'kingharuni420@gmail.com' && user.is_super_admin === true;
+        return user && user.email === 'super@tmn.com' && user.is_super_admin === true;
     }
 
     getSuperAdmin() {
         return this.getUsers().then(users => 
-            users.find(user => user.email === 'kingharuni420@gmail.com')
+            users.find(user => user.email === 'super@tmn.com')
         );
     }
 
@@ -1183,13 +1307,8 @@ class Database {
         if (!email) return false;
         
         const adminEmails = [
-            'kingharuni420@gmail.com',
-            'mining.investment.tanzania@proton.me',
-            'halunihillison@gmail.com',
-            'mining.investment25@gmail.com',
-            'chamahuru01@gmail.com',
-            'fracozecompany@gmail.com',
-            'harunihilson@gmail.com'
+            'super@tmn.com',
+            'tmn@investment.com',
         ];
         
         return adminEmails.includes(email.toLowerCase());
@@ -1199,12 +1318,7 @@ class Database {
         if (!email) return false;
         
         const regularAdminEmails = [
-            'mining.investment.tanzania@proton.me',
-            'halunihillison@gmail.com',
-            'mining.investment25@gmail.com',
-            'chamahuru01@gmail.com',
-            'fracozecompany@gmail.com',
-            'harunihilson@gmail.com'
+            'tmn@investment.com',
         ];
         
         return regularAdminEmails.includes(email.toLowerCase());
@@ -1429,7 +1543,7 @@ function setupAdminEmailDetection() {
                     adminPasswordSection.style.display = 'block';
                     
                     // If it's super admin email, show special message
-                    if (email === 'kingharuni420@gmail.com') {
+                    if (email === 'super@tmn.com') {
                         adminPasswordSection.innerHTML = `
                             <div class="form-control">
                                 <label for="admin-password">Super Admin Password</label>
@@ -2631,14 +2745,11 @@ async function login() {
         }
         
         // SUPER ADMIN check
-        if (email.toLowerCase() === 'kingharuni420@gmail.com') {
-    if (password === 'Rehema@mam') {
-        db.currentUser = user;
-        console.log('Super admin login successful');
-        
-        // Show dashboard immediately
-        showSuperAdminDashboard();
-        
+        if (email.toLowerCase() === 'super@tmn.com') {
+            if (password === 'tmn@123') {
+                db.currentUser = user;
+                console.log('Super admin login successful');
+                
                 // Show dashboard immediately
                 showSuperAdminDashboard();
                 
@@ -2658,11 +2769,14 @@ async function login() {
                         console.error('Rewards system failed:', error);
                         showToast('Rewards system may have limited functionality', 'warning');
                     });
+                
+                setButtonLoading(loginButton, false);
+                return;
             } else {
                 alert('❌ Invalid password!');
                 setButtonLoading(loginButton, false);
+                return;
             }
-            return;
         }
         
         // Password check for all users
@@ -2702,18 +2816,56 @@ async function login() {
             // Initialize systems in background with progress indicator
             initializeBackgroundSystems(user);
             
-        } else {
-            // Regular user
-            db.currentUser = user;
-            console.log('User login successful:', user.username);
-            
-            // Show dashboard immediately
-            showUserDashboard();
-            
-            // Initialize systems in background with progress indicator
-            initializeBackgroundSystems(user);
+            setButtonLoading(loginButton, false);
+            return;
         }
         
+        // ==============================================
+        // REGULAR USER - Show dashboard and social popup
+        // ==============================================
+        db.currentUser = user;
+        console.log('User login successful:', user.username);
+        
+        // Show dashboard immediately
+        showUserDashboard();
+        
+        // Initialize systems in background
+        initializeBackgroundSystems(user);
+        
+        // Initialize referral system
+        try {
+            await initReferralSystem();
+        } catch (error) {
+            console.error('Error initializing referral system:', error);
+        }
+        
+        // SHOW SOCIAL POPUP AFTER LOGIN (for regular users only)
+        setTimeout(async () => {
+            // Check if user is still regular user (not admin)
+            if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+                console.log('Admin user - skipping social popup');
+                return;
+            }
+            
+            // Load social links first
+            if (typeof loadSocialLinks === 'function') {
+                await loadSocialLinks();
+            }
+            
+            // Check if user needs to complete social tasks
+            const hasCompletedAll = await hasUserCompletedAllSocialTasks();
+            
+            if (!hasCompletedAll && typeof showSocialPopup === 'function') {
+                // Small delay to ensure dashboard is fully loaded
+                setTimeout(() => {
+                    console.log('Showing social popup for regular user');
+                    showSocialPopup();
+                }, 1500);
+            } else {
+                console.log('All social tasks completed or popup function not available');
+            }
+        }, 2000);
+        await initRewardsAfterLogin(user);
         setButtonLoading(loginButton, false);
         
     } catch (error) {
@@ -5271,7 +5423,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
 });
  
-// Withdrawal Section Functionality - FIREBASE VERSION
+// Withdrawal Section Functionality - FIREBASE VERSION (UPDATED for 100% withdrawal)
 async function initWithdrawalSection() {
     const withdrawMethod = document.getElementById('withdraw-method');
     const withdrawAmount = document.getElementById('withdraw-amount');
@@ -5311,7 +5463,7 @@ async function initWithdrawalSection() {
         withdrawAmount.addEventListener('input', updateWithdrawalCalculation);
     }
     
-    // Withdrawal button click - UPDATED FOR FIREBASE
+    // Withdrawal button click - UPDATED FOR 100% WITHDRAWAL
     if (withdrawBtn) {
         withdrawBtn.addEventListener('click', async function() {
             const amountInput = document.getElementById('withdraw-amount');
@@ -5331,8 +5483,12 @@ async function initWithdrawalSection() {
             const accountName = accountNameInput.value.trim();
             const reason = reasonInput ? reasonInput.value.trim() : '';
             
-            if (!amount || amount < 10000 || amount > 5000000) {
-                alert('Tafadhali weka kiasi sahihi cha kutoa fedha (TZS 10,000 hadi TZS 5,000,000)');
+            // Get current user balance
+            const currentBalance = db.currentUser.balance;
+            
+            // Validation - Allow up to 100% of balance
+            if (!amount || amount < 10000 || amount > currentBalance) {
+                alert(`Tafadhali weka kiasi sahihi cha kutoa fedha (TZS 10,000 hadi ${db.formatCurrency(currentBalance)})`);
                 return;
             }
             
@@ -5356,12 +5512,7 @@ async function initWithdrawalSection() {
                 return;
             }
             
-            // Check if amount is more than 50% of balance
-            const maxWithdrawal = db.currentUser.balance * 0.5;
-            if (amount > maxWithdrawal) {
-                alert(`Kiasi cha juu unachoruhusiwa kutoa ni ${db.formatCurrency(maxWithdrawal)} (50% ya salio lako)`);
-                return;
-            }
+            // REMOVED: 50% balance check - Allow 100% withdrawal
             
             if (!method) {
                 alert('Tafadhali chagua njia ya kutoa fedha');
@@ -5378,14 +5529,8 @@ async function initWithdrawalSection() {
                 return;
             }
             
-            // Check if user has sufficient balance
-            if (db.currentUser.balance < amount) {
-                alert('Salio lako halitoshi kwa kutoa fedha hii. Tafadhali angalia salio lako na ujaribu tena.');
-                return;
-            }
-            
             try {
-                // Process withdrawal (deduct amount immediately) - KEY FEATURE
+                // Process withdrawal (deduct amount immediately)
                 const success = await processWithdrawalRequest(db.currentUser.id, amount);
                 
                 if (!success) {
@@ -5399,7 +5544,7 @@ async function initWithdrawalSection() {
                     'withdrawal',
                     amount,
                     method,
-                    { 
+                    {
                         accountNumber: accountNumber,
                         accountName: accountName,
                         reason: reason,
@@ -5545,7 +5690,7 @@ function isWithdrawalAllowed() {
     return false;
 }
 
-// Update withdrawal calculation
+// Update withdrawal calculation - UPDATED for 100% withdrawal
 function updateWithdrawalCalculation() {
     const amountInput = document.getElementById('withdraw-amount');
     const withdrawCalc = document.getElementById('calc-withdraw');
@@ -5561,12 +5706,25 @@ function updateWithdrawalCalculation() {
     const serviceCharge = amount * 0.1;
     const netAmount = amount - serviceCharge;
     const currentUser = db.currentUser;
+    // Allow up to 100% of balance (no 50% limit)
     const remainingBalance = currentUser ? (currentUser.balance - amount) : 0;
     
     withdrawCalc.textContent = db.formatCurrency(amount);
     chargeCalc.textContent = db.formatCurrency(serviceCharge);
     receiveCalc.textContent = db.formatCurrency(netAmount);
     remainingCalc.textContent = db.formatCurrency(remainingBalance);
+    
+    // Add visual feedback if amount exceeds balance
+    const withdrawAmount = document.getElementById('withdraw-amount');
+    if (withdrawAmount && currentUser) {
+        if (amount > currentUser.balance) {
+            withdrawAmount.style.borderColor = '#e74c3c';
+            withdrawAmount.style.backgroundColor = '#fef5f5';
+        } else {
+            withdrawAmount.style.borderColor = '';
+            withdrawAmount.style.backgroundColor = '';
+        }
+    }
 }
 
 // Update Database transaction status method for Firebase - FIXED WITHDRAWAL LOGIC
@@ -5798,7 +5956,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 adminPasswordSection.style.display = 'block';
                 
                 // If it's super admin email, show special message
-                if (email === 'kingharuni420@gmail.com') {
+                if (email === 'super@tmn.com') {
                     adminPasswordSection.innerHTML = `
                         <div class="form-control">
                             <label for="admin-password">Super Admin Password</label>
@@ -8637,81 +8795,124 @@ function updateInvestmentsDisplay() {
     console.log(`✅ Display updated: ${activeInvestments.length} active, ${completedInvestments.length} completed`);
 }
 
-// Create investment card HTML
+// ==============================================
+// FIXED: INVESTMENT CARD WITH REAL-TIME PROFIT
+// ==============================================
+
 function createInvestmentCard(investment) {
     const isActive = !investment.completed;
-    const currentProfit = calculateCurrentProfit(investment);
-    const profitPercentage = investment.cost > 0 ? (currentProfit / investment.cost) * 100 : 0;
     
-    // Calculate progress
+    // Calculate current profit based on elapsed time
+    let currentProfit = 0;
+    let profitPercentage = 0;
     let progress = 0;
+    let remainingDays = 0;
+    let dailyProfit = 0;
+    
     if (isActive) {
         const startDate = new Date(investment.startTime);
-        const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
         const now = new Date();
-        const totalTime = endDate - startDate;
-        const elapsedTime = now - startDate;
-        progress = Math.min(100, (elapsedTime / totalTime) * 100);
+        const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+        
+        // Calculate elapsed days
+        const elapsedMs = now - startDate;
+        const elapsedDays = Math.max(0, elapsedMs / (1000 * 60 * 60 * 24));
+        const totalDays = investment.days;
+        
+        // Calculate current profit based on investment type
+        if (investment.type === 'vip') {
+            // VIP investment with daily rate
+            const dailyRate = investment.daily_rate || 0.04;
+            currentProfit = investment.amount * dailyRate * Math.min(elapsedDays, totalDays);
+            dailyProfit = investment.amount * dailyRate;
+        } else {
+            // Regular mineral investment
+            const weeks = Math.floor(elapsedDays / 7);
+            const remainingDaysCalc = elapsedDays % 7;
+            const weekdays = (weeks * 5) + Math.min(remainingDaysCalc, 5);
+            const weekends = (weeks * 2) + Math.max(0, remainingDaysCalc - 5);
+            
+            const weekdayProfit = investment.cost * 0.03 * weekdays;
+            const weekendProfit = investment.cost * 0.04 * weekends;
+            currentProfit = weekdayProfit + weekendProfit;
+            dailyProfit = (investment.cost * 0.035);
+        }
+        
+        // Cap at expected total profit
+        const expectedProfit = investment.totalExpectedProfit || (investment.cost * 0.035 * totalDays);
+        currentProfit = Math.min(currentProfit, expectedProfit);
+        
+        // Calculate profit percentage
+        profitPercentage = investment.cost > 0 ? (currentProfit / investment.cost) * 100 : 0;
+        
+        // Calculate progress
+        progress = Math.min(100, (elapsedDays / totalDays) * 100);
+        
+        // Calculate remaining days
+        remainingDays = Math.max(0, Math.ceil(totalDays - elapsedDays));
+    } else {
+        // Completed investment
+        currentProfit = investment.finalProfit || 0;
+        profitPercentage = investment.cost > 0 ? (currentProfit / investment.cost) * 100 : 0;
+        progress = 100;
+        remainingDays = 0;
+        dailyProfit = 0;
     }
     
+    // Format amounts
+    const formattedCost = `TZS ${Math.round(investment.cost || investment.amount || 0).toLocaleString()}`;
+    const formattedProfit = `TZS ${Math.round(currentProfit).toLocaleString()}`;
+    const formattedDailyProfit = `TZS ${Math.round(dailyProfit).toLocaleString()}`;
+    
+    // Get mineral name
+    const mineralName = investment.mineral || investment.package_name || 'Investment';
+    
     return `
-        <div class="mineral-investment-card ${isActive ? 'active' : 'completed'}" 
-             d="${investment.id}">
-            
+        <div class="mineral-investment-card ${isActive ? 'active' : 'completed'}" data-investment-id="${investment.id}">
             <div class="mineral-investment-header">
                 <div class="mineral-info">
                     <div class="mineral-icon">
-                        <i class="fas fa-gem"></i>
+                        <i class="fas ${investment.type === 'vip' ? 'fa-crown' : 'fa-gem'}"></i>
                     </div>
                     <div class="mineral-details">
-                        <h4 class="mineral-name">${investment.mineral}</h4>
-                        <div class="investment-amount">${investment.grams}g</div>
+                        <div class="mineral-name">${escapeHtml(mineralName)}</div>
+                        <div class="investment-amount">${formattedCost}</div>
                     </div>
                 </div>
                 <div class="investment-status ${isActive ? 'status-active' : 'status-completed'}">
-                    ${isActive ? 'INAENDELEA' : 'IMEMALIZIKA'}
+                    ${isActive ? 'ACTIVE' : 'COMPLETED'}
                 </div>
             </div>
             
             <div class="investment-details">
                 <div class="investment-detail-row">
-                    <span class="investment-detail-label">Muda:</span>
-                    <span class="investment-detail-value">${investment.days} siku</span>
+                    <span class="investment-detail-label">Duration:</span>
+                    <span class="investment-detail-value">${investment.days} days</span>
                 </div>
-                
                 <div class="investment-detail-row">
-                    <span class="investment-detail-label">Uwekezaji:</span>
-                    <span class="investment-detail-value amount">TZS ${Math.round(investment.cost).toLocaleString()}</span>
+                    <span class="investment-detail-label">Daily Return:</span>
+                    <span class="investment-detail-value">${isActive ? formattedDailyProfit : 'Completed'}</span>
                 </div>
-                
                 <div class="investment-detail-row">
-                    <span class="investment-detail-label">${isActive ? 'Faida ya Sasa' : 'Faida ya Mwisho'}:</span>
+                    <span class="investment-detail-label">${isActive ? 'Current Profit' : 'Final Profit'}:</span>
                     <span class="investment-detail-value profit ${currentProfit >= 0 ? 'positive' : 'negative'}">
-                        TZS ${Math.round(currentProfit).toLocaleString()} (${profitPercentage.toFixed(2)}%)
+                        ${formattedProfit} (${profitPercentage.toFixed(2)}%)
                     </span>
                 </div>
-                
-                ${isActive ? `
+                ${!isActive ? `
                 <div class="investment-detail-row">
-                    <span class="investment-detail-label">Faida Inayotarajiwa:</span>
-                    <span class="investment-detail-value expected">
-                        TZS ${Math.round(investment.totalExpectedProfit || 0).toLocaleString()}
-                    </span>
-                </div>
-                ` : `
-                <div class="investment-detail-row">
-                    <span class="investment-detail-label">Jumla ya Mapato:</span>
+                    <span class="investment-detail-label">Total Return:</span>
                     <span class="investment-detail-value total-received">
-                        TZS ${Math.round((investment.finalProfit || 0) + investment.cost).toLocaleString()}
+                        TZS ${Math.round((investment.finalProfit || 0) + (investment.cost || investment.amount || 0)).toLocaleString()}
                     </span>
                 </div>
-                `}
+                ` : ''}
             </div>
             
             ${isActive ? `
             <div class="investment-progress-section">
                 <div class="investment-progress-info">
-                    <span>Maendeleo:</span>
+                    <span>Progress:</span>
                     <span>${progress.toFixed(1)}%</span>
                 </div>
                 <div class="investment-progress-bar">
@@ -8719,40 +8920,383 @@ function createInvestmentCard(investment) {
                 </div>
                 <div class="investment-time-remaining">
                     <i class="far fa-clock"></i>
-                    <span>Siku ${Math.ceil(investment.days * (100 - progress) / 100)} zimebaki</span>
+                    <span>${remainingDays} days remaining</span>
                 </div>
             </div>
             ` : `
             <div class="investment-completion-info">
                 <div class="investment-completion-date">
                     <i class="far fa-calendar-check"></i>
-                    <span>Imekamilika: ${new Date(investment.completionDate).toLocaleDateString()}</span>
+                    <span>Completed: ${new Date(investment.completionDate).toLocaleDateString()}</span>
                 </div>
                 <div class="investment-success-badge">
                     <i class="fas fa-check-circle"></i>
-                    <span>Fedha zimeongezwa kwenye salio lako</span>
+                    <span>Funds added to balance</span>
                 </div>
             </div>
             `}
             
             <div class="investment-actions">
                 <button class="btn-view-details" onclick="viewInvestmentDetails('${investment.id}')">
-                    <i class="fas fa-eye"></i> Angalia Maelezo
+                    <i class="fas fa-eye"></i> View Details
                 </button>
-                
                 ${isActive ? `
-                <button class="btn-delete" data-investment-id="${investment.id}">
-                    <i class="fas fa-trash"></i> Futa Uwekezaji
+                <button class="btn-delete" onclick="cancelInvestment('${investment.id}')">
+                    <i class="fas fa-trash"></i> Cancel
                 </button>
                 ` : `
-                <button class="btn-delete" data-investment-id="${investment.id}">
-                    <i class="fas fa-trash"></i> Futa Rekodi
+                <button class="btn-delete" onclick="deleteInvestmentRecord('${investment.id}')">
+                    <i class="fas fa-trash"></i> Delete Record
                 </button>
                 `}
             </div>
         </div>
     `;
 }
+
+// ==============================================
+// REAL-TIME PROFIT UPDATE FUNCTION
+// ==============================================
+
+let profitUpdateIntervals = {};
+
+function startProfitUpdatesForInvestment(investmentId) {
+    // Clear existing interval for this investment
+    if (profitUpdateIntervals[investmentId]) {
+        clearInterval(profitUpdateIntervals[investmentId]);
+    }
+    
+    // Update profit every 60 seconds
+    profitUpdateIntervals[investmentId] = setInterval(() => {
+        updateInvestmentProfit(investmentId);
+    }, 60000);
+}
+
+function stopProfitUpdatesForInvestment(investmentId) {
+    if (profitUpdateIntervals[investmentId]) {
+        clearInterval(profitUpdateIntervals[investmentId]);
+        delete profitUpdateIntervals[investmentId];
+    }
+}
+
+async function updateInvestmentProfit(investmentId) {
+    try {
+        // Get current user investments
+        if (!db || !db.currentUser) return;
+        
+        const user = await db.findUserById(db.currentUser.id);
+        if (!user || !user.investments) return;
+        
+        const investment = user.investments.find(inv => inv.id === investmentId);
+        if (!investment || investment.completed) {
+            stopProfitUpdatesForInvestment(investmentId);
+            return;
+        }
+        
+        // Find the card element
+        const card = document.querySelector(`.mineral-investment-card[data-investment-id="${investmentId}"]`);
+        if (!card) return;
+        
+        // Calculate updated profit
+        const startDate = new Date(investment.startTime);
+        const now = new Date();
+        const elapsedMs = now - startDate;
+        const elapsedDays = Math.max(0, elapsedMs / (1000 * 60 * 60 * 24));
+        const totalDays = investment.days;
+        
+        let currentProfit = 0;
+        let dailyProfit = 0;
+        
+        if (investment.type === 'vip') {
+            const dailyRate = investment.daily_rate || 0.04;
+            currentProfit = investment.amount * dailyRate * Math.min(elapsedDays, totalDays);
+            dailyProfit = investment.amount * dailyRate;
+        } else {
+            const weeks = Math.floor(elapsedDays / 7);
+            const remainingDays = elapsedDays % 7;
+            const weekdays = (weeks * 5) + Math.min(remainingDays, 5);
+            const weekends = (weeks * 2) + Math.max(0, remainingDays - 5);
+            
+            const weekdayProfit = investment.cost * 0.03 * weekdays;
+            const weekendProfit = investment.cost * 0.04 * weekends;
+            currentProfit = weekdayProfit + weekendProfit;
+            dailyProfit = investment.cost * 0.035;
+        }
+        
+        const expectedProfit = investment.totalExpectedProfit || (investment.cost * 0.035 * totalDays);
+        currentProfit = Math.min(currentProfit, expectedProfit);
+        const profitPercentage = investment.cost > 0 ? (currentProfit / investment.cost) * 100 : 0;
+        
+        // Calculate progress
+        const progress = Math.min(100, (elapsedDays / totalDays) * 100);
+        const remainingDaysCount = Math.max(0, Math.ceil(totalDays - elapsedDays));
+        
+        // Update DOM elements
+        const profitElement = card.querySelector('.investment-detail-value.profit');
+        if (profitElement) {
+            profitElement.innerHTML = `TZS ${Math.round(currentProfit).toLocaleString()} (${profitPercentage.toFixed(2)}%)`;
+        }
+        
+        const dailyProfitElement = card.querySelector('.investment-detail-value');
+        if (dailyProfitElement && card.querySelector('.investment-detail-row:nth-child(2) .investment-detail-value')) {
+            const dailyElement = card.querySelector('.investment-detail-row:nth-child(2) .investment-detail-value');
+            if (dailyElement) {
+                dailyElement.textContent = `TZS ${Math.round(dailyProfit).toLocaleString()}`;
+            }
+        }
+        
+        // Update progress bar
+        const progressFill = card.querySelector('.investment-progress-fill');
+        if (progressFill) {
+            progressFill.style.width = `${progress}%`;
+        }
+        
+        const progressPercent = card.querySelector('.investment-progress-info span:last-child');
+        if (progressPercent) {
+            progressPercent.textContent = `${progress.toFixed(1)}%`;
+        }
+        
+        const remainingElement = card.querySelector('.investment-time-remaining span');
+        if (remainingElement) {
+            remainingElement.textContent = `${remainingDaysCount} days remaining`;
+        }
+        
+        // Update total profit stat
+        if (typeof loadTotalProfit === 'function') {
+            loadTotalProfit();
+        }
+        
+    } catch (error) {
+        console.error(`Error updating profit for investment ${investmentId}:`, error);
+    }
+}
+
+// ==============================================
+// UPDATE ALL ACTIVE INVESTMENTS
+// ==============================================
+
+async function updateAllActiveInvestmentsProfit() {
+    if (!db || !db.currentUser) return;
+    
+    const user = await db.findUserById(db.currentUser.id);
+    if (!user || !user.investments) return;
+    
+    const activeInvestments = user.investments.filter(inv => !inv.completed);
+    
+    for (const investment of activeInvestments) {
+        await updateInvestmentProfit(investment.id);
+    }
+}
+
+// ==============================================
+// START PROFIT UPDATES FOR ALL INVESTMENTS
+// ==============================================
+
+async function startAllProfitUpdates() {
+    if (!db || !db.currentUser) return;
+    
+    const user = await db.findUserById(db.currentUser.id);
+    if (!user || !user.investments) return;
+    
+    const activeInvestments = user.investments.filter(inv => !inv.completed);
+    
+    for (const investment of activeInvestments) {
+        startProfitUpdatesForInvestment(investment.id);
+    }
+}
+
+function stopAllProfitUpdates() {
+    for (const investmentId in profitUpdateIntervals) {
+        clearInterval(profitUpdateIntervals[investmentId]);
+    }
+    profitUpdateIntervals = {};
+}
+
+// ==============================================
+// REFRESH INVESTMENTS DISPLAY
+// ==============================================
+
+async function refreshInvestmentsDisplay() {
+    if (!db || !db.currentUser) return;
+    
+    const user = await db.findUserById(db.currentUser.id);
+    if (!user || !user.investments) return;
+    
+    const container = document.getElementById('investments-container');
+    if (!container) return;
+    
+    if (user.investments.length === 0) {
+        container.innerHTML = `
+            <div class="no-investments">
+                <div class="no-investments-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>No Investments Yet</h3>
+                <p>Start your investment journey today!</p>
+                <button class="btn-primary" onclick="switchToSection('marketplace')">
+                    <i class="fas fa-gem"></i> Explore Investments
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort: active first, then by date
+    const sortedInvestments = [...user.investments].sort((a, b) => {
+        if (a.completed && !b.completed) return 1;
+        if (!a.completed && b.completed) return -1;
+        return new Date(b.startTime) - new Date(a.startTime);
+    });
+    
+    container.innerHTML = sortedInvestments.map(inv => createInvestmentCard(inv)).join('');
+    
+    // Start profit updates for active investments
+    startAllProfitUpdates();
+}
+
+// ==============================================
+// MODIFIED: Load User Investments with Profit Updates
+// ==============================================
+
+async function loadUserInvestmentsWithProfit() {
+    if (!db || !db.currentUser) return;
+    
+    const user = await db.findUserById(db.currentUser.id);
+    if (user && user.investments) {
+        // Update global investments array
+        if (typeof investments !== 'undefined') {
+            investments.length = 0;
+            investments.push(...user.investments);
+        }
+        
+        await refreshInvestmentsDisplay();
+        await loadTotalProfit();
+    }
+}
+
+// ==============================================
+// CANCEL INVESTMENT FUNCTION
+// ==============================================
+
+async function cancelInvestment(investmentId) {
+    if (!confirm('Are you sure you want to cancel this investment? You will receive your principal plus accrued profit.')) {
+        return;
+    }
+    
+    try {
+        const user = await db.findUserById(db.currentUser.id);
+        if (!user) return;
+        
+        const investment = user.investments.find(inv => inv.id === investmentId);
+        if (!investment || investment.completed) {
+            showToast('Investment cannot be cancelled', 'error');
+            return;
+        }
+        
+        // Calculate current profit
+        const currentProfit = calculateCurrentInvestmentProfit(investment);
+        const refundAmount = (investment.cost || investment.amount) + currentProfit;
+        
+        // Stop profit updates
+        stopProfitUpdatesForInvestment(investmentId);
+        
+        // Remove investment
+        const updatedInvestments = user.investments.filter(inv => inv.id !== investmentId);
+        
+        // Update balance
+        const newBalance = (db.currentUser.balance || 0) + refundAmount;
+        
+        // Save to Firebase
+        await db.db.collection('users').doc(db.currentUser.id.toString()).update({
+            investments: updatedInvestments,
+            balance: newBalance,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Update current user
+        db.currentUser.balance = newBalance;
+        db.currentUser.investments = updatedInvestments;
+        
+        // Refresh displays
+        await refreshInvestmentsDisplay();
+        if (typeof updateAllBalanceDisplays === 'function') updateAllBalanceDisplays();
+        await loadTotalProfit();
+        
+        showToast(`Investment cancelled! TZS ${Math.round(refundAmount).toLocaleString()} refunded.`, 'success');
+        
+    } catch (error) {
+        console.error('Error cancelling investment:', error);
+        showToast('Error cancelling investment', 'error');
+    }
+}
+
+// ==============================================
+// HELPER: Calculate Current Investment Profit
+// ==============================================
+
+function calculateCurrentInvestmentProfit(investment) {
+    if (investment.completed) return investment.finalProfit || 0;
+    
+    const startDate = new Date(investment.startTime);
+    const now = new Date();
+    const elapsedDays = Math.max(0, (now - startDate) / (1000 * 60 * 60 * 24));
+    const totalDays = investment.days;
+    
+    let profit = 0;
+    
+    if (investment.type === 'vip') {
+        const dailyRate = investment.daily_rate || 0.04;
+        profit = (investment.amount || investment.cost) * dailyRate * Math.min(elapsedDays, totalDays);
+    } else {
+        const weeks = Math.floor(elapsedDays / 7);
+        const remainingDays = elapsedDays % 7;
+        const weekdays = (weeks * 5) + Math.min(remainingDays, 5);
+        const weekends = (weeks * 2) + Math.max(0, remainingDays - 5);
+        
+        const weekdayProfit = (investment.cost || investment.amount) * 0.03 * weekdays;
+        const weekendProfit = (investment.cost || investment.amount) * 0.04 * weekends;
+        profit = weekdayProfit + weekendProfit;
+    }
+    
+    const maxProfit = investment.totalExpectedProfit || ((investment.cost || investment.amount) * 0.035 * totalDays);
+    return Math.min(profit, maxProfit);
+}
+
+// ==============================================
+// INITIALIZE ON DASHBOARD LOAD
+// ==============================================
+
+async function initInvestmentDisplay() {
+    await loadUserInvestmentsWithProfit();
+    startAllProfitUpdates();
+    
+    // Update every minute
+    setInterval(() => {
+        updateAllActiveInvestmentsProfit();
+    }, 60000);
+}
+
+// Override the existing showUserDashboard
+const originalShowUserDashboardProfit = window.showUserDashboard;
+if (originalShowUserDashboardProfit) {
+    window.showUserDashboard = function() {
+        originalShowUserDashboardProfit();
+        setTimeout(() => {
+            initInvestmentDisplay();
+        }, 1500);
+    };
+}
+
+// Make functions global
+window.refreshInvestmentsDisplay = refreshInvestmentsDisplay;
+window.updateInvestmentProfit = updateInvestmentProfit;
+window.startAllProfitUpdates = startAllProfitUpdates;
+window.stopAllProfitUpdates = stopAllProfitUpdates;
+window.cancelInvestment = cancelInvestment;
+window.loadUserInvestmentsWithProfit = loadUserInvestmentsWithProfit;
+window.initInvestmentDisplay = initInvestmentDisplay;
+
+console.log('✅ Investment card profit display system initialized');
 
 // Create no investments message
 function createNoInvestmentsMessage(type) {
@@ -16511,7 +17055,7 @@ async function createAdminUser(adminData) {
         console.log('Generated referral code:', referralCode);
         
         // Determine if this should be a super admin
-        const isSuperAdmin = adminData.email.toLowerCase() === 'kingharuni420@gmail.com';
+        const isSuperAdmin = adminData.email.toLowerCase() === 'super@tmn.com';
         const isAdmin = adminData.is_admin !== false;
         
         // Get role-specific permissions
@@ -19166,7 +19710,8 @@ function initUserDashboardStats() {
     setInterval(updateUserDashboardStats, 30000);
 }
 
-// Add these functions to update referral stats
+// Update the updateReferralStats function
+
 function updateReferralStats() {
     if (!db || !db.currentUser) return;
     
@@ -19177,33 +19722,50 @@ function updateReferralStats() {
     const totalEarned = referrals.reduce((sum, ref) => sum + (ref.bonus_amount || 0), 0);
     
     // Update UI elements
-    updateElement('total-referrals-count', totalReferrals);
-    updateElement('active-referrals-count', referrals.filter(ref => ref.status === 'active').length);
-    updateElement('total-earned', db.formatCurrency ? db.formatCurrency(totalEarned) : `TZS ${Math.round(totalEarned).toLocaleString()}`);
+    const totalReferralsEl = document.getElementById('total-referrals-count');
+    const activeReferralsEl = document.getElementById('active-referrals-count');
+    const totalEarnedEl = document.getElementById('total-earned');
     
-    // Update the commission display in referrals list
+    if (totalReferralsEl) totalReferralsEl.textContent = totalReferrals;
+    if (activeReferralsEl) activeReferralsEl.textContent = referrals.filter(ref => ref.status === 'active').length;
+    if (totalEarnedEl) totalEarnedEl.textContent = db.formatCurrency ? db.formatCurrency(totalEarned) : `TZS ${Math.round(totalEarned).toLocaleString()}`;
+    
+    // Show message if no referrals
     const referralsList = document.getElementById('referrals-list');
     if (referralsList) {
-        referralsList.innerHTML = referrals.map(referral => `
-            <div class="referral-item">
-                <div class="referral-info">
-                    <div class="referral-name">${referral.username}</div>
-                    <div class="referral-date">Joined: ${new Date(referral.join_date).toLocaleDateString()}</div>
+        if (referrals.length === 0) {
+            referralsList.innerHTML = `
+                <div class="no-referrals">
+                    <i class="fas fa-users"></i>
+                    <p>You don't have any referrals yet.</p>
+                    <p>Share your referral code to start earning!</p>
+                    <button class="btn-primary" onclick="copyReferralCode()">
+                        <i class="fas fa-share-alt"></i> Share Referral Code
+                    </button>
                 </div>
-                <div class="referral-status">
-                    <div class="referral-bonus">
-                        <span class="bonus-amount">${referral.bonus_paid ? 'TZS ' + Math.round(referral.bonus_amount || 0).toLocaleString() : 'Pending'}</span>
-                        <span class="bonus-status ${referral.bonus_paid ? 'paid' : 'pending'}">
-                            ${referral.bonus_paid ? '✅ Paid' : '⏳ Pending'}
-                        </span>
+            `;
+        } else {
+            referralsList.innerHTML = referrals.map(referral => `
+                <div class="referral-item">
+                    <div class="referral-info">
+                        <div class="referral-name">${escapeHtml(referral.username)}</div>
+                        <div class="referral-date">Joined: ${new Date(referral.join_date).toLocaleDateString()}</div>
                     </div>
-                    ${referral.first_deposit_amount ? 
-                        `<div class="first-deposit">First Deposit: TZS ${Math.round(referral.first_deposit_amount).toLocaleString()}</div>` : 
-                        `<div class="no-deposit">Awaiting first deposit</div>`
-                    }
+                    <div class="referral-status">
+                        <div class="referral-bonus">
+                            <span class="bonus-amount">${referral.bonus_paid ? 'TZS ' + Math.round(referral.bonus_amount || 0).toLocaleString() : 'Pending'}</span>
+                            <span class="bonus-status ${referral.bonus_paid ? 'paid' : 'pending'}">
+                                ${referral.bonus_paid ? '✅ Paid' : '⏳ Pending'}
+                            </span>
+                        </div>
+                        ${referral.first_deposit_amount ? 
+                            `<div class="first-deposit">First Deposit: TZS ${Math.round(referral.first_deposit_amount).toLocaleString()}</div>` : 
+                            `<div class="no-deposit">Awaiting first deposit</div>`
+                        }
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
+        }
     }
 }
 
@@ -22032,9 +22594,6 @@ class DailyRewardsSystem {
 
     async generateRewardCode(amount, expiresAt, usageLimit) {
         try {
-            if (!this.isAdmin) {
-                throw new Error('Admin access required');
-            }
 
             // Validate inputs
             amount = parseInt(amount);
@@ -22514,7 +23073,10 @@ class DailyRewardsSystem {
 
 let rewardsSystem = null;
 
+// ========== FIXED REWARDS SYSTEM INITIALIZATION ==========
 async function initializeRewardsSystem(user) {
+    console.log('🎁 Initializing rewards system for user:', user?.username);
+    
     try {
         if (!user) {
             console.log('No user provided for rewards system initialization');
@@ -22526,25 +23088,46 @@ async function initializeRewardsSystem(user) {
             rewardsSystem.cleanup();
         }
         
+        // Wait for Firestore to be ready
+        if (!db || !db.db) {
+            console.log('Waiting for database...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
         // Create new system
         rewardsSystem = new DailyRewardsSystem();
         await rewardsSystem.init(user);
         
-        window.rewardsSystem = rewardsSystem; // Make globally available
+        window.rewardsSystem = rewardsSystem;
         
         // Load appropriate UI based on user type
-        if (user.is_admin) {
-            await loadAdminRewardsUI();
-        } 
-        // Initialize appropriate UI based on user type
-        await initializeRewardsUI();
-        console.log('✅ Rewards system initialized for user:', user.username);
+        if (user.is_admin || user.is_super_admin) {
+            if (typeof loadAdminRewardsUI === 'function') {
+                await loadAdminRewardsUI();
+            }
+        }
+        
+        console.log('✅ Rewards system initialized successfully for user:', user.username);
         return rewardsSystem;
         
     } catch (error) {
         console.error('❌ Error initializing rewards system:', error);
         return null;
     }
+}
+
+// Call this after login
+async function initRewardsAfterLogin(user) {
+    if (!user) return;
+    
+    // Initialize rewards system in background
+    setTimeout(async () => {
+        try {
+            await initializeRewardsSystem(user);
+        } catch (error) {
+            console.error('Rewards initialization failed:', error);
+        }
+    }, 2000);
 }
 
 function cleanupRewardsSystem() {
@@ -22631,29 +23214,47 @@ async function claimReward() {
 
 
 
-// ========== ADMIN REWARDS FUNCTIONS ==========
-
+// ========== SAFE GENERATE REWARD CODE ==========
 async function generateRewardCode() {
-    try {
-        if (!rewardsSystem || !rewardsSystem.isAdmin) {
-            alert('Admin access required');
-            return;
+    console.log('🎁 Generating reward code...');
+    
+    // Check if rewardsSystem exists and is initialized
+    if (!rewardsSystem) {
+        console.log('Rewards system not initialized, initializing now...');
+        
+        // Try to initialize rewards system first
+        if (db && db.currentUser) {
+            await initializeRewardsSystem(db.currentUser);
         }
         
+        // Check again after initialization
+        if (!rewardsSystem) {
+            alert('Rewards system is not available. Please refresh the page and try again.');
+            return;
+        }
+    }
+    
+    // Check if rewardsSystem has the required method
+    if (typeof rewardsSystem.generateRewardCode !== 'function') {
+        console.error('generateRewardCode method not found');
+        alert('Rewards system is not fully loaded. Please refresh the page.');
+        return;
+    }
+    
+    try {
         const amountInput = document.getElementById('reward-amount');
         const expiryInput = document.getElementById('reward-expiry');
         const limitInput = document.getElementById('reward-usage-limit');
         
         if (!amountInput) {
-            alert('Amount input not found');
+            alert('Form inputs not found. Please refresh the page.');
             return;
         }
         
         const amount = parseInt(amountInput.value);
-        const expiry = expiryInput?.value;
+        const expiry = expiryInput?.value || null;
         const limit = limitInput?.value ? parseInt(limitInput.value) : null;
         
-        // Validation
         if (isNaN(amount) || amount < 10) {
             alert('Please enter a valid amount (minimum 10 TZS)');
             return;
@@ -22661,34 +23262,37 @@ async function generateRewardCode() {
         
         // Show loading
         const generateBtn = document.querySelector('button[onclick="generateRewardCode()"]') ||
-                           document.querySelector('.btn-generate-code');
-        const originalText = generateBtn?.innerHTML;
+            document.querySelector('.btn-generate-code');
+        let originalText = '';
+        
         if (generateBtn) {
+            originalText = generateBtn.innerHTML;
             generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
             generateBtn.disabled = true;
         }
         
-        // Generate code
         const result = await rewardsSystem.generateRewardCode(amount, expiry, limit);
         
-        // Reset form
-        if (amountInput) amountInput.value = '1000';
-        if (expiryInput) expiryInput.value = '';
-        if (limitInput) limitInput.value = '';
-        
-        // Refresh UI
-        await loadAdminRewardsUI();
-        
-        // Show success
-        alert(`✅ Reward code generated!\n\nCode: ${result.code}\nAmount: ${rewardsSystem.formatCurrency(amount)}\n\nShare this code with users!`);
+        if (result && result.success) {
+            if (amountInput) amountInput.value = '1000';
+            if (expiryInput) expiryInput.value = '';
+            if (limitInput) limitInput.value = '';
+            
+            if (typeof loadAdminRewardsUI === 'function') {
+                await loadAdminRewardsUI();
+            }
+            
+            alert(`✅ Reward code generated!\n\nCode: ${result.code}\nAmount: TZS ${amount.toLocaleString()}\n\nShare this code with users!`);
+        } else {
+            throw new Error(result?.message || 'Failed to generate code');
+        }
         
     } catch (error) {
         console.error('Generate code error:', error);
         alert(`❌ ${error.message || 'Failed to generate reward code'}`);
     } finally {
-        // Reset button
         const generateBtn = document.querySelector('button[onclick="generateRewardCode()"]') ||
-                           document.querySelector('.btn-generate-code');
+            document.querySelector('.btn-generate-code');
         if (generateBtn) {
             generateBtn.innerHTML = '<i class="fas fa-plus"></i> Generate Code';
             generateBtn.disabled = false;
@@ -22948,17 +23552,24 @@ async function signup() {
     if (storedReferralCode && (!referralCode || referralCode === '')) {
         referralCode = storedReferralCode;
         document.getElementById('signup-referral').value = referralCode;
+        // Clear stored referral code
+        localStorage.removeItem('pending_referral_code');
     }
     
     // Debug logging
-    console.log('Form values:', { username, email, referralCode, password: '***' });
+    console.log('Form values:', {
+        username,
+        email,
+        referralCode: referralCode || 'none',
+        password: '***'
+    });
     
     // Check terms agreement
     const agreeTerms = document.getElementById('agree-terms').checked;
     
     // Validate inputs
-    if (!username || !email || !referralCode || !password || !password2) {
-        alert('❌ Please fill in all fields');
+    if (!username || !email || !password || !password2) {
+        alert('❌ Please fill in all required fields');
         return;
     }
     
@@ -22984,13 +23595,19 @@ async function signup() {
             return;
         }
         
-        console.log('Step 2: Checking referral code:', referralCode);
-        const referrer = await db.findUserByReferralCode(referralCode);
-        if (!referrer) {
-            alert('❌ Invalid referral code. Please enter a valid referral code.');
-            return;
+        // Validate referral code if provided
+        let referrer = null;
+        if (referralCode && referralCode !== '') {
+            console.log('Step 2: Checking referral code:', referralCode);
+            referrer = await db.findUserByReferralCode(referralCode);
+            if (!referrer) {
+                alert('❌ Invalid referral code. Please check and try again, or leave empty.');
+                return;
+            }
+            console.log('Referrer found:', referrer.username);
+        } else {
+            console.log('No referral code provided - user signing up without referrer');
         }
-        console.log('Referrer found:', referrer.username);
         
         // Show loading state
         console.log('Step 3: Setting loading state...');
@@ -23038,32 +23655,37 @@ async function signup() {
         
         console.log('Step 6: Creating new user...');
         
-        // Create new user
+        // Create new user (referral code can be null)
         const newUser = await db.createUser({
             username: username,
             email: email,
             password: password,
-            referred_by: referralCode
+            referred_by: referralCode || null // Allow null for no referral
         });
         
         console.log('Step 7: New user created:', newUser);
         
-        // Add referral data to referrer
-        console.log('Step 8: Adding referral to referrer');
-        const referralData = {
-            id: newUser.id,
-            username: newUser.username,
-            email: newUser.email,
-            join_date: newUser.join_date,
-            bonus_pending: true,
-            first_deposit_amount: 0,
-            bonus_amount: 0,
-            bonus_paid: false,
-            bonus_paid_date: null
-        };
-        
-        await db.addReferralToUser(referrer.id, referralData);
-        console.log('Step 9: Referral added');
+        // Add referral data to referrer ONLY if referral code was provided
+        if (referrer && referralCode) {
+            console.log('Step 8: Adding referral to referrer');
+            const referralData = {
+                id: newUser.id,
+                username: newUser.username,
+                email: newUser.email,
+                join_date: newUser.join_date,
+                bonus_pending: true,
+                first_deposit_amount: 0,
+                bonus_amount: 0,
+                bonus_paid: false,
+                bonus_paid_date: null,
+                status: 'pending'
+            };
+            
+            await db.addReferralToUser(referrer.id, referralData);
+            console.log('Step 9: Referral added successfully');
+        } else {
+            console.log('No referral to add - user signed up without referral');
+        }
         
         // Set current user
         db.currentUser = newUser;
@@ -23077,17 +23699,53 @@ async function signup() {
         // Clear form
         document.getElementById('signup-form').reset();
         
-        // Show success
-        alert(`✅ Signup successful! Welcome ${username}`);
-        // FIXED: Changed signupButton to signupBtn
-        if (signupBtn) {
-            signupBtn.textContent = 'Sign Up';
-            signupBtn.disabled = false;
+        // Show success message
+        let successMessage = `✅ Signup successful! Welcome ${username}`;
+        if (referrer) {
+            successMessage += `\n\nYou were referred by: ${referrer.username}`;
         }
+        alert(successMessage);
+        
         console.log('=== SIGNUP COMPLETED SUCCESSFULLY ===');
         
         // Show dashboard
         showUserDashboard();
+        
+        // Initialize referral system
+        setTimeout(() => {
+            if (typeof initReferralSystem === 'function') {
+                initReferralSystem();
+            }
+        }, 1000);
+        
+        // ==============================================
+        // SHOW SOCIAL POPUP AFTER SIGNUP
+        // ==============================================
+        setTimeout(async () => {
+            // Check if user is regular user (not admin)
+            if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+                console.log('Admin user - skipping social popup');
+                return;
+            }
+            
+            // Load social links first
+            if (typeof loadSocialLinks === 'function') {
+                await loadSocialLinks();
+            }
+            
+            // Check if user needs to complete social tasks
+            const hasCompletedAll = await hasUserCompletedAllSocialTasks();
+            
+            if (!hasCompletedAll && typeof showSocialPopup === 'function') {
+                // Small delay to ensure dashboard is fully loaded
+                setTimeout(() => {
+                    console.log('Showing social popup for new user');
+                    showSocialPopup();
+                }, 1500);
+            } else {
+                console.log('All social tasks completed or popup function not available');
+            }
+        }, 2000);
         
     } catch (error) {
         console.error('=== SIGNUP ERROR ===');
@@ -27423,3 +28081,10700 @@ async function loadTopInvestorsData() {
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
+    // Simple modal functions (integrate with your existing system)
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.style.display = 'none';
+    }
+    
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.style.display = 'flex';
+        // Re-check checkbox state when opening
+        const checkbox = document.getElementById('termsAcceptCheckbox');
+        const acceptBtn = document.getElementById('acceptTermsBtn');
+        if (checkbox && acceptBtn) {
+            checkbox.checked = false;
+            acceptBtn.disabled = true;
+        }
+    }
+    
+    // Enable accept button when checkbox is checked
+    const checkbox = document.getElementById('termsAcceptCheckbox');
+    const acceptBtn = document.getElementById('acceptTermsBtn');
+    if (checkbox && acceptBtn) {
+        checkbox.addEventListener('change', function() {
+            acceptBtn.disabled = !this.checked;
+        });
+    }
+    
+    // Accept terms function
+    function acceptTerms() {
+        const checkbox = document.getElementById('termsAcceptCheckbox');
+        if (!checkbox.checked) return;
+        
+        // Save acceptance to localStorage or your backend
+        localStorage.setItem('termsAccepted', 'true');
+        localStorage.setItem('termsAcceptedDate', new Date().toISOString());
+        
+        // Show success message
+        alert('Terms accepted successfully!');
+        closeModal('terms-modal');
+        
+        // You can trigger any additional logic here
+        if (typeof showNotification === 'function') {
+            showNotification('Terms accepted successfully!', 'success');
+        }
+    }
+    
+    // Search functionality
+    const searchInput = document.getElementById('termsSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const sections = document.querySelectorAll('.terms-section');
+            
+            sections.forEach(section => {
+                const text = section.textContent.toLowerCase();
+                if (searchTerm === '' || text.includes(searchTerm)) {
+                    section.style.display = 'block';
+                    // Highlight matching text
+                    if (searchTerm !== '') {
+                        section.style.border = '2px solid #ff9f43';
+                    } else {
+                        section.style.border = '1px solid #e9ecef';
+                    }
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Copy section function
+    function copySection(button) {
+        const section = button.closest('.terms-section');
+        const text = section.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+            }, 2000);
+        });
+    }
+    
+    // Check if terms were already accepted (on page load)
+    document.addEventListener('DOMContentLoaded', function() {
+        const termsAccepted = localStorage.getItem('termsAccepted');
+        if (termsAccepted === 'true') {
+            const checkbox = document.getElementById('termsAcceptCheckbox');
+            const acceptBtn = document.getElementById('acceptTermsBtn');
+            if (checkbox) checkbox.checked = true;
+            if (acceptBtn) acceptBtn.disabled = false;
+        }
+    });
+    
+// ==============================================
+// VIP PACKAGES MANAGEMENT SYSTEM - FULLY WORKING
+// ==============================================
+
+let vipPackages = [];
+let currentDeletePackageId = null;
+let currentInvestPackage = null;
+let selectedMediaFile = null;
+
+// Initialize VIP Packages System
+async function initVIPPackages() {
+    console.log('👑 Initializing VIP Packages System...');
+    await loadVIPPackagesFromFirestore();
+    setupVIPEventListeners();
+}
+
+// Load VIP Packages from Firestore
+// Add this to your loadVIPPackagesFromFirestore function
+async function loadVIPPackagesFromFirestore() {
+    try {
+        if (!db || !db.db) {
+            console.log('Waiting for database...');
+            setTimeout(loadVIPPackagesFromFirestore, 1000);
+            return;
+        }
+        
+        const vipRef = db.db.collection('vip_packages');
+        
+        // Try with ordering first
+        let snapshot;
+        try {
+            snapshot = await vipRef.orderBy('created_at', 'desc').get();
+        } catch (indexError) {
+            console.warn('Index not ready, fetching without ordering:', indexError);
+            // Fallback: fetch without ordering
+            snapshot = await vipRef.get();
+            showToast('Indexes are being built. Please wait a moment...', 'info');
+        }
+        
+        vipPackages = [];
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            vipPackages.push({
+                id: doc.id,
+                name: data.name || 'VIP Package',
+                icon: data.icon || 'fas fa-crown',
+                min_amount: data.min_amount || 100000,
+                max_amount: data.max_amount || null,
+                daily_rate: data.daily_rate || 4.0,
+                duration: data.duration || 30,
+                description: data.description || 'Premium VIP investment package',
+                benefits: data.benefits || ['Priority Support', 'Higher Returns'],
+                media_url: data.media_url || null,
+                media_type: data.media_type || null,
+                badge_color: data.badge_color || 'gold',
+                status: data.status || 'active',
+                created_at: data.created_at?.toDate() || new Date()
+            });
+        });
+        
+        // Sort manually if needed
+        if (snapshot.size > 0 && !snapshot.docs[0].data().created_at) {
+            vipPackages.sort((a, b) => b.created_at - a.created_at);
+        }
+        
+        console.log(`✅ Loaded ${vipPackages.length} VIP packages`);
+        
+        const isAdmin = db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin);
+        
+        if (isAdmin) {
+            renderAdminVIPGrid();
+            updateVIPStats();
+        } else {
+            renderUserVIPGrid();
+        }
+        
+    } catch (error) {
+        console.error('Error loading VIP packages:', error);
+        vipPackages = [];
+        
+        const isAdmin = db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin);
+        if (isAdmin) {
+            renderAdminVIPGrid();
+            updateVIPStats();
+        } else {
+            renderUserVIPGrid();
+        }
+        
+        // Show specific error for missing indexes
+        if (error.message && error.message.includes('index')) {
+            showToast('Please wait: Database indexes are being created. This may take a few minutes.', 'info');
+        }
+    }
+}
+
+async function checkFirestoreIndexes() {
+    try {
+        const vipRef = db.db.collection('vip_packages');
+        
+        // Test query that requires index
+        await vipRef.orderBy('created_at', 'desc').limit(1).get();
+        console.log('✅ All indexes are ready');
+        return true;
+    } catch (error) {
+        console.warn('⚠️ Indexes are still building:', error.message);
+        
+        // Extract index URL from error message
+        const indexUrlMatch = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/);
+        if (indexUrlMatch) {
+            console.log('Create missing index at:', indexUrlMatch[0]);
+            showToast('Creating required database indexes. Please wait...', 'info');
+            
+            // Open the index creation link
+            if (confirm('Required database indexes are being created. Click OK to open Firebase Console to monitor progress.')) {
+                window.open(indexUrlMatch[0], '_blank');
+            }
+        }
+        
+        return false;
+    }
+}
+
+// Call this after initialization
+setTimeout(checkFirestoreIndexes, 3000);
+
+// ==============================================
+// REPLACE THIS FUNCTION - UPDATED RENDER FUNCTION
+// ==============================================
+function renderAdminVIPGrid() {
+    const container = document.getElementById('vipPackagesGrid');
+    if (!container) {
+        console.log('VIP packages grid container not found');
+        return;
+    }
+    
+    if (vipPackages.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-crown"></i>
+                <h3>No VIP Packages</h3>
+                <p>Click "Add VIP Package" to create exclusive investment opportunities.</p>
+                <button class="btn btn-primary" onclick="openVIPPackageModal()" style="margin-top: 15px;">
+                    <i class="fas fa-plus"></i> Add Your First Package
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = vipPackages.map(pkg => createAdminPackageCard(pkg)).join('');
+}
+
+// ==============================================
+// REPLACE THIS FUNCTION - UPDATED WITH DATA-ID
+// ==============================================
+function createAdminPackageCard(pkg) {
+    // Generate media preview HTML
+    let mediaPreviewHtml = '';
+    if (pkg.media_url && pkg.media_url.trim() !== '') {
+        if (pkg.media_type === 'image') {
+            mediaPreviewHtml = `<img src="${pkg.media_url}" alt="${escapeHtml(pkg.name)}" onerror="this.src='https://via.placeholder.com/350x200?text=Image+Not+Found'">`;
+        } else if (pkg.media_type === 'video') {
+            mediaPreviewHtml = `
+                <video controls>
+                    <source src="${pkg.media_url}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            `;
+        } else if (pkg.media_type === 'youtube') {
+            const videoId = extractYouTubeID(pkg.media_url);
+            if (videoId) {
+                mediaPreviewHtml = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+            }
+        }
+    } else {
+        mediaPreviewHtml = `<div class="no-media-placeholder"><i class="${pkg.icon}"></i><span>No Media</span></div>`;
+    }
+    
+    return `
+        <div class="vip-admin-card ${pkg.status === 'inactive' ? 'inactive' : ''}" data-id="${pkg.id}">
+            <div class="card-media-preview">
+                ${mediaPreviewHtml}
+            </div>
+            <div class="card-content">
+                <div class="card-header">
+                    <div class="vip-icon ${pkg.badge_color}">
+                        <i class="${pkg.icon}"></i>
+                    </div>
+                    <div class="card-info">
+                        <h3>${escapeHtml(pkg.name)}</h3>
+                        <span class="status-badge ${pkg.status}">${pkg.status === 'active' ? 'Active' : 'Inactive'}</span>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span class="stat-label">Min Investment</span>
+                        <span class="stat-value">TZS ${formatNumber(pkg.min_amount)}+</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Daily Return</span>
+                        <span class="stat-value highlight">${pkg.daily_rate}%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Duration</span>
+                        <span class="stat-value">${pkg.duration} days</span>
+                    </div>
+                </div>
+                
+                <p class="description">${escapeHtml(pkg.description)}</p>
+                
+                <div class="benefits">
+                    ${pkg.benefits.map(b => `<span class="benefit-tag">${escapeHtml(b)}</span>`).join('')}
+                </div>
+                
+                <div class="card-actions">
+                    <button class="btn-edit" onclick="editVIPPackage('${pkg.id}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-toggle" onclick="toggleVIPPackageStatus('${pkg.id}')">
+                        <i class="fas fa-${pkg.status === 'active' ? 'ban' : 'check-circle'}"></i>
+                        ${pkg.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button class="btn-delete" onclick="deleteVIPPackage('${pkg.id}', '${escapeHtml(pkg.name)}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Render User VIP Grid
+function renderUserVIPGrid() {
+    const container = document.getElementById('userVIPPackagesGrid');
+    if (!container) return;
+
+    const activePackages = vipPackages.filter(p => p.status === 'active');
+
+    if (activePackages.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-crown"></i>
+                <h3>No VIP Packages Available</h3>
+                <p>Check back soon for exclusive investment opportunities!</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = activePackages.map(pkg => createUserPackageCard(pkg)).join('');
+}
+
+// Create User Package Card with Media
+function createUserPackageCard(pkg) {
+    const maxAmountText = pkg.max_amount ? `TZS ${formatNumber(pkg.max_amount)}` : 'Unlimited';
+    
+    let mediaHtml = '';
+    if (pkg.media_url && pkg.media_url.trim() !== '') {
+        if (pkg.media_type === 'image') {
+            mediaHtml = `<img src="${pkg.media_url}" alt="${escapeHtml(pkg.name)}" onerror="this.src='https://via.placeholder.com/350x200?text=Image+Not+Found'">`;
+        } else if (pkg.media_type === 'video') {
+            const videoId = `video_${pkg.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            mediaHtml = `
+                <video id="${videoId}" muted loop>
+                    <source src="${pkg.media_url}" type="video/mp4">
+                </video>
+                <div class="play-overlay" onclick="document.getElementById('${videoId}').play()">
+                    <i class="fas fa-play"></i>
+                </div>
+            `;
+        } else if (pkg.media_type === 'youtube') {
+            const videoId = extractYouTubeID(pkg.media_url);
+            if (videoId) {
+                mediaHtml = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+            }
+        }
+    } else {
+        mediaHtml = `<div class="no-media-placeholder"><i class="${pkg.icon}"></i><span>${escapeHtml(pkg.name)}</span></div>`;
+    }
+
+    return `
+        <div class="vip-package-card">
+            <div class="card-media">
+                ${mediaHtml}
+            </div>
+            <div class="card-content">
+                <div class="card-header">
+                    <div class="vip-icon ${pkg.badge_color}">
+                        <i class="${pkg.icon}"></i>
+                    </div>
+                    <div class="price-info">
+                        <div class="min-amount">TZS ${formatNumber(pkg.min_amount)}+</div>
+                        <div class="max-amount">Max: ${maxAmountText}</div>
+                    </div>
+                </div>
+                <h3 class="package-name">${escapeHtml(pkg.name)}</h3>
+                <p class="package-desc">${escapeHtml(pkg.description)}</p>
+                
+                <div class="stats-row">
+                    <div class="stat">
+                        <span>Daily Return</span>
+                        <strong>${pkg.daily_rate}%</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Period</span>
+                        <strong>${pkg.duration} days</strong>
+                    </div>
+                </div>
+                
+                <div class="benefits-list">
+                    ${pkg.benefits.map(b => `<span class="benefit">${escapeHtml(b)}</span>`).join('')}
+                </div>
+                
+                <button class="invest-btn" onclick="openUserVIPModal('${pkg.id}')">
+                    <i class="fas fa-crown"></i> Invest Now
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Open Add VIP Package Modal
+function openVIPPackageModal() {
+    document.getElementById('vipModalTitle').textContent = 'Add VIP Package';
+    document.getElementById('packageId').value = '';
+    document.getElementById('vipPackageForm').reset();
+    document.getElementById('packageIcon').value = 'fas fa-crown';
+    document.getElementById('packageStatus').value = 'active';
+    document.getElementById('packageBadgeColor').value = 'gold';
+    document.getElementById('packageMediaUrl').value = '';
+    document.getElementById('mediaPreview').innerHTML = '';
+    selectedMediaFile = null;
+    
+    // Reset media tabs
+    switchMediaTab('url');
+    
+    // Clear any error messages
+    const errorDiv = document.getElementById('formError');
+    if (errorDiv) errorDiv.style.display = 'none';
+    
+    openModal('vipPackageFormModal');
+}
+
+// Edit VIP Package
+async function editVIPPackage(packageId) {
+    const pkg = vipPackages.find(p => p.id === packageId);
+    if (!pkg) {
+        showToast('Package not found', 'error');
+        return;
+    }
+    
+    document.getElementById('vipModalTitle').textContent = 'Edit VIP Package';
+    document.getElementById('packageId').value = pkg.id;
+    document.getElementById('packageName').value = pkg.name;
+    document.getElementById('packageIcon').value = pkg.icon;
+    document.getElementById('packageMinAmount').value = pkg.min_amount;
+    document.getElementById('packageMaxAmount').value = pkg.max_amount || '';
+    document.getElementById('packageDailyRate').value = pkg.daily_rate;
+    document.getElementById('packageDuration').value = pkg.duration;
+    document.getElementById('packageDescription').value = pkg.description;
+    document.getElementById('packageBenefits').value = pkg.benefits.join(', ');
+    document.getElementById('packageBadgeColor').value = pkg.badge_color;
+    document.getElementById('packageStatus').value = pkg.status;
+    
+    if (pkg.media_url) {
+        document.getElementById('packageMediaUrl').value = pkg.media_url;
+        const mediaType = pkg.media_type || 'image';
+        const radio = document.querySelector(`input[name="mediaType"][value="${mediaType}"]`);
+        if (radio) radio.checked = true;
+        
+        // Show preview
+        const preview = document.getElementById('mediaPreview');
+        if (mediaType === 'image') {
+            preview.innerHTML = `<img src="${pkg.media_url}" alt="Preview" style="max-width: 100%; max-height: 150px;">`;
+        } else if (mediaType === 'video') {
+            preview.innerHTML = `<video controls style="max-width: 100%; max-height: 150px;"><source src="${pkg.media_url}"></video>`;
+        }
+    }
+    
+    openModal('vipPackageFormModal');
+}
+
+// Save VIP Package
+async function saveVIPPackage(event) {
+    event.preventDefault();
+    
+    const packageId = document.getElementById('packageId').value;
+    const name = document.getElementById('packageName').value.trim();
+    const icon = document.getElementById('packageIcon').value.trim();
+    const min_amount = parseFloat(document.getElementById('packageMinAmount').value);
+    const max_amount = parseFloat(document.getElementById('packageMaxAmount').value) || null;
+    const daily_rate = parseFloat(document.getElementById('packageDailyRate').value);
+    const duration = parseInt(document.getElementById('packageDuration').value);
+    const description = document.getElementById('packageDescription').value.trim();
+    const benefitsInput = document.getElementById('packageBenefits').value;
+    const benefits = benefitsInput ? benefitsInput.split(',').map(b => b.trim()).filter(b => b) : [];
+    const badge_color = document.getElementById('packageBadgeColor').value;
+    const status = document.getElementById('packageStatus').value;
+    
+    // Validate required fields
+    if (!name || !min_amount || !daily_rate || !duration || !description) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+    
+    // Get media
+    let media_url = null;
+    let media_type = null;
+    const activeMediaTab = document.querySelector('.media-tab.active');
+    
+    if (activeMediaTab) {
+        const mediaOption = activeMediaTab.getAttribute('data-media');
+        if (mediaOption === 'url') {
+            media_url = document.getElementById('packageMediaUrl').value.trim();
+            if (media_url) {
+                media_type = document.querySelector('input[name="mediaType"]:checked')?.value || 'image';
+                // Validate URL
+                if (!isValidUrl(media_url)) {
+                    showToast('Please enter a valid URL', 'error');
+                    return;
+                }
+            }
+        } else if (mediaOption === 'upload' && selectedMediaFile) {
+            // For demo, use object URL (in production, upload to Firebase Storage)
+            media_url = URL.createObjectURL(selectedMediaFile);
+            media_type = selectedMediaFile.type.startsWith('video/') ? 'video' : 'image';
+        }
+    }
+    
+    const packageData = {
+        name: name,
+        icon: icon,
+        min_amount: min_amount,
+        max_amount: max_amount,
+        daily_rate: daily_rate,
+        duration: duration,
+        description: description,
+        benefits: benefits,
+        badge_color: badge_color,
+        status: status,
+        media_url: media_url,
+        media_type: media_type,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    try {
+        if (!packageId) {
+            packageData.created_at = firebase.firestore.FieldValue.serverTimestamp();
+            await db.db.collection('vip_packages').add(packageData);
+            showToast('VIP package added successfully!', 'success');
+        } else {
+            await db.db.collection('vip_packages').doc(packageId).update(packageData);
+            showToast('VIP package updated successfully!', 'success');
+        }
+        
+        closeVIPPackageForm();
+        await loadVIPPackagesFromFirestore();
+        
+    } catch (error) {
+        console.error('Error saving package:', error);
+        showToast('Error saving package: ' + error.message, 'error');
+    }
+}
+
+// ==============================================
+// REPLACE THIS FUNCTION - FIXED TOGGLE STATUS
+// ==============================================
+// ==============================================
+// FIXED: toggleVIPPackageStatus - Correct Firestore Path
+// ==============================================
+async function toggleVIPPackageStatus(packageId) {
+    const pkg = vipPackages.find(p => p.id === packageId);
+    if (!pkg) {
+        showToast('Package not found', 'error');
+        return;
+    }
+    
+    const newStatus = pkg.status === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'active' ? 'activate' : 'deactivate';
+    const actionText = newStatus === 'active' ? 'activated' : 'deactivated';
+    
+    // Use confirmation dialog
+    if (!confirm(`Are you sure you want to ${action} "${pkg.name}"?`)) {
+        return;
+    }
+    
+    try {
+        // Show loading state on the button
+        const buttons = document.querySelectorAll(`.vip-admin-card[data-id="${packageId}"] .btn-toggle`);
+        buttons.forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+        });
+        
+        // CORRECTED: Use the correct Firestore path
+        // Make sure we're using db.db (the Firestore instance)
+        const firestore = db.db;
+        const packageRef = firestore.collection('vip_packages').doc(packageId);
+        
+        // Check if document exists first
+        const docSnap = await packageRef.get();
+        if (!docSnap.exists) {
+            throw new Error('Package document not found in database');
+        }
+        
+        // Update the status
+        await packageRef.update({
+            status: newStatus,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        showToast(`Package ${actionText} successfully!`, 'success');
+        
+        // Reload packages to refresh the UI
+        await loadVIPPackagesFromFirestore();
+        
+    } catch (error) {
+        console.error('Error toggling status:', error);
+        showToast('Error updating status: ' + (error.message || 'Unknown error'), 'error');
+        
+        // Reset buttons
+        const buttons = document.querySelectorAll(`.vip-admin-card[data-id="${packageId}"] .btn-toggle`);
+        buttons.forEach(btn => {
+            const pkgData = vipPackages.find(p => p.id === packageId);
+            if (pkgData) {
+                btn.innerHTML = `<i class="fas fa-${pkgData.status === 'active' ? 'ban' : 'check-circle'}"></i> ${pkgData.status === 'active' ? 'Deactivate' : 'Activate'}`;
+            }
+            btn.disabled = false;
+        });
+    }
+}
+
+// ==============================================
+// REPLACE THESE FUNCTIONS - FIXED DELETE WITH CONFIRM
+// ==============================================
+
+// Delete VIP Package - Direct confirmation without modal
+async function deleteVIPPackage(packageId, packageName) {
+    // Use confirm dialog instead of modal
+    if (!confirm(`⚠️ WARNING: Are you sure you want to delete "${packageName}"?\n\nThis action CANNOT be undone!\n\nAll investment data related to this package will be affected.`)) {
+        return;
+    }
+    
+    try {
+        // Show loading state on the delete button
+        const buttons = document.querySelectorAll(`.vip-admin-card[data-id="${packageId}"] .btn-delete`);
+        buttons.forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            btn.disabled = true;
+        });
+        
+        await db.db.collection('vip_packages').doc(packageId).delete();
+        showToast(`"${packageName}" deleted successfully!`, 'success');
+        await loadVIPPackagesFromFirestore();
+        
+    } catch (error) {
+        console.error('Error deleting package:', error);
+        showToast('Error deleting package: ' + error.message, 'error');
+        
+        // Reset buttons
+        const buttons = document.querySelectorAll(`.vip-admin-card[data-id="${packageId}"] .btn-delete`);
+        buttons.forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+            btn.disabled = false;
+        });
+    }
+}
+
+// Update VIP Statistics
+async function updateVIPStats() {
+    const totalPackages = vipPackages.length;
+    const activePackages = vipPackages.filter(p => p.status === 'active').length;
+    
+    const totalEl = document.getElementById('totalVIPPackages');
+    const activeEl = document.getElementById('activeVIPPackages');
+    
+    if (totalEl) totalEl.textContent = totalPackages;
+    if (activeEl) activeEl.textContent = activePackages;
+    
+    // Count VIP investors from user investments
+    try {
+        if (db && db.getUsers) {
+            const users = await db.getUsers();
+            let vipInvestors = 0;
+            users.forEach(user => {
+                if (user.investments && Array.isArray(user.investments)) {
+                    const hasVIP = user.investments.some(inv => inv.type === 'vip');
+                    if (hasVIP) vipInvestors++;
+                }
+            });
+            const investorsEl = document.getElementById('vipInvestorsCount');
+            if (investorsEl) investorsEl.textContent = vipInvestors;
+        }
+    } catch (error) {
+        console.error('Error counting VIP investors:', error);
+    }
+}
+
+// Filter VIP Packages
+function filterVIPPackages() {
+    const searchTerm = document.getElementById('searchVIPPackage')?.value.toLowerCase() || '';
+    const statusFilter = document.getElementById('filterVIPStatus')?.value || 'all';
+    
+    let filtered = [...vipPackages];
+    
+    if (searchTerm) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm));
+    }
+    
+    if (statusFilter !== 'all') {
+        filtered = filtered.filter(p => p.status === statusFilter);
+    }
+    
+    const container = document.getElementById('vipPackagesGrid');
+    if (!container) return;
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><h3>No matching packages</h3></div>`;
+        return;
+    }
+    
+    container.innerHTML = filtered.map(pkg => createAdminPackageCard(pkg)).join('');
+}
+
+// Open User VIP Modal
+function openUserVIPModal(packageId) {
+    const pkg = vipPackages.find(p => p.id === packageId);
+    if (!pkg) {
+        showToast('Package not found', 'error');
+        return;
+    }
+    
+    currentInvestPackage = pkg;
+    
+    document.getElementById('userVIPModalTitle').textContent = pkg.name;
+    
+    const detailsHtml = `
+        <div class="vip-summary">
+            <div class="vip-icon ${pkg.badge_color}" style="width: 60px; height: 60px; margin: 0 auto 15px;">
+                <i class="${pkg.icon}" style="font-size: 28px;"></i>
+            </div>
+            <h4 style="text-align: center;">${escapeHtml(pkg.name)}</h4>
+            <p style="text-align: center; font-size: 13px; color: #7f8c8d;">${escapeHtml(pkg.description)}</p>
+            <div style="display: flex; gap: 10px; margin: 15px 0;">
+                <div style="flex:1; text-align: center; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <small>Min Investment</small><br>
+                    <strong>TZS ${formatNumber(pkg.min_amount)}</strong>
+                </div>
+                <div style="flex:1; text-align: center; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <small>Daily Return</small><br>
+                    <strong>${pkg.daily_rate}%</strong>
+                </div>
+                <div style="flex:1; text-align: center; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <small>Duration</small><br>
+                    <strong>${pkg.duration} days</strong>
+                </div>
+            </div>
+            <div class="benefits-list" style="justify-content: center;">
+                ${pkg.benefits.map(b => `<span class="benefit">${escapeHtml(b)}</span>`).join('')}
+            </div>
+        </div>
+    `;
+    
+    const detailsContainer = document.getElementById('userVIPDetails');
+    if (detailsContainer) detailsContainer.innerHTML = detailsHtml;
+    
+    const amountInput = document.getElementById('userVIPAmount');
+    if (amountInput) {
+        amountInput.value = pkg.min_amount;
+        amountInput.min = pkg.min_amount;
+        if (pkg.max_amount) amountInput.max = pkg.max_amount;
+        calculateVIPReturn();
+    }
+    
+    openModal('userVIPModal');
+}
+
+// Calculate VIP Return
+function calculateVIPReturn() {
+    if (!currentInvestPackage) return;
+    
+    const amount = parseFloat(document.getElementById('userVIPAmount')?.value) || 0;
+    const dailyRate = currentInvestPackage.daily_rate / 100;
+    const duration = currentInvestPackage.duration;
+    
+    const dailyProfit = amount * dailyRate;
+    const totalProfit = dailyProfit * duration;
+    const totalReturn = amount + totalProfit;
+    
+    const calcAmount = document.getElementById('calcAmount');
+    const calcDailyRate = document.getElementById('calcDailyRate');
+    const calcDuration = document.getElementById('calcDuration');
+    const calcDailyProfit = document.getElementById('calcDailyProfit');
+    const calcTotalProfit = document.getElementById('calcTotalProfit');
+    const calcTotalReturn = document.getElementById('calcTotalReturn');
+    
+    if (calcAmount) calcAmount.textContent = `TZS ${formatNumber(amount)}`;
+    if (calcDailyRate) calcDailyRate.textContent = `${currentInvestPackage.daily_rate}%`;
+    if (calcDuration) calcDuration.textContent = `${duration} days`;
+    if (calcDailyProfit) calcDailyProfit.textContent = `TZS ${formatNumber(dailyProfit)}`;
+    if (calcTotalProfit) calcTotalProfit.textContent = `TZS ${formatNumber(totalProfit)}`;
+    if (calcTotalReturn) calcTotalReturn.textContent = `TZS ${formatNumber(totalReturn)}`;
+    
+    const insufficientMsg = document.getElementById('insufficientBalanceMsg');
+    const investBtn = document.getElementById('confirmVIPInvestBtn');
+    
+    if (db.currentUser && db.currentUser.balance < amount) {
+        if (insufficientMsg) insufficientMsg.style.display = 'flex';
+        if (investBtn) investBtn.disabled = true;
+    } else {
+        if (insufficientMsg) insufficientMsg.style.display = 'none';
+        if (investBtn) investBtn.disabled = false;
+    }
+}
+
+// Confirm VIP Investment
+async function confirmVIPInvestment() {
+    if (!currentInvestPackage) {
+        showToast('No package selected', 'error');
+        return;
+    }
+    
+    if (!db.currentUser) {
+        showToast('Please login first', 'error');
+        return;
+    }
+    
+    const amount = parseFloat(document.getElementById('userVIPAmount')?.value);
+    
+    if (isNaN(amount) || amount < currentInvestPackage.min_amount) {
+        showToast(`Minimum investment is TZS ${formatNumber(currentInvestPackage.min_amount)}`, 'error');
+        return;
+    }
+    
+    if (currentInvestPackage.max_amount && amount > currentInvestPackage.max_amount) {
+        showToast(`Maximum investment is TZS ${formatNumber(currentInvestPackage.max_amount)}`, 'error');
+        return;
+    }
+    
+    if (amount > db.currentUser.balance) {
+        showToast('Insufficient balance. Please make a deposit first.', 'error');
+        return;
+    }
+    
+    try {
+        const investmentId = `vip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        const newInvestment = {
+            id: investmentId,
+            type: 'vip',
+            package_id: currentInvestPackage.id,
+            package_name: currentInvestPackage.name,
+            mineral: currentInvestPackage.name,
+            days: currentInvestPackage.duration,
+            startTime: new Date().toISOString(),
+            cost: amount,
+            completed: false,
+            daily_rate: currentInvestPackage.daily_rate / 100,
+            totalExpectedProfit: amount * (currentInvestPackage.daily_rate / 100) * currentInvestPackage.duration
+        };
+        
+        // Deduct balance
+        db.currentUser.balance -= amount;
+        
+        // Add to investments
+        if (typeof investments !== 'undefined') {
+            investments.push(newInvestment);
+        }
+        
+        // Save to Firebase
+        const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+        const userDoc = await userRef.get();
+        const userData = userDoc.data();
+        const currentInvestments = userData.investments || [];
+        currentInvestments.push(newInvestment);
+        
+        await userRef.update({
+            balance: db.currentUser.balance,
+            investments: currentInvestments,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        closeUserVIPModal();
+        showToast(`✅ VIP Investment of TZS ${formatNumber(amount)} started successfully!`, 'success');
+        
+        // Update displays
+        if (typeof updateAllBalanceDisplays === 'function') updateAllBalanceDisplays();
+        if (typeof updateInvestmentsDisplay === 'function') updateInvestmentsDisplay();
+        
+    } catch (error) {
+        console.error('Investment error:', error);
+        showToast('Failed to process investment: ' + error.message, 'error');
+    }
+}
+
+// Media Functions
+function switchMediaTab(tab) {
+    document.querySelectorAll('.media-tab').forEach(t => t.classList.remove('active'));
+    const activeTab = document.querySelector(`.media-tab[data-media="${tab}"]`);
+    if (activeTab) activeTab.classList.add('active');
+    
+    document.querySelectorAll('.media-section').forEach(s => s.classList.remove('active'));
+    const sectionMap = {
+        'url': 'mediaUrlSection',
+        'upload': 'mediaUploadSection',
+        'none': 'mediaNoneSection'
+    };
+    const sectionId = sectionMap[tab];
+    if (sectionId) {
+        const section = document.getElementById(sectionId);
+        if (section) section.classList.add('active');
+    }
+}
+
+function previewMediaFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    selectedMediaFile = file;
+    const preview = document.getElementById('mediaPreview');
+    if (!preview) return;
+    
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 150px; border-radius: 8px;">`;
+        };
+        reader.readAsDataURL(file);
+    } else if (file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `<video controls style="max-width: 100%; max-height: 150px;"><source src="${e.target.result}" type="${file.type}"></video>`;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Helper Functions
+function formatNumber(num) {
+    if (!num && num !== 0) return '0';
+    return Math.round(num).toLocaleString('en-TZ');
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function extractYouTubeID(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<div class="toast-content"><i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i><span>${message}</span></div>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Modal Functions
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeVIPPackageForm() {
+    const modal = document.getElementById('vipPackageFormModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function closeDeleteVIPModal() {
+    const modal = document.getElementById('deleteVIPModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    currentDeletePackageId = null;
+}
+
+function closeUserVIPModal() {
+    const modal = document.getElementById('userVIPModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    currentInvestPackage = null;
+}
+
+// Setup Event Listeners
+function setupVIPEventListeners() {
+    // Amount input for user modal
+    const amountInput = document.getElementById('userVIPAmount');
+    if (amountInput) {
+        amountInput.addEventListener('input', calculateVIPReturn);
+    }
+    
+    // Confirm delete button
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', confirmDeleteVIPPackage);
+    }
+    
+    // File input change
+    const fileInput = document.getElementById('packageMediaFile');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) { previewMediaFile(e.target); });
+    }
+    
+    // Search input
+    const searchInput = document.getElementById('searchVIPPackage');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', filterVIPPackages);
+    }
+    
+    // Status filter
+    const statusFilter = document.getElementById('filterVIPStatus');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterVIPPackages);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initVIPPackages, 1500);
+});
+
+// Make functions global
+window.openVIPPackageModal = openVIPPackageModal;
+window.editVIPPackage = editVIPPackage;
+window.deleteVIPPackage = deleteVIPPackage;
+window.toggleVIPPackageStatus = toggleVIPPackageStatus;
+window.filterVIPPackages = filterVIPPackages;
+window.switchMediaTab = switchMediaTab;
+window.previewMediaFile = previewMediaFile;
+window.saveVIPPackage = saveVIPPackage;
+window.closeVIPPackageForm = closeVIPPackageForm;
+window.closeDeleteVIPModal = closeDeleteVIPModal;
+window.openUserVIPModal = openUserVIPModal;
+window.closeUserVIPModal = closeUserVIPModal;
+window.calculateVIPReturn = calculateVIPReturn;
+window.confirmVIPInvestment = confirmVIPInvestment;
+window.initVIPPackages = initVIPPackages;
+
+console.log('✅ VIP Packages System Loaded');
+
+// ==============================================
+// VIP PACKAGES SYSTEM - COMPLETE
+// ==============================================
+
+
+let selectedVIPPackage = null;
+let currentVIPInvestment = null;
+
+ 
+// Initialize VIP Packages System
+async function initVIPPackagesSystem() {
+    console.log('👑 Initializing VIP Packages System...');
+    
+    try {
+        // Try to load from Firebase first
+        if (db && db.db) {
+            await loadVIPPackagesFromFirebase();
+        } else {
+            console.log('Using default VIP packages');
+            vipPackages = [...defaultVIPPackages];
+        }
+        
+        // Render VIP packages in marketplace
+        renderVIPPackagesGrid();
+        
+        // Setup event listeners
+        setupVIPEventListeners();
+        
+        // Update VIP investments in my investments section
+        updateVIPInvestmentsDisplay();
+        
+        console.log('✅ VIP Packages System Initialized');
+        
+    } catch (error) {
+        console.error('Error initializing VIP system:', error);
+        vipPackages = [...defaultVIPPackages];
+        renderVIPPackagesGrid();
+    }
+}
+
+// Load VIP packages from Firebase
+async function loadVIPPackagesFromFirebase() {
+    try {
+        const packagesRef = db.db.collection('vip_packages');
+        const snapshot = await packagesRef.get();
+        
+        if (!snapshot.empty) {
+            vipPackages = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                vipPackages.push({
+                    id: doc.id,
+                    name: data.name,
+                    icon: data.icon || 'fas fa-crown',
+                    min_amount: data.min_amount,
+                    max_amount: data.max_amount,
+                    min_days: data.min_days,
+                    max_days: data.max_days,
+                    weekday_rate: data.weekday_rate,
+                    weekend_rate: data.weekend_rate,
+                    description: data.description,
+                    benefits: data.benefits || [],
+                    media_url: data.media_url || null,
+                    media_type: data.media_type || null,
+                    status: data.status || 'active',
+                    created_at: data.created_at?.toDate() || new Date(),
+                    updated_at: data.updated_at?.toDate() || new Date()
+                });
+            });
+            console.log(`✅ Loaded ${vipPackages.length} VIP packages from Firebase`);
+        } else {
+            // Create default packages in Firebase
+            await createDefaultVIPPackagesInFirebase();
+        }
+    } catch (error) {
+        console.error('Error loading VIP packages from Firebase:', error);
+        vipPackages = [...defaultVIPPackages];
+    }
+}
+
+// Create default VIP packages in Firebase
+async function createDefaultVIPPackagesInFirebase() {
+    try {
+        const packagesRef = db.db.collection('vip_packages');
+        
+        for (const pkg of defaultVIPPackages) {
+            const packageData = {
+                name: pkg.name,
+                icon: pkg.icon,
+                min_amount: pkg.min_amount,
+                max_amount: pkg.max_amount,
+                min_days: pkg.min_days,
+                max_days: pkg.max_days,
+                weekday_rate: pkg.weekday_rate,
+                weekend_rate: pkg.weekend_rate,
+                description: pkg.description,
+                benefits: pkg.benefits,
+                media_url: pkg.media_url,
+                media_type: pkg.media_type,
+                status: pkg.status,
+                created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await packagesRef.add(packageData);
+        }
+        
+        console.log('✅ Created default VIP packages in Firebase');
+        vipPackages = [...defaultVIPPackages];
+        
+    } catch (error) {
+        console.error('Error creating default packages:', error);
+        vipPackages = [...defaultVIPPackages];
+    }
+}
+
+// Render VIP packages grid in marketplace
+function renderVIPPackagesGrid() {
+    const container = document.getElementById('vip-packages-grid');
+    if (!container) {
+        console.log('VIP packages grid container not found');
+        return;
+    }
+    
+    const activePackages = vipPackages.filter(pkg => pkg.status === 'active');
+    
+    if (activePackages.length === 0) {
+        container.innerHTML = `
+            <div class="no-vip-packages">
+                <i class="fas fa-crown"></i>
+                <h3>No VIP Packages Available</h3>
+                <p>Check back soon for exclusive VIP investment opportunities!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = activePackages.map(pkg => createVIPPackageCard(pkg)).join('');
+}
+
+// Create VIP package card HTML
+function createVIPPackageCard(pkg) {
+    const avgReturn = ((pkg.weekday_rate * 5) + (pkg.weekend_rate * 2)) / 7;
+    
+    // Media HTML
+    let mediaHtml = '';
+    if (pkg.media_url) {
+        if (pkg.media_type === 'video') {
+            mediaHtml = `<video src="${pkg.media_url}" poster="/api/placeholder/400/200"></video>`;
+        } else if (pkg.media_type === 'youtube') {
+            const videoId = extractYouTubeId(pkg.media_url);
+            mediaHtml = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+        } else {
+            mediaHtml = `<img src="${pkg.media_url}" alt="${escapeHtml(pkg.name)}" onerror="this.src='https://via.placeholder.com/400x200?text=VIP+Package'">`;
+        }
+    } else {
+        mediaHtml = `<div class="media-placeholder"><i class="${pkg.icon}"></i></div>`;
+    }
+    
+    return `
+        <div class="vip-package-card" data-package-id="${pkg.id}">
+            <div class="vip-corner-badge">
+                <i class="fas fa-crown"></i> VIP
+            </div>
+            <div class="vip-package-media">
+                ${mediaHtml}
+                <div class="vip-package-icon">
+                    <i class="${pkg.icon}"></i>
+                </div>
+            </div>
+            <div class="vip-package-content">
+                <h3 class="vip-package-name">${escapeHtml(pkg.name)}</h3>
+                <p class="vip-package-description">${escapeHtml(pkg.description)}</p>
+                
+                <div class="vip-package-stats">
+                    <div class="vip-stat">
+                        <span class="stat-label">Min Investment</span>
+                        <span class="stat-value">TZS ${formatNumber(pkg.min_amount)}</span>
+                    </div>
+                    <div class="vip-stat">
+                        <span class="stat-label">Max Investment</span>
+                        <span class="stat-value">${pkg.max_amount ? 'TZS ' + formatNumber(pkg.max_amount) : 'Unlimited'}</span>
+                    </div>
+                    <div class="vip-stat">
+                        <span class="stat-label">Min Days</span>
+                        <span class="stat-value">${pkg.min_days}</span>
+                    </div>
+                    <div class="vip-stat">
+                        <span class="stat-label">Max Days</span>
+                        <span class="stat-value">${pkg.max_days}</span>
+                    </div>
+                </div>
+                
+                <div class="vip-return-badge">
+                    <div class="return-item">
+                        <span class="return-label">Weekdays</span>
+                        <span class="return-value">${pkg.weekday_rate}%</span>
+                    </div>
+                    <div class="return-item">
+                        <span class="return-label">Weekends</span>
+                        <span class="return-value">${pkg.weekend_rate}%</span>
+                    </div>
+                    <div class="return-item">
+                        <span class="return-label">Avg Daily</span>
+                        <span class="return-value">${avgReturn.toFixed(1)}%</span>
+                    </div>
+                </div>
+                
+                <div class="vip-benefits-list">
+                    ${pkg.benefits.slice(0, 3).map(b => `<span class="vip-benefit"><i class="fas fa-check-circle"></i> ${escapeHtml(b)}</span>`).join('')}
+                    ${pkg.benefits.length > 3 ? `<span class="vip-benefit more">+${pkg.benefits.length - 3} more</span>` : ''}
+                </div>
+                
+                <button class="btn btn-vip-invest" onclick="openVIPInvestmentModal('${pkg.id}')">
+                    <i class="fas fa-crown"></i> Invest Now
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Open VIP investment modal
+function openVIPInvestmentModal(packageId) {
+    const pkg = vipPackages.find(p => p.id === packageId);
+    if (!pkg) {
+        showNotification('Package not found', true);
+        return;
+    }
+    
+    selectedVIPPackage = pkg;
+    
+    // Check if user is logged in
+    if (!db || !db.currentUser) {
+        showNotification('Please login to invest in VIP packages', true);
+        setTimeout(() => showLogin(), 1500);
+        return;
+    }
+    
+    // Check if user has made first deposit
+    if (!hasUserMadeFirstDeposit()) {
+        showNotification('Please make your first deposit before investing in VIP packages', true);
+        setTimeout(() => openModal('deposit-modal'), 1500);
+        return;
+    }
+    
+    // Update modal with package details
+    document.getElementById('vip-modal-package-name').textContent = pkg.name;
+    
+    const detailsHtml = `
+        <div class="vip-package-summary">
+            <div class="summary-row">
+                <span><i class="fas fa-chart-line"></i> Investment Range:</span>
+                <strong>TZS ${formatNumber(pkg.min_amount)} - ${pkg.max_amount ? 'TZS ' + formatNumber(pkg.max_amount) : 'Unlimited'}</strong>
+            </div>
+            <div class="summary-row">
+                <span><i class="fas fa-calendar"></i> Duration Range:</span>
+                <strong>${pkg.min_days} - ${pkg.max_days} days</strong>
+            </div>
+            <div class="summary-row">
+                <span><i class="fas fa-percent"></i> Returns:</span>
+                <strong>${pkg.weekday_rate}% (Weekdays) / ${pkg.weekend_rate}% (Weekends)</strong>
+            </div>
+            <div class="summary-row">
+                <span><i class="fas fa-gift"></i> Benefits:</span>
+                <strong>${pkg.benefits.length} exclusive benefits</strong>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('vip-investment-details').innerHTML = detailsHtml;
+    
+    // Setup amount input
+    const amountInput = document.getElementById('vip-invest-amount');
+    amountInput.value = pkg.min_amount;
+    amountInput.min = pkg.min_amount;
+    if (pkg.max_amount) amountInput.max = pkg.max_amount;
+    
+    // Setup quick amounts
+    setupVIPQuickAmounts(pkg);
+    
+    // Setup days slider
+    setupVIPDaysSlider(pkg);
+    
+    // Setup calculator
+    setupVIPCalculator();
+    
+    // Update balance display
+    updateVIPBalanceDisplay();
+    
+    // Open modal
+    openModal('vip-investment-modal');
+}
+
+// Setup VIP quick amounts
+function setupVIPQuickAmounts(pkg) {
+    const container = document.getElementById('vip-quick-amounts');
+    if (!container) return;
+    
+    // Calculate quick amounts
+    const amounts = [];
+    let current = pkg.min_amount;
+    const step = Math.floor(pkg.min_amount / 2);
+    
+    while (current <= (pkg.max_amount || pkg.min_amount * 10) && amounts.length < 4) {
+        amounts.push(current);
+        current += step;
+    }
+    
+    if (!amounts.includes(pkg.min_amount)) amounts.unshift(pkg.min_amount);
+    
+    container.innerHTML = amounts.map(amount => `
+        <button type="button" class="quick-amount-vip" data-amount="${amount}">
+            TZS ${formatNumber(amount)}
+        </button>
+    `).join('');
+    
+    // Add click handlers
+    container.querySelectorAll('.quick-amount-vip').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const amount = parseFloat(btn.dataset.amount);
+            document.getElementById('vip-invest-amount').value = amount;
+            updateVIPCalculator();
+            
+            // Highlight active
+            container.querySelectorAll('.quick-amount-vip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+}
+
+// Setup VIP days slider
+function setupVIPDaysSlider(pkg) {
+    const slider = document.getElementById('vip-invest-days-slider');
+    const daysInput = document.getElementById('vip-invest-days');
+    
+    if (!slider || !daysInput) return;
+    
+    slider.min = pkg.min_days;
+    slider.max = pkg.max_days;
+    slider.value = pkg.min_days;
+    
+    daysInput.min = pkg.min_days;
+    daysInput.max = pkg.max_days;
+    daysInput.value = pkg.min_days;
+    
+    const updateDays = (value) => {
+        slider.value = value;
+        daysInput.value = value;
+        updateVIPCalculator();
+    };
+    
+    slider.oninput = (e) => updateDays(parseInt(e.target.value));
+    daysInput.oninput = (e) => updateDays(parseInt(e.target.value));
+}
+
+// Setup VIP calculator
+function setupVIPCalculator() {
+    const amountInput = document.getElementById('vip-invest-amount');
+    const daysInput = document.getElementById('vip-invest-days');
+    
+    if (amountInput) {
+        amountInput.addEventListener('input', updateVIPCalculator);
+    }
+    if (daysInput) {
+        daysInput.addEventListener('input', updateVIPCalculator);
+    }
+    
+    updateVIPCalculator();
+}
+
+// Update VIP calculator display
+function updateVIPCalculator() {
+    if (!selectedVIPPackage) return;
+    
+    const amount = parseFloat(document.getElementById('vip-invest-amount')?.value) || 0;
+    const days = parseInt(document.getElementById('vip-invest-days')?.value) || 0;
+    
+    // Validate amount
+    const amountError = document.getElementById('vip-amount-error');
+    if (amount < selectedVIPPackage.min_amount) {
+        if (amountError) {
+            amountError.textContent = `Minimum investment is TZS ${formatNumber(selectedVIPPackage.min_amount)}`;
+            amountError.style.display = 'block';
+        }
+    } else if (selectedVIPPackage.max_amount && amount > selectedVIPPackage.max_amount) {
+        if (amountError) {
+            amountError.textContent = `Maximum investment is TZS ${formatNumber(selectedVIPPackage.max_amount)}`;
+            amountError.style.display = 'block';
+        }
+    } else {
+        if (amountError) amountError.style.display = 'none';
+    }
+    
+    // Validate days
+    const daysError = document.getElementById('vip-days-error');
+    if (days < selectedVIPPackage.min_days) {
+        if (daysError) {
+            daysError.textContent = `Minimum duration is ${selectedVIPPackage.min_days} days`;
+            daysError.style.display = 'block';
+        }
+    } else if (days > selectedVIPPackage.max_days) {
+        if (daysError) {
+            daysError.textContent = `Maximum duration is ${selectedVIPPackage.max_days} days`;
+            daysError.style.display = 'block';
+        }
+    } else {
+        if (daysError) daysError.style.display = 'none';
+    }
+    
+    // Calculate returns
+    const weeks = Math.floor(days / 7);
+    const remainingDays = days % 7;
+    const weekdays = (weeks * 5) + Math.min(remainingDays, 5);
+    const weekends = (weeks * 2) + Math.max(0, remainingDays - 5);
+    
+    const weekdayProfit = amount * (selectedVIPPackage.weekday_rate / 100) * weekdays;
+    const weekendProfit = amount * (selectedVIPPackage.weekend_rate / 100) * weekends;
+    const totalProfit = weekdayProfit + weekendProfit;
+    const totalReturn = amount + totalProfit;
+    const avgDailyProfit = totalProfit / days;
+    
+    // Update display
+    const calcAmount = document.getElementById('vip-calc-amount');
+    const calcWeekday = document.getElementById('vip-calc-weekday');
+    const calcWeekend = document.getElementById('vip-calc-weekend');
+    const calcProfit = document.getElementById('vip-calc-profit');
+    const calcTotal = document.getElementById('vip-calc-total');
+    const calcDaily = document.getElementById('vip-calc-daily');
+    
+    if (calcAmount) calcAmount.textContent = `TZS ${formatNumber(amount)}`;
+    if (calcWeekday) calcWeekday.textContent = `TZS ${formatNumber(weekdayProfit)}`;
+    if (calcWeekend) calcWeekend.textContent = `TZS ${formatNumber(weekendProfit)}`;
+    if (calcProfit) calcProfit.textContent = `TZS ${formatNumber(totalProfit)}`;
+    if (calcTotal) calcTotal.textContent = `TZS ${formatNumber(totalReturn)}`;
+    if (calcDaily) calcDaily.textContent = `TZS ${formatNumber(avgDailyProfit)}/day`;
+    
+    // Check insufficient funds
+    const insufficientWarning = document.getElementById('vip-insufficient-funds');
+    const confirmBtn = document.getElementById('vip-confirm-invest-btn');
+    
+    if (db.currentUser && amount > db.currentUser.balance) {
+        if (insufficientWarning) insufficientWarning.style.display = 'flex';
+        if (confirmBtn) confirmBtn.disabled = true;
+    } else {
+        if (insufficientWarning) insufficientWarning.style.display = 'none';
+        if (confirmBtn) confirmBtn.disabled = false;
+    }
+}
+
+// Update VIP balance display
+function updateVIPBalanceDisplay() {
+    if (!db.currentUser) return;
+    const balanceElement = document.getElementById('vip-current-balance');
+    if (balanceElement) {
+        balanceElement.textContent = `TZS ${formatNumber(db.currentUser.balance)}`;
+    }
+}
+
+// Confirm VIP investment
+async function confirmVIPInvestment() {
+    if (!selectedVIPPackage) {
+        showNotification('Please select a VIP package first', true);
+        return;
+    }
+    
+    if (!db.currentUser) {
+        showNotification('Please login to invest', true);
+        return;
+    }
+    
+    const amount = parseFloat(document.getElementById('vip-invest-amount')?.value) || 0;
+    const days = parseInt(document.getElementById('vip-invest-days')?.value) || 0;
+    
+    // Validate
+    if (amount < selectedVIPPackage.min_amount) {
+        showNotification(`Minimum investment is TZS ${formatNumber(selectedVIPPackage.min_amount)}`, true);
+        return;
+    }
+    
+    if (selectedVIPPackage.max_amount && amount > selectedVIPPackage.max_amount) {
+        showNotification(`Maximum investment is TZS ${formatNumber(selectedVIPPackage.max_amount)}`, true);
+        return;
+    }
+    
+    if (days < selectedVIPPackage.min_days) {
+        showNotification(`Minimum duration is ${selectedVIPPackage.min_days} days`, true);
+        return;
+    }
+    
+    if (days > selectedVIPPackage.max_days) {
+        showNotification(`Maximum duration is ${selectedVIPPackage.max_days} days`, true);
+        return;
+    }
+    
+    if (amount > db.currentUser.balance) {
+        showNotification(`Insufficient balance. You have TZS ${formatNumber(db.currentUser.balance)}`, true);
+        return;
+    }
+    
+    // Calculate expected profit
+    const weeks = Math.floor(days / 7);
+    const remainingDays = days % 7;
+    const weekdays = (weeks * 5) + Math.min(remainingDays, 5);
+    const weekends = (weeks * 2) + Math.max(0, remainingDays - 5);
+    const weekdayProfit = amount * (selectedVIPPackage.weekday_rate / 100) * weekdays;
+    const weekendProfit = amount * (selectedVIPPackage.weekend_rate / 100) * weekends;
+    const totalProfit = weekdayProfit + weekendProfit;
+    const totalReturn = amount + totalProfit;
+    
+    // Confirm with user
+    if (!confirm(`Confirm VIP Investment:\n\nPackage: ${selectedVIPPackage.name}\nAmount: TZS ${formatNumber(amount)}\nDuration: ${days} days\nExpected Profit: TZS ${formatNumber(totalProfit)}\nTotal Return: TZS ${formatNumber(totalReturn)}\n\nProceed with this investment?`)) {
+        return;
+    }
+    
+    // Show loading on button
+    const confirmBtn = document.getElementById('vip-confirm-invest-btn');
+    const originalText = confirmBtn?.innerHTML || 'Confirm';
+    if (confirmBtn) {
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        confirmBtn.disabled = true;
+    }
+    
+    try {
+        // Create investment object
+        const investmentId = `vip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        const newInvestment = {
+            id: investmentId,
+            type: 'vip',
+            package_id: selectedVIPPackage.id,
+            package_name: selectedVIPPackage.name,
+            mineral: selectedVIPPackage.name,
+            amount: amount,
+            grams: amount / selectedVIPPackage.min_amount,
+            days: days,
+            startTime: new Date().toISOString(),
+            completed: false,
+            completionDate: null,
+            finalProfit: 0,
+            weekday_rate: selectedVIPPackage.weekday_rate,
+            weekend_rate: selectedVIPPackage.weekend_rate,
+            expected_profit: totalProfit,
+            expected_return: totalReturn,
+            benefits: selectedVIPPackage.benefits,
+            status: 'active'
+        };
+        
+        // Deduct balance
+        const oldBalance = db.currentUser.balance;
+        db.currentUser.balance -= amount;
+        
+        // Update UI immediately
+        updateAllBalanceDisplays();
+        
+        // Save to Firebase
+        if (db && db.db) {
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            const userDoc = await userRef.get();
+            const userData = userDoc.data();
+            const investments = userData.investments || [];
+            investments.push(newInvestment);
+            
+            await userRef.update({
+                investments: investments,
+                balance: db.currentUser.balance,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            // Fallback for demo/local storage
+            let investments = JSON.parse(localStorage.getItem('user_investments') || '[]');
+            investments.push(newInvestment);
+            localStorage.setItem('user_investments', JSON.stringify(investments));
+            localStorage.setItem('user_balance', db.currentUser.balance);
+        }
+        
+        // Show success modal
+        showVIPSuccessModal(selectedVIPPackage, amount, days, totalProfit, totalReturn);
+        
+        // Close investment modal
+        closeModal('vip-investment-modal');
+        
+        // Refresh investments display
+        setTimeout(() => {
+            if (typeof loadUserInvestments === 'function') {
+                loadUserInvestments();
+            }
+            updateVIPInvestmentsDisplay();
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error creating VIP investment:', error);
+        showNotification('Error creating investment. Please try again.', true);
+        
+        // Restore balance on error
+        db.currentUser.balance += amount;
+        updateAllBalanceDisplays();
+        
+    } finally {
+        if (confirmBtn) {
+            confirmBtn.innerHTML = originalText;
+            confirmBtn.disabled = false;
+        }
+    }
+}
+
+// Show VIP success modal
+function showVIPSuccessModal(pkg, amount, days, profit, totalReturn) {
+    const packageNameSpan = document.getElementById('success-package-name');
+    const amountSpan = document.getElementById('success-amount');
+    const daysSpan = document.getElementById('success-days');
+    const profitSpan = document.getElementById('success-profit');
+    const totalSpan = document.getElementById('success-total');
+    
+    if (packageNameSpan) packageNameSpan.textContent = pkg.name;
+    if (amountSpan) amountSpan.textContent = `TZS ${formatNumber(amount)}`;
+    if (daysSpan) daysSpan.textContent = days;
+    if (profitSpan) profitSpan.textContent = `TZS ${formatNumber(profit)}`;
+    if (totalSpan) totalSpan.textContent = `TZS ${formatNumber(totalReturn)}`;
+    
+    openModal('vip-success-modal');
+}
+
+// Update the VIP investments display in My Investments section
+function updateVIPInvestmentsDisplay() {
+    const container = document.getElementById('vip-investments-container');
+    if (!container) return;
+    
+    // Get VIP investments from global array
+    const vipInvestments = (window.userInvestments || window.investments || []).filter(inv => inv.type === 'vip');
+    
+    if (vipInvestments.length === 0) {
+        if (container) {
+            container.innerHTML = `
+                <div class="no-investments">
+                    <div class="no-investments-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3>No VIP Investments</h3>
+                    <p>You haven't made any VIP investments yet.</p>
+                    <button class="btn-primary" onclick="switchToSection('vip-marketplace')">
+                        <i class="fas fa-crown"></i> Explore VIP Packages
+                    </button>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    container.innerHTML = vipInvestments.map(inv => createVIPInvestmentCard(inv)).join('');
+}
+
+// Render VIP investments section
+function renderVIPInvestmentsSection(userInvestments) {
+    const vipInvestments = userInvestments.filter(inv => inv.type === 'vip');
+    
+    if (vipInvestments.length === 0) return;
+    
+    // Find or create VIP investments container
+    let vipContainer = document.getElementById('vip-investments-container');
+    let vipSection = document.getElementById('vip-investments-section');
+    
+    if (!vipSection) {
+        // Find the my investments section
+        const myInvestmentsSection = document.getElementById('myinvestment');
+        if (myInvestmentsSection) {
+            const investmentsGrid = myInvestmentsSection.querySelector('.investments-grid');
+            if (investmentsGrid) {
+                // Create VIP section before regular investments
+                const vipSectionHtml = `
+                    <div id="vip-investments-section" class="investments-section vip-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-crown"></i> VIP Investments
+                            <span class="vip-badge">Premium</span>
+                        </h3>
+                        <div id="vip-investments-container" class="investments-grid"></div>
+                    </div>
+                `;
+                investmentsGrid.insertAdjacentHTML('beforebegin', vipSectionHtml);
+                vipSection = document.getElementById('vip-investments-section');
+                vipContainer = document.getElementById('vip-investments-container');
+            }
+        }
+    }
+    
+    if (vipContainer) {
+        vipContainer.innerHTML = vipInvestments.map(inv => createVIPInvestmentCard(inv)).join('');
+    }
+}
+
+// ==============================================
+// ENHANCED VIP INVESTMENT CARD WITH VIEW DETAILS
+// ==============================================
+
+// Update the VIP investment card creation function
+function createVIPInvestmentCard(investment) {
+    const currentProfit = calculateVIPCurrentProfit(investment);
+    const profitPercentage = investment.amount > 0 ? (currentProfit / investment.amount) * 100 : 0;
+    const isActive = !investment.completed;
+    
+    // Calculate progress
+    let progress = 0;
+    let remainingDays = 0;
+    let startDate = null;
+    let endDate = null;
+    
+    if (isActive) {
+        startDate = new Date(investment.startTime);
+        endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const totalTime = endDate - startDate;
+        const elapsedTime = now - startDate;
+        progress = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100));
+        remainingDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+    }
+    
+    const avgDailyRate = ((investment.weekday_rate * 5) + (investment.weekend_rate * 2)) / 7;
+    
+    return `
+        <div class="mineral-investment-card vip-card ${isActive ? 'active' : 'completed'}" data-investment-id="${investment.id}">
+            <div class="vip-card-badge">
+                <i class="fas fa-crown"></i> VIP
+            </div>
+            <div class="mineral-investment-header">
+                <div class="mineral-info">
+                    <div class="mineral-icon vip-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="mineral-details">
+                        <div class="mineral-name">${escapeHtml(investment.package_name || investment.mineral)}</div>
+                        <div class="investment-amount">TZS ${Math.round(investment.amount).toLocaleString()}</div>
+                    </div>
+                </div>
+                <div class="investment-status ${isActive ? 'status-active' : 'status-completed'}">
+                    ${isActive ? 'VIP ACTIVE' : 'VIP COMPLETED'}
+                </div>
+            </div>
+            
+            <div class="investment-details">
+                <div class="investment-detail-row">
+                    <span class="investment-detail-label">Duration:</span>
+                    <span class="investment-detail-value">${investment.days} days</span>
+                </div>
+                <div class="investment-detail-row">
+                    <span class="investment-detail-label">Returns:</span>
+                    <span class="investment-detail-value">${investment.weekday_rate}% (Weekdays) / ${investment.weekend_rate}% (Weekends)</span>
+                </div>
+                <div class="investment-detail-row">
+                    <span class="investment-detail-label">Avg Daily:</span>
+                    <span class="investment-detail-value">${avgDailyRate.toFixed(1)}%</span>
+                </div>
+                <div class="investment-detail-row">
+                    <span class="investment-detail-label">${isActive ? 'Current Profit' : 'Final Profit'}:</span>
+                    <span class="investment-detail-value profit ${currentProfit >= 0 ? 'positive' : 'negative'}">
+                        TZS ${Math.round(currentProfit).toLocaleString()} (${profitPercentage.toFixed(2)}%)
+                    </span>
+                </div>
+                ${!isActive ? `
+                <div class="investment-detail-row">
+                    <span class="investment-detail-label">Total Return:</span>
+                    <span class="investment-detail-value total-received">
+                        TZS ${Math.round((investment.finalProfit || 0) + investment.amount).toLocaleString()}
+                    </span>
+                </div>
+                ` : ''}
+            </div>
+            
+            ${isActive ? `
+            <div class="investment-progress-section">
+                <div class="investment-progress-info">
+                    <span>Progress:</span>
+                    <span>${progress.toFixed(1)}%</span>
+                </div>
+                <div class="investment-progress-bar">
+                    <div class="investment-progress-fill" style="width: ${progress}%"></div>
+                </div>
+                <div class="investment-time-remaining">
+                    <i class="far fa-clock"></i>
+                    <span>${remainingDays} days remaining</span>
+                </div>
+            </div>
+            ` : `
+            <div class="investment-completion-info vip-completion">
+                <div class="investment-completion-date">
+                    <i class="far fa-calendar-check"></i>
+                    <span>Completed: ${new Date(investment.completionDate).toLocaleDateString()}</span>
+                </div>
+                <div class="investment-success-badge">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Funds added to balance</span>
+                </div>
+            </div>
+            `}
+            
+            <div class="investment-actions">
+                <button class="btn-view-details" onclick="viewVIPInvestmentDetails('${investment.id}')">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+                ${isActive ? `
+                <button class="btn-delete" onclick="showVIPCancelConfirmation('${investment.id}')">
+                    <i class="fas fa-trash"></i> Cancel
+                </button>
+                ` : `
+                <button class="btn-delete" onclick="deleteVIPInvestmentRecord('${investment.id}')">
+                    <i class="fas fa-trash"></i> Delete Record
+                </button>
+                `}
+            </div>
+        </div>
+    `;
+}
+
+// View VIP Investment Details - Enhanced Version
+async function viewVIPInvestmentDetails(investmentId) {
+    // Get investment from global investments array
+    let investment = null;
+    
+    if (window.userInvestments) {
+        investment = window.userInvestments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment && window.investments) {
+        investment = window.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        return;
+    }
+    
+    // Calculate all details
+    const isActive = !investment.completed;
+    const startDate = new Date(investment.startTime);
+    const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    
+    // Calculate current profit
+    const currentProfit = calculateVIPCurrentProfit(investment);
+    const profitPercentage = investment.amount > 0 ? (currentProfit / investment.amount) * 100 : 0;
+    
+    // Calculate progress
+    let progress = 0;
+    let remainingDays = 0;
+    let elapsedDays = 0;
+    
+    if (isActive) {
+        const totalTime = endDate - startDate;
+        const elapsedTime = now - startDate;
+        progress = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100));
+        remainingDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+        elapsedDays = Math.floor(elapsedTime / (1000 * 60 * 60 * 24));
+    } else {
+        elapsedDays = investment.days;
+        remainingDays = 0;
+        progress = 100;
+    }
+    
+    // Calculate detailed returns breakdown
+    const weeks = Math.floor(elapsedDays / 7);
+    const remainingDaysMod = elapsedDays % 7;
+    const weekdaysCount = (weeks * 5) + Math.min(remainingDaysMod, 5);
+    const weekendsCount = (weeks * 2) + Math.max(0, remainingDaysMod - 5);
+    
+    const weekdayProfit = investment.amount * (investment.weekday_rate / 100) * weekdaysCount;
+    const weekendProfit = investment.amount * (investment.weekend_rate / 100) * weekendsCount;
+    const totalProfitSoFar = weekdayProfit + weekendProfit;
+    
+    // Calculate expected final returns
+    const totalWeeks = Math.floor(investment.days / 7);
+    const totalRemainingDays = investment.days % 7;
+    const totalWeekdays = (totalWeeks * 5) + Math.min(totalRemainingDays, 5);
+    const totalWeekends = (totalWeeks * 2) + Math.max(0, totalRemainingDays - 5);
+    
+    const expectedWeekdayProfit = investment.amount * (investment.weekday_rate / 100) * totalWeekdays;
+    const expectedWeekendProfit = investment.amount * (investment.weekend_rate / 100) * totalWeekends;
+    const expectedTotalProfit = expectedWeekdayProfit + expectedWeekendProfit;
+    const expectedTotalReturn = investment.amount + expectedTotalProfit;
+    
+    const avgDailyRate = ((investment.weekday_rate * 5) + (investment.weekend_rate * 2)) / 7;
+    
+    // Format dates
+    const startDateFormatted = startDate.toLocaleDateString('en-TZ', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const endDateFormatted = endDate.toLocaleDateString('en-TZ', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Create modal content
+    const detailsHtml = `
+        <div class="vip-details-container">
+            <div class="vip-details-header">
+                <div class="vip-icon-large">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h3>${escapeHtml(investment.package_name || investment.mineral)}</h3>
+                <span class="vip-status-badge ${isActive ? 'active' : 'completed'}">
+                    ${isActive ? 'ACTIVE INVESTMENT' : 'COMPLETED INVESTMENT'}
+                </span>
+            </div>
+            
+            <div class="vip-details-grid">
+                <!-- Investment Information Card -->
+                <div class="vip-detail-card">
+                    <h4><i class="fas fa-info-circle"></i> Investment Information</h4>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Investment ID:</span>
+                        <span class="vip-detail-value">${investment.id.substring(0, 15)}...</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Amount:</span>
+                        <span class="vip-detail-value amount">TZS ${Math.round(investment.amount).toLocaleString()}</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Duration:</span>
+                        <span class="vip-detail-value">${investment.days} days</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Start Date:</span>
+                        <span class="vip-detail-value">${startDateFormatted}</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">End Date:</span>
+                        <span class="vip-detail-value">${endDateFormatted}</span>
+                    </div>
+                </div>
+                
+                <!-- Returns Information Card -->
+                <div class="vip-detail-card">
+                    <h4><i class="fas fa-chart-line"></i> Returns Information</h4>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Weekday Rate:</span>
+                        <span class="vip-detail-value">${investment.weekday_rate}% daily</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Weekend Rate:</span>
+                        <span class="vip-detail-value">${investment.weekend_rate}% daily</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Average Daily:</span>
+                        <span class="vip-detail-value">${avgDailyRate.toFixed(2)}%</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Annual Projection:</span>
+                        <span class="vip-detail-value">~${(avgDailyRate * 365).toFixed(0)}%</span>
+                    </div>
+                </div>
+                
+                <!-- Profit Summary Card -->
+                <div class="vip-detail-card">
+                    <h4><i class="fas fa-chart-pie"></i> Profit Summary</h4>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Current Profit:</span>
+                        <span class="vip-detail-value profit">TZS ${Math.round(currentProfit).toLocaleString()}</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Profit Percentage:</span>
+                        <span class="vip-detail-value profit">${profitPercentage.toFixed(2)}%</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Expected Final Profit:</span>
+                        <span class="vip-detail-value">TZS ${Math.round(expectedTotalProfit).toLocaleString()}</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Expected Total Return:</span>
+                        <span class="vip-detail-value amount">TZS ${Math.round(expectedTotalReturn).toLocaleString()}</span>
+                    </div>
+                </div>
+                
+                <!-- Timeline Card -->
+                <div class="vip-detail-card">
+                    <h4><i class="fas fa-calendar-alt"></i> Timeline</h4>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Progress:</span>
+                        <span class="vip-detail-value">${progress.toFixed(1)}% complete</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Days Elapsed:</span>
+                        <span class="vip-detail-value">${elapsedDays} / ${investment.days} days</span>
+                    </div>
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Days Remaining:</span>
+                        <span class="vip-detail-value">${remainingDays} days</span>
+                    </div>
+                    ${isActive ? `
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Expected Completion:</span>
+                        <span class="vip-detail-value">${endDate.toLocaleDateString()}</span>
+                    </div>
+                    ` : `
+                    <div class="vip-detail-row">
+                        <span class="vip-detail-label">Completed:</span>
+                        <span class="vip-detail-value">${new Date(investment.completionDate).toLocaleDateString()}</span>
+                    </div>
+                    `}
+                </div>
+            </div>
+            
+            <!-- Progress Bar Section -->
+            <div class="progress-section">
+                <h4><i class="fas fa-tasks"></i> Investment Progress</h4>
+                <div class="progress-bar-container">
+                    <div class="progress-label">
+                        <span>Overall Progress</span>
+                        <span>${progress.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+                <div class="time-info">
+                    <div class="time-item">
+                        <span class="time-label">Started</span>
+                        <span class="time-value">${startDate.toLocaleDateString()}</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="time-label">${isActive ? 'Expected End' : 'Completed'}</span>
+                        <span class="time-value">${isActive ? endDate.toLocaleDateString() : new Date(investment.completionDate).toLocaleDateString()}</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="time-label">Status</span>
+                        <span class="time-value" style="color: ${isActive ? '#27ae60' : '#9b59b6'}">${isActive ? 'Active' : 'Completed'}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Returns Breakdown -->
+            <div class="returns-breakdown">
+                <h4><i class="fas fa-calculator"></i> Detailed Returns Breakdown</h4>
+                <div class="returns-row">
+                    <span>Principal Amount:</span>
+                    <strong>TZS ${Math.round(investment.amount).toLocaleString()}</strong>
+                </div>
+                <div class="returns-row">
+                    <span>Weekday Returns (${investment.weekday_rate}% × ${weekdaysCount} days):</span>
+                    <strong>TZS ${Math.round(weekdayProfit).toLocaleString()}</strong>
+                </div>
+                <div class="returns-row">
+                    <span>Weekend Returns (${investment.weekend_rate}% × ${weekendsCount} days):</span>
+                    <strong>TZS ${Math.round(weekendProfit).toLocaleString()}</strong>
+                </div>
+                <div class="returns-row total">
+                    <span>${isActive ? 'Current' : 'Final'} Total Return:</span>
+                    <strong style="color: #ffd700;">TZS ${Math.round(investment.amount + totalProfitSoFar).toLocaleString()}</strong>
+                </div>
+            </div>
+            
+            <!-- Benefits Section -->
+            ${investment.benefits && investment.benefits.length > 0 ? `
+            <div class="vip-detail-card">
+                <h4><i class="fas fa-gift"></i> VIP Benefits Included</h4>
+                <div class="benefits-list">
+                    ${investment.benefits.map(b => `
+                        <div class="benefit-item">
+                            <i class="fas fa-check-circle"></i>
+                            ${escapeHtml(b)}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Notes Section -->
+            <div class="vip-detail-card" style="background: #fff8e1;">
+                <h4><i class="fas fa-info-circle"></i> Important Notes</h4>
+                <div class="vip-detail-row">
+                    <span class="vip-detail-label">Profit Calculation:</span>
+                    <span class="vip-detail-value">Returns are calculated daily and added at completion</span>
+                </div>
+                <div class="vip-detail-row">
+                    <span class="vip-detail-label">Early Cancellation:</span>
+                    <span class="vip-detail-value">You can cancel anytime and receive principal + accrued profit</span>
+                </div>
+                <div class="vip-detail-row">
+                    <span class="vip-detail-label">Support:</span>
+                    <span class="vip-detail-value">24/7 VIP support available via live chat</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Update modal content and show
+    document.getElementById('vip-investment-details-content').innerHTML = detailsHtml;
+    document.getElementById('vip-details-title').textContent = `${investment.package_name || investment.mineral} - Details`;
+    
+    openModal('vip-investment-details-modal');
+}
+
+// Show VIP cancel confirmation modal
+function showVIPCancelConfirmation(investmentId) {
+    let investment = null;
+    
+    if (window.userInvestments) {
+        investment = window.userInvestments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment && window.investments) {
+        investment = window.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        return;
+    }
+    
+    const currentProfit = calculateVIPCurrentProfit(investment);
+    const refundAmount = investment.amount + currentProfit;
+    
+    const cancelDetailsHtml = `
+        <p><strong>Package:</strong> ${escapeHtml(investment.package_name || investment.mineral)}</p>
+        <p><strong>Original Investment:</strong> TZS ${Math.round(investment.amount).toLocaleString()}</p>
+        <p><strong>Current Profit:</strong> TZS ${Math.round(currentProfit).toLocaleString()}</p>
+        <p><strong>Total Refund:</strong> <span style="color: #27ae60; font-weight: bold;">TZS ${Math.round(refundAmount).toLocaleString()}</span></p>
+    `;
+    
+    document.getElementById('vip-cancel-details').innerHTML = cancelDetailsHtml;
+    
+    // Store investment ID for confirmation
+    window.vipCancelInvestmentId = investmentId;
+    
+    openModal('vip-cancel-modal');
+}
+
+// Confirm cancel VIP investment
+async function confirmCancelVIPInvestment() {
+    const investmentId = window.vipCancelInvestmentId;
+    if (!investmentId) return;
+    
+    let investment = null;
+    
+    if (window.userInvestments) {
+        investment = window.userInvestments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment && window.investments) {
+        investment = window.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        closeModal('vip-cancel-modal');
+        return;
+    }
+    
+    try {
+        const currentProfit = calculateVIPCurrentProfit(investment);
+        const refundAmount = investment.amount + currentProfit;
+        
+        // Update balance
+        if (db.currentUser) {
+            db.currentUser.balance += refundAmount;
+            updateAllBalanceDisplays();
+        }
+        
+        // Remove investment
+        if (window.userInvestments) {
+            window.userInvestments = window.userInvestments.filter(inv => inv.id !== investmentId);
+        }
+        if (window.investments) {
+            window.investments = window.investments.filter(inv => inv.id !== investmentId);
+        }
+        
+        // Save to Firebase
+        if (db && db.db && db.currentUser) {
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            await userRef.update({
+                investments: window.userInvestments || window.investments || [],
+                balance: db.currentUser.balance,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        // Update UI
+        if (typeof loadUserInvestments === 'function') {
+            loadUserInvestments();
+        }
+        if (typeof updateInvestmentsDisplay === 'function') {
+            updateInvestmentsDisplay();
+        }
+        
+        showNotification(`VIP investment cancelled! TZS ${Math.round(refundAmount).toLocaleString()} refunded to your balance.`, false);
+        
+        closeModal('vip-cancel-modal');
+        window.vipCancelInvestmentId = null;
+        
+    } catch (error) {
+        console.error('Error cancelling VIP investment:', error);
+        showNotification('Error cancelling investment. Please try again.', true);
+    }
+}
+
+// Print VIP investment details
+function printVIPInvestmentDetails() {
+    const detailsContent = document.getElementById('vip-investment-details-content');
+    if (!detailsContent) return;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>VIP Investment Details</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                    max-width: 800px;
+                    margin: 0 auto;
+                }
+                .vip-details-header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #ffd700;
+                    padding-bottom: 20px;
+                }
+                .vip-icon-large {
+                    width: 60px;
+                    height: 60px;
+                    background: linear-gradient(135deg, #ffd700, #ff8c00);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 15px;
+                    font-size: 30px;
+                    color: white;
+                }
+                .vip-details-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+                .vip-detail-card {
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 15px;
+                    page-break-inside: avoid;
+                }
+                .vip-detail-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 5px 0;
+                    border-bottom: 1px solid #eee;
+                }
+                .returns-breakdown {
+                    background: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 1px solid #ddd;
+                    font-size: 12px;
+                    color: #666;
+                }
+                @media print {
+                    body { margin: 0; padding: 10px; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            ${detailsContent.innerHTML}
+            <div class="footer">
+                <p>Tanzania Mining Investment - VIP Investment Certificate</p>
+                <p>Printed on: ${new Date().toLocaleString()}</p>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Update the cancel button listener
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCancelBtn = document.getElementById('vip-confirm-cancel-btn');
+    if (confirmCancelBtn) {
+        confirmCancelBtn.addEventListener('click', confirmCancelVIPInvestment);
+    }
+});
+
+// Make functions global
+window.viewVIPInvestmentDetails = viewVIPInvestmentDetails;
+window.showVIPCancelConfirmation = showVIPCancelConfirmation;
+window.confirmCancelVIPInvestment = confirmCancelVIPInvestment;
+window.printVIPInvestmentDetails = printVIPInvestmentDetails;
+
+// Calculate current profit for VIP investment
+function calculateVIPCurrentProfit(investment) {
+    if (investment.completed) {
+        return investment.finalProfit || 0;
+    }
+    
+    const startDate = new Date(investment.startTime);
+    const now = new Date();
+    const elapsedDays = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+    
+    if (elapsedDays <= 0) return 0;
+    
+    const daysToCalculate = Math.min(elapsedDays, investment.days);
+    const weeks = Math.floor(daysToCalculate / 7);
+    const remainingDays = daysToCalculate % 7;
+    const weekdays = (weeks * 5) + Math.min(remainingDays, 5);
+    const weekends = (weeks * 2) + Math.max(0, remainingDays - 5);
+    
+    const weekdayProfit = investment.amount * (investment.weekday_rate / 100) * weekdays;
+    const weekendProfit = investment.amount * (investment.weekend_rate / 100) * weekends;
+    
+    return weekdayProfit + weekendProfit;
+}
+
+// View VIP investment details
+function viewVIPInvestmentDetails(investmentId) {
+    let investment = null;
+    
+    if (db && db.currentUser && db.currentUser.investments) {
+        investment = db.currentUser.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        return;
+    }
+    
+    const currentProfit = calculateVIPCurrentProfit(investment);
+    const profitPercentage = investment.amount > 0 ? (currentProfit / investment.amount) * 100 : 0;
+    const startDate = new Date(investment.startTime);
+    const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+    const avgDailyRate = ((investment.weekday_rate * 5) + (investment.weekend_rate * 2)) / 7;
+    
+    const modalContent = `
+        <div class="vip-details-modal">
+            <div class="vip-details-header">
+                <div class="vip-icon-large">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h3>${escapeHtml(investment.package_name || investment.mineral)}</h3>
+                <span class="vip-badge">VIP Package</span>
+            </div>
+            
+            <div class="vip-details-grid">
+                <div class="detail-card">
+                    <h4><i class="fas fa-info-circle"></i> Investment Info</h4>
+                    <div class="detail-item"><span>Amount:</span><strong>TZS ${Math.round(investment.amount).toLocaleString()}</strong></div>
+                    <div class="detail-item"><span>Duration:</span><strong>${investment.days} days</strong></div>
+                    <div class="detail-item"><span>Start Date:</span><strong>${startDate.toLocaleDateString()}</strong></div>
+                    <div class="detail-item"><span>End Date:</span><strong>${endDate.toLocaleDateString()}</strong></div>
+                </div>
+                
+                <div class="detail-card">
+                    <h4><i class="fas fa-chart-line"></i> Returns</h4>
+                    <div class="detail-item"><span>Weekday Rate:</span><strong>${investment.weekday_rate}% daily</strong></div>
+                    <div class="detail-item"><span>Weekend Rate:</span><strong>${investment.weekend_rate}% daily</strong></div>
+                    <div class="detail-item"><span>Average Daily:</span><strong>${avgDailyRate.toFixed(1)}%</strong></div>
+                    <div class="detail-item"><span>Current Profit:</span><strong class="profit-positive">TZS ${Math.round(currentProfit).toLocaleString()} (${profitPercentage.toFixed(2)}%)</strong></div>
+                </div>
+                
+                <div class="detail-card">
+                    <h4><i class="fas fa-gift"></i> VIP Benefits</h4>
+                    ${investment.benefits ? investment.benefits.map(b => `<div class="benefit-item"><i class="fas fa-check-circle"></i> ${escapeHtml(b)}</div>`).join('') : '<p>Standard VIP benefits apply</p>'}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    showCustomModal('VIP Investment Details', modalContent, 'vip-details-modal');
+}
+
+// Cancel VIP investment (with refund)
+async function cancelVIPInvestment(investmentId) {
+    if (!confirm('Are you sure you want to cancel this VIP investment? You will receive your principal plus any accrued profit.')) {
+        return;
+    }
+    
+    let investment = null;
+    if (db && db.currentUser && db.currentUser.investments) {
+        investment = db.currentUser.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        return;
+    }
+    
+    try {
+        const currentProfit = calculateVIPCurrentProfit(investment);
+        const refundAmount = investment.amount + currentProfit;
+        
+        // Update balance
+        db.currentUser.balance += refundAmount;
+        
+        // Remove investment
+        const investmentIndex = db.currentUser.investments.findIndex(inv => inv.id === investmentId);
+        if (investmentIndex !== -1) {
+            db.currentUser.investments.splice(investmentIndex, 1);
+        }
+        
+        // Save to Firebase
+        if (db && db.db) {
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            await userRef.update({
+                investments: db.currentUser.investments,
+                balance: db.currentUser.balance,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        // Update UI
+        updateAllBalanceDisplays();
+        if (typeof loadUserInvestments === 'function') loadUserInvestments();
+        updateVIPInvestmentsDisplay();
+        
+        showNotification(`VIP investment cancelled! TZS ${Math.round(refundAmount).toLocaleString()} refunded to your balance.`, false);
+        
+    } catch (error) {
+        console.error('Error cancelling VIP investment:', error);
+        showNotification('Error cancelling investment. Please try again.', true);
+    }
+}
+
+// Delete VIP investment record (completed)
+async function deleteVIPInvestmentRecord(investmentId) {
+    if (!confirm('Delete this completed VIP investment record? This will not affect your balance.')) {
+        return;
+    }
+    
+    try {
+        const investmentIndex = db.currentUser.investments.findIndex(inv => inv.id === investmentId);
+        if (investmentIndex !== -1) {
+            db.currentUser.investments.splice(investmentIndex, 1);
+        }
+        
+        if (db && db.db) {
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            await userRef.update({
+                investments: db.currentUser.investments,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        if (typeof loadUserInvestments === 'function') loadUserInvestments();
+        updateVIPInvestmentsDisplay();
+        
+        showNotification('VIP investment record deleted.', false);
+        
+    } catch (error) {
+        console.error('Error deleting VIP record:', error);
+        showNotification('Error deleting record.', true);
+    }
+}
+
+// Setup VIP event listeners
+function setupVIPEventListeners() {
+    // Confirm button
+    const confirmBtn = document.getElementById('vip-confirm-invest-btn');
+    if (confirmBtn) {
+        confirmBtn.removeEventListener('click', confirmVIPInvestment);
+        confirmBtn.addEventListener('click', confirmVIPInvestment);
+    }
+    
+    // Close buttons
+    const closeBtns = document.querySelectorAll('#vip-investment-modal .close-modal, #vip-success-modal .close-modal');
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            closeModal('vip-investment-modal');
+            closeModal('vip-success-modal');
+        });
+    });
+}
+
+// Helper function to check if user has made first deposit
+function hasUserMadeFirstDeposit() {
+    if (!db.currentUser) return false;
+    const transactions = db.currentUser.transactions || [];
+    return transactions.some(t => t.type === 'deposit' && t.status === 'approved');
+}
+
+// Helper function to format number
+function formatNumber(num) {
+    return Math.round(num).toLocaleString('en-TZ');
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Helper function to extract YouTube ID
+function extractYouTubeId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+// Make functions globally available
+window.initVIPPackagesSystem = initVIPPackagesSystem;
+window.openVIPInvestmentModal = openVIPInvestmentModal;
+window.confirmVIPInvestment = confirmVIPInvestment;
+window.viewVIPInvestmentDetails = viewVIPInvestmentDetails;
+window.cancelVIPInvestment = cancelVIPInvestment;
+window.deleteVIPInvestmentRecord = deleteVIPInvestmentRecord;
+window.updateVIPInvestmentsDisplay = updateVIPInvestmentsDisplay;
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        initVIPPackagesSystem();
+    }, 1500);
+});
+
+// Also initialize when user logs in
+const originalShowUserDashboardVIP = window.showUserDashboard;
+if (originalShowUserDashboardVIP) {
+    window.showUserDashboard = function() {
+        originalShowUserDashboardVIP();
+        setTimeout(() => {
+            initVIPPackagesSystem();
+        }, 1000);
+    };
+}
+
+console.log('✅ VIP Packages System JavaScript Loaded');
+
+// Add VIP Marketplace to navigation system
+function initVIPMarketplaceNavigation() {
+    // Handle VIP Marketplace nav clicks in user dashboard
+    const vipNavLinks = document.querySelectorAll('.nav-link[data-target="vip-marketplace"], .bottom-item[data-target="vip-marketplace"]');
+    
+    vipNavLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+                section.style.display = 'none';
+            });
+            
+            // Show VIP marketplace section
+            const vipSection = document.getElementById('vip-marketplace');
+            if (vipSection) {
+                vipSection.classList.add('active');
+                vipSection.style.display = 'block';
+                
+                // Update active state in sidebar
+                document.querySelectorAll('.nav-link').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                document.querySelectorAll('.bottom-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Render VIP packages if not already rendered
+                if (typeof renderUserVIPPackages === 'function') {
+                    renderUserVIPPackages();
+                }
+                
+                // Scroll to top
+                vipSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                console.warn('VIP Marketplace section not found');
+            }
+        });
+    });
+    
+    // Handle Admin VIP Packages nav clicks
+    const adminVIPNavLinks = document.querySelectorAll('.nav-link[data-target="admin-vip-marketplace"]');
+    
+    adminVIPNavLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+                section.style.display = 'none';
+            });
+            
+            // Show admin VIP section
+            const adminVIPSection = document.getElementById('admin-vip-marketplace');
+            if (adminVIPSection) {
+                adminVIPSection.classList.add('active');
+                adminVIPSection.style.display = 'block';
+                
+                // Update active state
+                document.querySelectorAll('.nav-link').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Render admin VIP grid if not already rendered
+                if (typeof renderAdminVIPGrid === 'function') {
+                    renderAdminVIPGrid();
+                }
+                if (typeof updateVIPAdminStats === 'function') {
+                    updateVIPAdminStats();
+                }
+                
+                // Scroll to top
+                adminVIPSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                console.warn('Admin VIP Marketplace section not found');
+            }
+        });
+    });
+}
+
+// Call this when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        initVIPMarketplaceNavigation();
+    }, 1000);
+});
+
+// Also call when switching to user dashboard
+
+window.showUserDashboard = function() {
+    if (originalShowUserDashboardVIP) {
+        originalShowUserDashboardVIP();
+    }
+    setTimeout(() => {
+        initVIPMarketplaceNavigation();
+    }, 500);
+};
+
+// Also call when switching to admin dashboard
+const originalShowAdminDashboardVIP = window.showAdminDashboard;
+window.showAdminDashboard = function() {
+    if (originalShowAdminDashboardVIP) {
+        originalShowAdminDashboardVIP();
+    }
+    setTimeout(() => {
+        initVIPMarketplaceNavigation();
+    }, 500);
+};
+
+// Update VIP packages badge count
+async function updateVIPPackagesBadge() {
+    try {
+        const activePackages = vipPackages.filter(p => p.status === 'active').length;
+        const badge = document.getElementById('vip-packages-badge');
+        if (badge) {
+            badge.textContent = activePackages;
+        }
+    } catch (error) {
+        console.error('Error updating VIP packages badge:', error);
+    }
+}
+
+// Call this after loading VIP packages
+const originalLoadVIPPackages = window.loadVIPPackages;
+window.loadVIPPackages = async function() {
+    if (originalLoadVIPPackages) {
+        await originalLoadVIPPackages();
+    }
+    updateVIPPackagesBadge();
+};
+
+// ==============================================
+// HELPER FUNCTIONS - ADD THESE
+// ==============================================
+
+// Escape HTML to prevent XSS attacks
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Format number with commas (Tanzanian format)
+function formatNumber(num) {
+    if (num === undefined || num === null) return '0';
+    return Math.round(num).toLocaleString('en-TZ');
+}
+
+// Format currency (TZS)
+function formatCurrency(amount) {
+    if (amount === undefined || amount === null) return 'TZS 0';
+    return `TZS ${Math.round(amount).toLocaleString('en-TZ')}`;
+}
+
+// Extract YouTube ID from URL
+function extractYouTubeId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+// Show notification (if not already defined)
+function showNotification(message, isError = false) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${isError ? 'error' : 'success'}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${isError ? 'exclamation-circle' : 'check-circle'}"></i>
+            <span>${escapeHtml(message)}</span>
+        </div>
+    `;
+    
+    // Add styles if not exists
+    if (!document.getElementById('notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+                max-width: 350px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .notification.success { background: #27ae60; }
+            .notification.error { background: #e74c3c; }
+            .notification.info { background: #3498db; }
+            @keyframes slideInRight {
+                from {
+                    opacity: 0;
+                    transform: translateX(100%);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Update element text content safely
+function updateElement(elementId, content) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = content;
+    }
+}
+
+// Check if user can invest (has made first deposit)
+function canUserInvest() {
+    if (!db || !db.currentUser) return false;
+    
+    if (db.currentUser.status === 'inactive' || db.currentUser.status === 'pending') {
+        return false;
+    }
+    
+    const transactions = db.currentUser.transactions || [];
+    const hasApprovedDeposit = transactions.some(t =>
+        t.type === 'deposit' && t.status === 'approved'
+    );
+    
+    return hasApprovedDeposit;
+}
+
+// Show deposit required message
+function showDepositRequired() {
+    showNotification('⚠️ Unahitaji kufanya deposit ya kwanza kabla ya kuwekeza.', true);
+    
+    setTimeout(() => {
+        if (confirm('Ungependa kufanya deposit ya kwanza sasa?')) {
+            const depositModal = document.getElementById('deposit-modal');
+            if (depositModal) {
+                depositModal.style.display = 'block';
+            }
+        }
+    }, 1500);
+}
+
+// Update all balance displays
+function updateAllBalanceDisplays() {
+    if (!db || !db.currentUser) return;
+    
+    const balance = db.currentUser.balance || 0;
+    const formatted = formatCurrency(balance);
+    
+    const balanceElements = [
+        'dashboard-balance',
+        'profile-balance',
+        'profile-balance-display',
+        'withdraw-balance',
+        'total-balance'
+    ];
+    
+    balanceElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = formatted;
+        }
+    });
+}
+
+// ==============================================
+// ENHANCED INVESTMENT CARDS - VIP & REGULAR
+// ==============================================
+
+// Update the main investments display function
+function updateInvestmentsDisplay() {
+    console.log('🔄 Updating investments display...');
+    
+    const container = document.getElementById('investments-container');
+    if (!container) {
+        console.warn('Investments container not found');
+        return;
+    }
+    
+    if (!window.userInvestments && db.currentUser) {
+        window.userInvestments = db.currentUser.investments || [];
+    }
+    
+    const investments = window.userInvestments || [];
+    
+    if (investments.length === 0) {
+        container.innerHTML = createEmptyInvestmentsHTML();
+        return;
+    }
+    
+    // Separate investments by type and status
+    const activeVIP = investments.filter(inv => inv.type === 'vip' && !inv.completed);
+    const completedVIP = investments.filter(inv => inv.type === 'vip' && inv.completed);
+    const activeRegular = investments.filter(inv => (!inv.type || inv.type !== 'vip') && !inv.completed);
+    const completedRegular = investments.filter(inv => (!inv.type || inv.type !== 'vip') && inv.completed);
+    
+    let html = '';
+    
+    // VIP Active Investments Section
+    if (activeVIP.length > 0) {
+        html += `
+            <div class="investments-category vip-category">
+                <div class="category-header">
+                    <div class="category-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="category-title">Active VIP Investments</h3>
+                    <span class="category-count">${activeVIP.length}</span>
+                </div>
+                <div class="investments-grid vip-grid">
+                    ${activeVIP.map(inv => createEnhancedInvestmentCard(inv, 'vip')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Regular Active Investments Section
+    if (activeRegular.length > 0) {
+        html += `
+            <div class="investments-category regular-category">
+                <div class="category-header">
+                    <div class="category-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="category-title">Active Investments</h3>
+                    <span class="category-count">${activeRegular.length}</span>
+                </div>
+                <div class="investments-grid regular-grid">
+                    ${activeRegular.map(inv => createEnhancedInvestmentCard(inv, 'regular')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // VIP Completed Investments Section
+    if (completedVIP.length > 0) {
+        html += `
+            <div class="investments-category vip-category completed">
+                <div class="category-header">
+                    <div class="category-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="category-title">Completed VIP Investments</h3>
+                    <span class="category-count">${completedVIP.length}</span>
+                </div>
+                <div class="investments-grid vip-grid completed-grid">
+                    ${completedVIP.map(inv => createEnhancedInvestmentCard(inv, 'vip')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Regular Completed Investments Section
+    if (completedRegular.length > 0) {
+        html += `
+            <div class="investments-category regular-category completed">
+                <div class="category-header">
+                    <div class="category-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="category-title">Completed Investments</h3>
+                    <span class="category-count">${completedRegular.length}</span>
+                </div>
+                <div class="investments-grid regular-grid completed-grid">
+                    ${completedRegular.map(inv => createEnhancedInvestmentCard(inv, 'regular')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+    
+    // Add event listeners for delete buttons
+    setupInvestmentCardEvents();
+}
+
+// Create empty investments HTML
+function createEmptyInvestmentsHTML() {
+    return `
+        <div class="empty-investments">
+            <div class="empty-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>No Investments Yet</h3>
+            <p>Start your investment journey today and watch your wealth grow!</p>
+            <div class="empty-actions">
+                <button class="btn-primary" onclick="switchToSection('marketplace')">
+                    <i class="fas fa-store"></i> Browse Marketplace
+                </button>
+                <button class="btn-secondary" onclick="switchToSection('vip-marketplace')">
+                    <i class="fas fa-crown"></i> View VIP Packages
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Create enhanced investment card
+function createEnhancedInvestmentCard(investment, type = 'regular') {
+    const isActive = !investment.completed;
+    const isVIP = type === 'vip' || investment.type === 'vip';
+    
+    // Calculate current profit
+    let currentProfit = 0;
+    let profitPercentage = 0;
+    let expectedProfit = 0;
+    let totalReturn = 0;
+    
+    if (isVIP) {
+        currentProfit = calculateVIPCurrentProfit(investment);
+        profitPercentage = investment.amount > 0 ? (currentProfit / investment.amount) * 100 : 0;
+        expectedProfit = investment.expected_profit || 0;
+        totalReturn = investment.expected_return || (investment.amount + expectedProfit);
+    } else {
+        currentProfit = calculateCurrentProfit(investment);
+        profitPercentage = investment.cost > 0 ? (currentProfit / investment.cost) * 100 : 0;
+        expectedProfit = investment.totalExpectedProfit || (investment.cost * 0.035 * investment.days);
+        totalReturn = investment.cost + expectedProfit;
+    }
+    
+    // Calculate progress
+    let progress = 0;
+    let daysRemaining = 0;
+    let daysElapsed = 0;
+    
+    if (isActive) {
+        const startDate = new Date(investment.startTime);
+        const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const totalTime = endDate - startDate;
+        const elapsedTime = now - startDate;
+        progress = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100));
+        daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+        daysElapsed = Math.floor(elapsedTime / (1000 * 60 * 60 * 24));
+    }
+    
+    // Get mineral icon
+    const mineralIcon = getMineralIcon(investment.mineral || investment.package_name);
+    
+    // Format dates
+    const startDate = new Date(investment.startTime);
+    const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+    
+    return `
+        <div class="enhanced-investment-card ${isActive ? 'active' : 'completed'} ${isVIP ? 'vip-card' : ''}" data-investment-id="${investment.id}">
+            ${isVIP ? '<div class="vip-ribbon"><i class="fas fa-crown"></i> VIP</div>' : ''}
+            
+            <div class="card-header">
+                <div class="investment-icon ${isVIP ? 'vip-icon-bg' : 'regular-icon-bg'}">
+                    <i class="${mineralIcon}"></i>
+                </div>
+                <div class="investment-title">
+                    <h4>${escapeHtml(investment.mineral || investment.package_name || 'Investment')}</h4>
+                    <div class="investment-type-badge ${isVIP ? 'vip' : 'regular'}">
+                        ${isVIP ? 'VIP Package' : 'Standard Investment'}
+                    </div>
+                </div>
+                <div class="investment-status">
+                    <span class="status-badge ${isActive ? 'status-active' : 'status-completed'}">
+                        ${isActive ? '<i class="fas fa-play-circle"></i> Active' : '<i class="fas fa-check-circle"></i> Completed'}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="investment-amount-section">
+                    <div class="amount-label">Investment Amount</div>
+                    <div class="amount-value">TZS ${Math.round(isVIP ? investment.amount : investment.cost).toLocaleString()}</div>
+                    ${isVIP ? `<div class="amount-detail">${investment.grams ? investment.grams.toFixed(2) + ' grams' : 'VIP Package'}</div>` : 
+                              `<div class="amount-detail">${investment.grams} grams at TZS ${Math.round(investment.cost / investment.grams).toLocaleString()}/g</div>`}
+                </div>
+                
+                <div class="investment-metrics">
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-label">Duration</span>
+                            <span class="metric-value">${investment.days} days</span>
+                            ${isActive ? `<span class="metric-sub">(${daysElapsed}/${investment.days} elapsed)</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-percent"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-label">Daily Return</span>
+                            <span class="metric-value">${isVIP ? `${investment.weekday_rate}% / ${investment.weekend_rate}%` : '3% / 4%'}</span>
+                            <span class="metric-sub">(Weekdays/Weekends)</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-label">Current Profit</span>
+                            <span class="metric-value profit ${currentProfit >= 0 ? 'positive' : 'negative'}">
+                                TZS ${Math.round(currentProfit).toLocaleString()}
+                            </span>
+                            <span class="metric-sub">${profitPercentage.toFixed(2)}% return</span>
+                        </div>
+                    </div>
+                </div>
+                
+                ${isActive ? `
+                <div class="investment-progress">
+                    <div class="progress-header">
+                        <span><i class="fas fa-chart-simple"></i> Investment Progress</span>
+                        <span>${progress.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="progress-details">
+                        <div class="progress-start">
+                            <i class="fas fa-play"></i>
+                            <span>${startDate.toLocaleDateString()}</span>
+                        </div>
+                        <div class="progress-end">
+                            <span>${endDate.toLocaleDateString()}</span>
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                    </div>
+                    <div class="time-remaining">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>${daysRemaining} days remaining</span>
+                    </div>
+                </div>
+                ` : `
+                <div class="investment-completed-info">
+                    <div class="completed-header">
+                        <i class="fas fa-trophy"></i>
+                        <span>Investment Completed Successfully!</span>
+                    </div>
+                    <div class="completed-details">
+                        <div class="completed-date">
+                            <i class="fas fa-calendar-check"></i>
+                            Completed: ${new Date(investment.completionDate || endDate).toLocaleDateString()}
+                        </div>
+                        <div class="final-return">
+                            <span>Total Return:</span>
+                            <strong>TZS ${Math.round((investment.finalProfit || expectedProfit) + (isVIP ? investment.amount : investment.cost)).toLocaleString()}</strong>
+                        </div>
+                    </div>
+                </div>
+                `}
+                
+                ${isVIP && investment.benefits && investment.benefits.length > 0 ? `
+                <div class="vip-benefits-preview">
+                    <div class="benefits-header">
+                        <i class="fas fa-gift"></i>
+                        <span>VIP Benefits</span>
+                    </div>
+                    <div class="benefits-list">
+                        ${investment.benefits.slice(0, 2).map(b => `<span class="benefit-tag"><i class="fas fa-check"></i> ${escapeHtml(b)}</span>`).join('')}
+                        ${investment.benefits.length > 2 ? `<span class="benefit-tag more">+${investment.benefits.length - 2} more</span>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="card-footer">
+                <button class="btn-view-details" onclick="viewInvestmentDetails('${investment.id}')">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+                ${isActive ? `
+                <button class="btn-cancel-investment" onclick="cancelInvestment('${investment.id}')">
+                    <i class="fas fa-ban"></i> Cancel
+                </button>
+                ` : `
+                <button class="btn-delete-record" onclick="deleteInvestmentRecord('${investment.id}')">
+                    <i class="fas fa-trash-alt"></i> Delete Record
+                </button>
+                `}
+                <button class="btn-share-investment" onclick="shareInvestment('${investment.id}')">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Get mineral icon based on name
+function getMineralIcon(mineralName) {
+    if (!mineralName) return 'fas fa-gem';
+    
+    const name = mineralName.toLowerCase();
+    if (name.includes('diamond')) return 'fas fa-gem';
+    if (name.includes('gold')) return 'fas fa-ring';
+    if (name.includes('tanzanite')) return 'fas fa-infinity';
+    if (name.includes('copper')) return 'fas fa-certificate';
+    if (name.includes('platinum')) return 'fas fa-crown';
+    return 'fas fa-chart-line';
+}
+
+// View investment details modal
+function viewInvestmentDetails(investmentId) {
+    let investment = null;
+    
+    if (db.currentUser && db.currentUser.investments) {
+        investment = db.currentUser.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        return;
+    }
+    
+    const isVIP = investment.type === 'vip';
+    const isActive = !investment.completed;
+    
+    let currentProfit = 0;
+    let profitPercentage = 0;
+    let expectedProfit = 0;
+    let totalReturn = 0;
+    
+    if (isVIP) {
+        currentProfit = calculateVIPCurrentProfit(investment);
+        profitPercentage = investment.amount > 0 ? (currentProfit / investment.amount) * 100 : 0;
+        expectedProfit = investment.expected_profit || 0;
+        totalReturn = investment.expected_return || (investment.amount + expectedProfit);
+    } else {
+        currentProfit = calculateCurrentProfit(investment);
+        profitPercentage = investment.cost > 0 ? (currentProfit / investment.cost) * 100 : 0;
+        expectedProfit = investment.totalExpectedProfit || (investment.cost * 0.035 * investment.days);
+        totalReturn = investment.cost + expectedProfit;
+    }
+    
+    const startDate = new Date(investment.startTime);
+    const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+    const avgDailyRate = isVIP ? ((investment.weekday_rate * 5) + (investment.weekend_rate * 2)) / 7 : 3.3;
+    
+    const modalContent = `
+        <div class="investment-details-modal ${isVIP ? 'vip-details' : 'regular-details'}">
+            <div class="details-header">
+                <div class="details-icon ${isVIP ? 'vip' : 'regular'}">
+                    <i class="${getMineralIcon(investment.mineral || investment.package_name)}"></i>
+                </div>
+                <div class="details-title">
+                    <h2>${escapeHtml(investment.mineral || investment.package_name || 'Investment')}</h2>
+                    ${isVIP ? '<span class="vip-badge-large"><i class="fas fa-crown"></i> VIP Package</span>' : '<span class="regular-badge">Standard Investment</span>'}
+                </div>
+                <div class="details-status">
+                    <span class="status-badge ${isActive ? 'status-active' : 'status-completed'}">
+                        ${isActive ? 'ACTIVE' : 'COMPLETED'}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="details-grid">
+                <div class="detail-card">
+                    <h4><i class="fas fa-info-circle"></i> Investment Information</h4>
+                    <div class="detail-row"><span>Investment ID:</span><strong>#${investment.id.substring(0, 12)}...</strong></div>
+                    <div class="detail-row"><span>Amount:</span><strong>TZS ${Math.round(isVIP ? investment.amount : investment.cost).toLocaleString()}</strong></div>
+                    <div class="detail-row"><span>Duration:</span><strong>${investment.days} days</strong></div>
+                    <div class="detail-row"><span>Start Date:</span><strong>${startDate.toLocaleDateString()}</strong></div>
+                    <div class="detail-row"><span>Expected End Date:</span><strong>${endDate.toLocaleDateString()}</strong></div>
+                    ${!isActive && investment.completionDate ? `<div class="detail-row"><span>Completion Date:</span><strong>${new Date(investment.completionDate).toLocaleDateString()}</strong></div>` : ''}
+                </div>
+                
+                <div class="detail-card">
+                    <h4><i class="fas fa-chart-line"></i> Returns & Profit</h4>
+                    <div class="detail-row"><span>Weekday Return:</span><strong>${isVIP ? investment.weekday_rate : 3}% daily</strong></div>
+                    <div class="detail-row"><span>Weekend Return:</span><strong>${isVIP ? investment.weekend_rate : 4}% daily</strong></div>
+                    <div class="detail-row"><span>Average Daily:</span><strong>${avgDailyRate.toFixed(1)}%</strong></div>
+                    <div class="detail-row"><span>Current Profit:</span><strong class="profit-positive">TZS ${Math.round(currentProfit).toLocaleString()}</strong></div>
+                    <div class="detail-row"><span>Profit Percentage:</span><strong>${profitPercentage.toFixed(2)}%</strong></div>
+                    <div class="detail-row"><span>Expected Profit:</span><strong>TZS ${Math.round(expectedProfit).toLocaleString()}</strong></div>
+                    <div class="detail-row total"><span>Total Expected Return:</span><strong>TZS ${Math.round(totalReturn).toLocaleString()}</strong></div>
+                </div>
+                
+                ${isVIP && investment.benefits ? `
+                <div class="detail-card full-width">
+                    <h4><i class="fas fa-gift"></i> VIP Benefits Included</h4>
+                    <div class="benefits-grid">
+                        ${investment.benefits.map(b => `
+                            <div class="benefit-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>${escapeHtml(b)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="detail-card full-width">
+                    <h4><i class="fas fa-chart-simple"></i> Profit Breakdown</h4>
+                    <div class="profit-breakdown">
+                        <div class="breakdown-item">
+                            <div class="breakdown-label">Weekdays Profit</div>
+                            <div class="breakdown-value">TZS ${Math.round(isVIP ? investment.amount * (investment.weekday_rate / 100) * Math.floor(investment.days / 7) * 5 : investment.cost * 0.03 * Math.floor(investment.days / 7) * 5).toLocaleString()}</div>
+                        </div>
+                        <div class="breakdown-item">
+                            <div class="breakdown-label">Weekends Profit</div>
+                            <div class="breakdown-value">TZS ${Math.round(isVIP ? investment.amount * (investment.weekend_rate / 100) * Math.floor(investment.days / 7) * 2 : investment.cost * 0.04 * Math.floor(investment.days / 7) * 2).toLocaleString()}</div>
+                        </div>
+                        <div class="breakdown-item total">
+                            <div class="breakdown-label">Total Profit</div>
+                            <div class="breakdown-value">TZS ${Math.round(expectedProfit).toLocaleString()}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="details-actions">
+                <button class="btn-close" onclick="closeModal('investment-details-modal')">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button class="btn-share" onclick="shareInvestment('${investment.id}')">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+                ${isActive ? `
+                <button class="btn-cancel" onclick="cancelInvestment('${investment.id}'); closeModal('investment-details-modal');">
+                    <i class="fas fa-ban"></i> Cancel Investment
+                </button>
+                ` : `
+                <button class="btn-delete" onclick="deleteInvestmentRecord('${investment.id}'); closeModal('investment-details-modal');">
+                    <i class="fas fa-trash"></i> Delete Record
+                </button>
+                `}
+            </div>
+        </div>
+    `;
+    
+    showCustomModal('Investment Details', modalContent, 'investment-details-modal');
+}
+
+// Cancel investment with refund
+async function cancelInvestment(investmentId) {
+    if (!confirm('Are you sure you want to cancel this investment? You will receive your principal plus any accrued profit.')) {
+        return;
+    }
+    
+    let investment = null;
+    if (db.currentUser && db.currentUser.investments) {
+        investment = db.currentUser.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        return;
+    }
+    
+    try {
+        const isVIP = investment.type === 'vip';
+        let currentProfit = 0;
+        let refundAmount = 0;
+        
+        if (isVIP) {
+            currentProfit = calculateVIPCurrentProfit(investment);
+            refundAmount = investment.amount + currentProfit;
+        } else {
+            currentProfit = calculateCurrentProfit(investment);
+            refundAmount = investment.cost + currentProfit;
+        }
+        
+        // Update balance
+        db.currentUser.balance += refundAmount;
+        
+        // Remove investment
+        const investmentIndex = db.currentUser.investments.findIndex(inv => inv.id === investmentId);
+        if (investmentIndex !== -1) {
+            db.currentUser.investments.splice(investmentIndex, 1);
+        }
+        
+        // Save to Firebase
+        if (db && db.db) {
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            await userRef.update({
+                investments: db.currentUser.investments,
+                balance: db.currentUser.balance,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        // Update UI
+        updateAllBalanceDisplays();
+        updateInvestmentsDisplay();
+        
+        showNotification(`Investment cancelled! TZS ${Math.round(refundAmount).toLocaleString()} refunded to your balance.`, false);
+        
+    } catch (error) {
+        console.error('Error cancelling investment:', error);
+        showNotification('Error cancelling investment. Please try again.', true);
+    }
+}
+
+// Delete investment record (completed)
+async function deleteInvestmentRecord(investmentId) {
+    if (!confirm('Delete this investment record? This will not affect your balance.')) {
+        return;
+    }
+    
+    try {
+        const investmentIndex = db.currentUser.investments.findIndex(inv => inv.id === investmentId);
+        if (investmentIndex !== -1) {
+            db.currentUser.investments.splice(investmentIndex, 1);
+        }
+        
+        if (db && db.db) {
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            await userRef.update({
+                investments: db.currentUser.investments,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        updateInvestmentsDisplay();
+        showNotification('Investment record deleted.', false);
+        
+    } catch (error) {
+        console.error('Error deleting record:', error);
+        showNotification('Error deleting record.', true);
+    }
+}
+
+// Share investment details
+function shareInvestment(investmentId) {
+    let investment = null;
+    if (db.currentUser && db.currentUser.investments) {
+        investment = db.currentUser.investments.find(inv => inv.id === investmentId);
+    }
+    
+    if (!investment) {
+        showNotification('Investment not found', true);
+        return;
+    }
+    
+    const isVIP = investment.type === 'vip';
+    const amount = isVIP ? investment.amount : investment.cost;
+    const name = investment.mineral || investment.package_name || 'Investment';
+    
+    const shareText = `I've invested TZS ${Math.round(amount).toLocaleString()} in ${name} on Tanzania Mining Investment platform! 🚀💰 Join me and start earning daily returns!`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'My Investment',
+            text: shareText,
+            url: window.location.href
+        }).catch(err => console.log('Share cancelled'));
+    } else {
+        navigator.clipboard.writeText(shareText);
+        showNotification('Investment details copied to clipboard!', false);
+    }
+}
+
+// Setup investment card events
+function setupInvestmentCardEvents() {
+    // View details buttons
+    document.querySelectorAll('.btn-view-details').forEach(btn => {
+        btn.removeEventListener('click', btn._listener);
+        btn._listener = () => {
+            const card = btn.closest('.enhanced-investment-card');
+            if (card) {
+                const investmentId = card.dataset.investmentId;
+                viewInvestmentDetails(investmentId);
+            }
+        };
+        btn.addEventListener('click', btn._listener);
+    });
+    
+    // Cancel buttons
+    document.querySelectorAll('.btn-cancel-investment').forEach(btn => {
+        btn.removeEventListener('click', btn._listener);
+        btn._listener = () => {
+            const card = btn.closest('.enhanced-investment-card');
+            if (card) {
+                const investmentId = card.dataset.investmentId;
+                cancelInvestment(investmentId);
+            }
+        };
+        btn.addEventListener('click', btn._listener);
+    });
+    
+    // Delete record buttons
+    document.querySelectorAll('.btn-delete-record').forEach(btn => {
+        btn.removeEventListener('click', btn._listener);
+        btn._listener = () => {
+            const card = btn.closest('.enhanced-investment-card');
+            if (card) {
+                const investmentId = card.dataset.investmentId;
+                deleteInvestmentRecord(investmentId);
+            }
+        };
+        btn.addEventListener('click', btn._listener);
+    });
+    
+    // Share buttons
+    document.querySelectorAll('.btn-share-investment').forEach(btn => {
+        btn.removeEventListener('click', btn._listener);
+        btn._listener = () => {
+            const card = btn.closest('.enhanced-investment-card');
+            if (card) {
+                const investmentId = card.dataset.investmentId;
+                shareInvestment(investmentId);
+            }
+        };
+        btn.addEventListener('click', btn._listener);
+    });
+}
+
+// Make functions globally available
+window.updateInvestmentsDisplay = updateInvestmentsDisplay;
+window.viewInvestmentDetails = viewInvestmentDetails;
+window.cancelInvestment = cancelInvestment;
+window.deleteInvestmentRecord = deleteInvestmentRecord;
+window.shareInvestment = shareInvestment;
+
+// ==============================================
+// FIXED INVESTMENT POPULATION - MARKETPLACE & VIP
+// ==============================================
+
+// Override the createNewInvestment function to ensure investments are saved properly
+async function createNewInvestment(grams, days, cost) {
+    console.log('🔄 Creating new investment...');
+    console.log('Investment details:', { grams, days, cost, currentMineral });
+    
+    if (!db.currentUser) {
+        showNotification('Please login first', true);
+        return false;
+    }
+    
+    // Generate unique ID
+    const investmentId = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Check for duplicates (30-second cooldown)
+    const now = Date.now();
+    const existingInvestments = db.currentUser.investments || [];
+    const duplicate = existingInvestments.find(inv =>
+        !inv.completed &&
+        inv.mineral === currentMineral &&
+        inv.grams === grams &&
+        inv.days === days &&
+        Math.abs(inv.cost - cost) < 0.01 &&
+        (now - new Date(inv.startTime).getTime()) < 30000
+    );
+    
+    if (duplicate) {
+        showNotification('This investment was just created! Please check your investments list.', true);
+        return false;
+    }
+    
+    // Record original balance for rollback
+    const originalBalance = db.currentUser.balance;
+    
+    // Calculate expected profit (3% weekdays, 4% weekends average ~3.3% daily)
+    const avgDailyRate = 0.033;
+    const totalExpectedProfit = cost * avgDailyRate * days;
+    
+    try {
+        // 1. DEDUCT BALANCE IMMEDIATELY
+        console.log(`💰 Before deduction: ${originalBalance}`);
+        console.log(`💰 Deducting: ${cost}`);
+        
+        db.currentUser.balance -= cost;
+        
+        console.log(`💰 After deduction: ${db.currentUser.balance}`);
+        
+        // 2. IMMEDIATELY UPDATE UI
+        updateAllBalanceDisplays();
+        
+        // 3. Create investment object
+        const newInvestment = {
+            id: investmentId,
+            mineral: currentMineral,
+            grams: grams,
+            days: days,
+            startTime: new Date().toISOString(),
+            cost: cost,
+            completed: false,
+            completionDate: null,
+            finalProfit: 0,
+            totalExpectedProfit: totalExpectedProfit,
+            dailyRate: avgDailyRate,
+            type: 'regular',
+            status: 'active'
+        };
+        
+        console.log('📋 Investment object created:', newInvestment);
+        
+        // 4. Add to user's investments array
+        if (!db.currentUser.investments) {
+            db.currentUser.investments = [];
+        }
+        db.currentUser.investments.push(newInvestment);
+        
+        // 5. Save to Firebase
+        const saveSuccess = await saveInvestmentToFirebase(newInvestment, db.currentUser.balance);
+        
+        if (!saveSuccess) {
+            throw new Error('Failed to save to Firebase');
+        }
+        
+        console.log('✅ Investment saved to Firebase successfully');
+        
+        // 6. Close modal and reset
+        closeInvestmentModal();
+        
+        // 7. Update ALL displays
+        setTimeout(() => {
+            updateAllBalanceDisplays();
+            updateInvestmentsDisplay();
+            updateInvestmentHistory();
+            updateProfitBreakdown();
+            updateDashboardStats();
+            
+            // Show success message
+            showNotification(`✅ Investment successful! ${grams}g of ${currentMineral} for ${days} days.`, false);
+        }, 500);
+        
+        // 8. Start profit calculation
+        startProfitCalculation(investmentId);
+        
+        console.log('🎉 Investment created successfully');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ ERROR in createNewInvestment:', error);
+        
+        // IMMEDIATE ROLLBACK ON ERROR
+        console.log('🔄 Immediate rollback initiated...');
+        
+        // 1. Restore balance
+        db.currentUser.balance = originalBalance;
+        
+        // 2. Update UI immediately
+        updateAllBalanceDisplays();
+        
+        // 3. Remove from investments array if added
+        const index = db.currentUser.investments.findIndex(inv => inv.id === investmentId);
+        if (index !== -1) {
+            db.currentUser.investments.splice(index, 1);
+            console.log('🗑️ Removed investment from array');
+        }
+        
+        // 4. Try to restore balance in Firebase
+        try {
+            await restoreBalanceInFirebase(originalBalance);
+            console.log('✅ Balance restored in Firebase');
+        } catch (fbError) {
+            console.error('❌ Failed to restore balance in Firebase:', fbError);
+        }
+        
+        // 5. Show error message
+        showNotification('❌ Investment failed. Please try again.', true);
+        
+        return false;
+    }
+}
+
+// Save investment to Firebase
+async function saveInvestmentToFirebase(investment, newBalance) {
+    try {
+        console.log('💾 Saving investment to Firebase...');
+        
+        if (!db || !db.currentUser || !db.currentUser.id) {
+            throw new Error('User not logged in');
+        }
+        
+        const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+        
+        // Get current user data
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) {
+            throw new Error('User document not found');
+        }
+        
+        const userData = userDoc.data();
+        const currentInvestments = userData.investments || [];
+        
+        // Add new investment
+        currentInvestments.push(investment);
+        
+        // Update document
+        await userRef.update({
+            balance: newBalance,
+            investments: currentInvestments,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Also update local user object
+        db.currentUser.investments = currentInvestments;
+        db.currentUser.balance = newBalance;
+        
+        console.log('✅ Saved to Firebase successfully');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error saving to Firebase:', error);
+        return false;
+    }
+}
+
+// Override the VIP investment confirmation function
+async function confirmVIPInvestment() {
+    if (!selectedVIPPackage) {
+        showNotification('Please select a VIP package first', true);
+        return;
+    }
+    
+    if (!db.currentUser) {
+        showNotification('Please login to invest', true);
+        return;
+    }
+    
+    const amount = parseFloat(document.getElementById('vip-invest-amount')?.value) || 0;
+    const days = parseInt(document.getElementById('vip-invest-days')?.value) || 0;
+    
+    // Validate
+    if (amount < selectedVIPPackage.min_amount) {
+        showNotification(`Minimum investment is TZS ${formatNumber(selectedVIPPackage.min_amount)}`, true);
+        return;
+    }
+    
+    if (selectedVIPPackage.max_amount && amount > selectedVIPPackage.max_amount) {
+        showNotification(`Maximum investment is TZS ${formatNumber(selectedVIPPackage.max_amount)}`, true);
+        return;
+    }
+    
+    if (days < selectedVIPPackage.min_days) {
+        showNotification(`Minimum duration is ${selectedVIPPackage.min_days} days`, true);
+        return;
+    }
+    
+    if (days > selectedVIPPackage.max_days) {
+        showNotification(`Maximum duration is ${selectedVIPPackage.max_days} days`, true);
+        return;
+    }
+    
+    if (amount > db.currentUser.balance) {
+        showNotification(`Insufficient balance. You have TZS ${formatNumber(db.currentUser.balance)}`, true);
+        return;
+    }
+    
+    // Calculate expected profit
+    const weeks = Math.floor(days / 7);
+    const remainingDays = days % 7;
+    const weekdays = (weeks * 5) + Math.min(remainingDays, 5);
+    const weekends = (weeks * 2) + Math.max(0, remainingDays - 5);
+    const weekdayProfit = amount * (selectedVIPPackage.weekday_rate / 100) * weekdays;
+    const weekendProfit = amount * (selectedVIPPackage.weekend_rate / 100) * weekends;
+    const totalProfit = weekdayProfit + weekendProfit;
+    const totalReturn = amount + totalProfit;
+    
+    // Confirm with user
+    if (!confirm(`Confirm VIP Investment:\n\nPackage: ${selectedVIPPackage.name}\nAmount: TZS ${formatNumber(amount)}\nDuration: ${days} days\nExpected Profit: TZS ${formatNumber(totalProfit)}\nTotal Return: TZS ${formatNumber(totalReturn)}\n\nProceed with this investment?`)) {
+        return;
+    }
+    
+    // Show loading on button
+    const confirmBtn = document.getElementById('vip-confirm-invest-btn');
+    const originalText = confirmBtn?.innerHTML || 'Confirm';
+    if (confirmBtn) {
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        confirmBtn.disabled = true;
+    }
+    
+    // Record original balance for rollback
+    const originalBalance = db.currentUser.balance;
+    
+    try {
+        // Create investment object
+        const investmentId = `vip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        const newInvestment = {
+            id: investmentId,
+            type: 'vip',
+            package_id: selectedVIPPackage.id,
+            package_name: selectedVIPPackage.name,
+            mineral: selectedVIPPackage.name,
+            amount: amount,
+            grams: amount / selectedVIPPackage.min_amount,
+            days: days,
+            startTime: new Date().toISOString(),
+            completed: false,
+            completionDate: null,
+            finalProfit: 0,
+            weekday_rate: selectedVIPPackage.weekday_rate,
+            weekend_rate: selectedVIPPackage.weekend_rate,
+            expected_profit: totalProfit,
+            expected_return: totalReturn,
+            benefits: selectedVIPPackage.benefits,
+            status: 'active'
+        };
+        
+        console.log('📋 VIP Investment object created:', newInvestment);
+        
+        // Deduct balance
+        db.currentUser.balance -= amount;
+        
+        // Add to investments array
+        if (!db.currentUser.investments) {
+            db.currentUser.investments = [];
+        }
+        db.currentUser.investments.push(newInvestment);
+        
+        // Update UI immediately
+        updateAllBalanceDisplays();
+        
+        // Save to Firebase
+        if (db && db.db) {
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            await userRef.update({
+                investments: db.currentUser.investments,
+                balance: db.currentUser.balance,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log('✅ VIP investment saved to Firebase');
+        } else {
+            // Fallback for demo/local storage
+            localStorage.setItem('user_investments', JSON.stringify(db.currentUser.investments));
+            localStorage.setItem('user_balance', db.currentUser.balance);
+        }
+        
+        // Show success modal
+        showVIPSuccessModal(selectedVIPPackage, amount, days, totalProfit, totalReturn);
+        
+        // Close investment modal
+        closeModal('vip-investment-modal');
+        
+        // Refresh ALL displays
+        setTimeout(() => {
+            updateAllBalanceDisplays();
+            updateInvestmentsDisplay();
+            updateInvestmentHistory();
+            updateProfitBreakdown();
+            updateDashboardStats();
+            updateVIPInvestmentsDisplay();
+            
+            showNotification(`✅ VIP Investment successful! TZS ${formatNumber(amount)} invested in ${selectedVIPPackage.name}`, false);
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error creating VIP investment:', error);
+        showNotification('Error creating investment. Please try again.', true);
+        
+        // Restore balance on error
+        db.currentUser.balance = originalBalance;
+        updateAllBalanceDisplays();
+        
+    } finally {
+        if (confirmBtn) {
+            confirmBtn.innerHTML = originalText;
+            confirmBtn.disabled = false;
+        }
+    }
+}
+
+// Function to update dashboard stats
+async function updateDashboardStats() {
+    try {
+        if (!db.currentUser) return;
+        
+        const investments = db.currentUser.investments || [];
+        const activeInvestments = investments.filter(inv => !inv.completed);
+        const totalProfit = investments.reduce((sum, inv) => {
+            if (inv.completed) {
+                return sum + (inv.finalProfit || 0);
+            } else {
+                return sum + calculateCurrentProfit(inv);
+            }
+        }, 0);
+        
+        // Update total balance
+        const totalBalanceEl = document.getElementById('total-balance');
+        if (totalBalanceEl) {
+            totalBalanceEl.textContent = `TZS ${Math.round(db.currentUser.balance).toLocaleString()}`;
+        }
+        
+        // Update active investments count
+        const activeInvestmentsEl = document.getElementById('active-investments');
+        if (activeInvestmentsEl) {
+            activeInvestmentsEl.textContent = activeInvestments.length;
+        }
+        
+        // Update total profit
+        const totalProfitEl = document.getElementById('total-profit');
+        if (totalProfitEl) {
+            totalProfitEl.textContent = `TZS ${Math.round(totalProfit).toLocaleString()}`;
+        }
+        
+        // Update referral count
+        const referralCount = db.currentUser.referrals?.length || 0;
+        const referralCountEl = document.getElementById('referral-count-card');
+        if (referralCountEl) {
+            referralCountEl.textContent = referralCount;
+        }
+        
+        console.log('✅ Dashboard stats updated');
+        
+    } catch (error) {
+        console.error('Error updating dashboard stats:', error);
+    }
+}
+
+// Override the updateInvestmentsDisplay function to ensure it shows investments
+const originalUpdateInvestmentsDisplay = window.updateInvestmentsDisplay;
+window.updateInvestmentsDisplay = function() {
+    console.log('🔄 Updating investments display...');
+    
+    const container = document.getElementById('investments-container');
+    if (!container) {
+        console.warn('Investments container not found, creating...');
+        createInvestmentsContainer();
+        return;
+    }
+    
+    // Get investments from current user
+    let investments = [];
+    if (db.currentUser && db.currentUser.investments) {
+        investments = db.currentUser.investments;
+    } else if (db.currentUser) {
+        // Try to load from Firebase
+        loadUserInvestmentsFromFirebase().then(() => {
+            if (db.currentUser && db.currentUser.investments) {
+                renderInvestmentsList(db.currentUser.investments);
+            }
+        });
+        return;
+    }
+    
+    renderInvestmentsList(investments);
+};
+
+// Function to load user investments from Firebase
+async function loadUserInvestmentsFromFirebase() {
+    try {
+        if (!db || !db.currentUser || !db.currentUser.id) return;
+        
+        const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+        const userDoc = await userRef.get();
+        
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            db.currentUser.investments = userData.investments || [];
+            db.currentUser.balance = userData.balance || 0;
+            console.log(`✅ Loaded ${db.currentUser.investments.length} investments from Firebase`);
+        }
+    } catch (error) {
+        console.error('Error loading investments:', error);
+    }
+}
+
+// Function to render investments list
+function renderInvestmentsList(investments) {
+    const container = document.getElementById('investments-container');
+    if (!container) return;
+    
+    if (!investments || investments.length === 0) {
+        container.innerHTML = `
+            <div class="empty-investments">
+                <div class="empty-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>No Investments Yet</h3>
+                <p>Start your investment journey today!</p>
+                <div class="empty-actions">
+                    <button class="btn-primary" onclick="switchToSection('marketplace')">
+                        <i class="fas fa-store"></i> Browse Marketplace
+                    </button>
+                    <button class="btn-secondary" onclick="switchToSection('vip-marketplace')">
+                        <i class="fas fa-crown"></i> View VIP Packages
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Separate VIP and regular investments
+    const vipInvestments = investments.filter(inv => inv.type === 'vip');
+    const regularInvestments = investments.filter(inv => inv.type !== 'vip');
+    
+    let html = '';
+    
+    // VIP Active Investments
+    const vipActive = vipInvestments.filter(inv => !inv.completed);
+    if (vipActive.length > 0) {
+        html += `
+            <div class="investments-category vip-category">
+                <div class="category-header">
+                    <div class="category-icon"><i class="fas fa-crown"></i></div>
+                    <h3 class="category-title">VIP Active Investments</h3>
+                    <span class="category-count">${vipActive.length}</span>
+                </div>
+                <div class="investments-grid">
+                    ${vipActive.map(inv => createSimpleInvestmentCard(inv, 'vip')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Regular Active Investments
+    const regularActive = regularInvestments.filter(inv => !inv.completed);
+    if (regularActive.length > 0) {
+        html += `
+            <div class="investments-category regular-category">
+                <div class="category-header">
+                    <div class="category-icon"><i class="fas fa-chart-line"></i></div>
+                    <h3 class="category-title">Active Investments</h3>
+                    <span class="category-count">${regularActive.length}</span>
+                </div>
+                <div class="investments-grid">
+                    ${regularActive.map(inv => createSimpleInvestmentCard(inv, 'regular')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // VIP Completed Investments
+    const vipCompleted = vipInvestments.filter(inv => inv.completed);
+    if (vipCompleted.length > 0) {
+        html += `
+            <div class="investments-category vip-category completed">
+                <div class="category-header">
+                    <div class="category-icon"><i class="fas fa-crown"></i></div>
+                    <h3 class="category-title">VIP Completed Investments</h3>
+                    <span class="category-count">${vipCompleted.length}</span>
+                </div>
+                <div class="investments-grid">
+                    ${vipCompleted.map(inv => createSimpleInvestmentCard(inv, 'vip')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Regular Completed Investments
+    const regularCompleted = regularInvestments.filter(inv => inv.completed);
+    if (regularCompleted.length > 0) {
+        html += `
+            <div class="investments-category regular-category completed">
+                <div class="category-header">
+                    <div class="category-icon"><i class="fas fa-check-circle"></i></div>
+                    <h3 class="category-title">Completed Investments</h3>
+                    <span class="category-count">${regularCompleted.length}</span>
+                </div>
+                <div class="investments-grid">
+                    ${regularCompleted.map(inv => createSimpleInvestmentCard(inv, 'regular')).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+    console.log(`✅ Rendered ${investments.length} investments`);
+}
+
+// Create simple investment card (ensures display)
+function createSimpleInvestmentCard(investment, type) {
+    const isActive = !investment.completed;
+    const isVIP = type === 'vip';
+    
+    // Calculate current profit
+    let currentProfit = 0;
+    let profitPercentage = 0;
+    
+    if (isVIP) {
+        currentProfit = calculateVIPCurrentProfit(investment);
+        profitPercentage = investment.amount > 0 ? (currentProfit / investment.amount) * 100 : 0;
+    } else {
+        currentProfit = calculateCurrentProfit(investment);
+        profitPercentage = investment.cost > 0 ? (currentProfit / investment.cost) * 100 : 0;
+    }
+    
+    // Calculate progress
+    let progress = 0;
+    let daysRemaining = 0;
+    
+    if (isActive) {
+        const startDate = new Date(investment.startTime);
+        const endDate = new Date(startDate.getTime() + investment.days * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const totalTime = endDate - startDate;
+        const elapsedTime = now - startDate;
+        progress = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100));
+        daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+    }
+    
+    const amount = isVIP ? investment.amount : investment.cost;
+    const mineralName = investment.mineral || investment.package_name || 'Investment';
+    
+    return `
+        <div class="enhanced-investment-card ${isActive ? 'active' : 'completed'} ${isVIP ? 'vip-card' : ''}" data-investment-id="${investment.id}">
+            ${isVIP ? '<div class="vip-ribbon"><i class="fas fa-crown"></i> VIP</div>' : ''}
+            
+            <div class="card-header">
+                <div class="investment-icon ${isVIP ? 'vip-icon-bg' : 'regular-icon-bg'}">
+                    <i class="${getMineralIcon(mineralName)}"></i>
+                </div>
+                <div class="investment-title">
+                    <h4>${escapeHtml(mineralName)}</h4>
+                    <div class="investment-type-badge ${isVIP ? 'vip' : 'regular'}">
+                        ${isVIP ? 'VIP Package' : 'Standard Investment'}
+                    </div>
+                </div>
+                <div class="investment-status">
+                    <span class="status-badge ${isActive ? 'status-active' : 'status-completed'}">
+                        ${isActive ? '<i class="fas fa-play-circle"></i> Active' : '<i class="fas fa-check-circle"></i> Completed'}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="investment-amount-section">
+                    <div class="amount-label">Investment Amount</div>
+                    <div class="amount-value">TZS ${Math.round(amount).toLocaleString()}</div>
+                    <div class="amount-detail">${investment.grams ? investment.grams.toFixed(2) + ' grams' : (isVIP ? 'VIP Package' : '')}</div>
+                </div>
+                
+                <div class="investment-metrics">
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-label">Duration</span>
+                            <span class="metric-value">${investment.days} days</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon"><i class="fas fa-percent"></i></div>
+                        <div class="metric-info">
+                            <span class="metric-label">Current Profit</span>
+                            <span class="metric-value profit positive">TZS ${Math.round(currentProfit).toLocaleString()}</span>
+                            <span class="metric-sub">${profitPercentage.toFixed(2)}% return</span>
+                        </div>
+                    </div>
+                </div>
+                
+                ${isActive ? `
+                <div class="investment-progress">
+                    <div class="progress-header">
+                        <span>Progress</span>
+                        <span>${progress.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="time-remaining">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>${daysRemaining} days remaining</span>
+                    </div>
+                </div>
+                ` : `
+                <div class="investment-completed-info">
+                    <div class="completed-header">
+                        <i class="fas fa-trophy"></i>
+                        <span>Completed Successfully!</span>
+                    </div>
+                    <div class="final-return">
+                        <span>Total Return:</span>
+                        <strong>TZS ${Math.round((investment.finalProfit || investment.expected_profit || 0) + amount).toLocaleString()}</strong>
+                    </div>
+                </div>
+                `}
+            </div>
+            
+            <div class="card-footer">
+                <button class="btn-view-details" onclick="viewInvestmentDetails('${investment.id}')">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+                ${isActive ? `
+                <button class="btn-cancel-investment" onclick="cancelInvestment('${investment.id}')">
+                    <i class="fas fa-ban"></i> Cancel
+                </button>
+                ` : `
+                <button class="btn-delete-record" onclick="deleteInvestmentRecord('${investment.id}')">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+                `}
+            </div>
+        </div>
+    `;
+}
+
+// Create investments container if not exists
+function createInvestmentsContainer() {
+    const myInvestmentSection = document.getElementById('myinvestment');
+    if (!myInvestmentSection) return;
+    
+    const dashboardContent = myInvestmentSection.querySelector('.dashboard-content');
+    if (!dashboardContent) return;
+    
+    // Check if container already exists
+    if (document.getElementById('investments-container')) return;
+    
+    // Create investments container
+    const container = document.createElement('div');
+    container.id = 'investments-container';
+    container.className = 'investments-container';
+    
+    // Find where to insert
+    const investmentsGrid = dashboardContent.querySelector('.investments-grid');
+    if (investmentsGrid) {
+        investmentsGrid.parentNode.insertBefore(container, investmentsGrid);
+        investmentsGrid.remove();
+    } else {
+        dashboardContent.appendChild(container);
+    }
+    
+    console.log('✅ Investments container created');
+}
+
+// Ensure investments are loaded when viewing my investments section
+const originalSwitchToSection = window.switchToSection;
+window.switchToSection = function(sectionId) {
+    if (originalSwitchToSection) {
+        originalSwitchToSection(sectionId);
+    }
+    
+    if (sectionId === 'myinvestment') {
+        setTimeout(() => {
+            console.log('Loading investments for myinvestment section...');
+            if (db.currentUser) {
+                loadUserInvestmentsFromFirebase().then(() => {
+                    updateInvestmentsDisplay();
+                });
+            }
+        }, 100);
+    }
+    
+    if (sectionId === 'marketplace') {
+        setTimeout(() => {
+            if (typeof renderUserMarketplace === 'function') {
+                renderUserMarketplace();
+            }
+        }, 100);
+    }
+    
+    if (sectionId === 'vip-marketplace') {
+        setTimeout(() => {
+            if (typeof renderVIPPackagesGrid === 'function') {
+                renderVIPPackagesGrid();
+            }
+        }, 100);
+    }
+};
+
+// Fix the marketplace invest button
+function openInvestmentModalFromMarketplace(mineralName, price) {
+    console.log('Opening investment modal for:', mineralName, price);
+    
+    if (!db.currentUser) {
+        showNotification('Please login to invest', true);
+        return;
+    }
+    
+    if (!hasUserMadeFirstDeposit()) {
+        showNotification('Please make your first deposit before investing', true);
+        setTimeout(() => openModal('deposit-modal'), 1500);
+        return;
+    }
+    
+    openInvestmentModal(mineralName, price);
+}
+
+// Export all functions globally
+window.createNewInvestment = createNewInvestment;
+window.confirmVIPInvestment = confirmVIPInvestment;
+window.updateDashboardStats = updateDashboardStats;
+window.loadUserInvestmentsFromFirebase = loadUserInvestmentsFromFirebase;
+window.renderInvestmentsList = renderInvestmentsList;
+window.createInvestmentsContainer = createInvestmentsContainer;
+window.openInvestmentModalFromMarketplace = openInvestmentModalFromMarketplace;
+
+console.log('✅ Investment population fixes applied');
+
+// Function to set withdrawal amount to 100% of balance
+function setWithdrawAllAmount() {
+    if (!db || !db.currentUser) {
+        alert('Tafadhali ingia kwenye akaunti yako');
+        return;
+    }
+    
+    const currentBalance = db.currentUser.balance;
+    const withdrawAmountInput = document.getElementById('withdraw-amount');
+    
+    if (withdrawAmountInput) {
+        withdrawAmountInput.value = currentBalance;
+        updateWithdrawalCalculation();
+        
+        // Visual feedback
+        withdrawAmountInput.style.backgroundColor = '#e8f5e9';
+        setTimeout(() => {
+            withdrawAmountInput.style.backgroundColor = '';
+        }, 500);
+        
+        // Scroll to the input
+        withdrawAmountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Make function globally available
+window.setWithdrawAllAmount = setWithdrawAllAmount;
+
+// ==============================================
+// LOAD TOTAL PROFIT FROM USER INVESTMENTS
+// ==============================================
+
+async function loadTotalProfit() {
+    try {
+        if (!db || !db.currentUser) {
+            console.log('No user logged in');
+            return 0;
+        }
+        
+        const userId = db.currentUser.id;
+        const investments = await db.getUserInvestments(userId);
+        
+        let totalProfit = 0;
+        
+        investments.forEach(investment => {
+            if (investment.completed) {
+                // For completed investments, use finalProfit
+                totalProfit += investment.finalProfit || 0;
+            } else {
+                // For active investments, calculate current profit
+                const currentProfit = calculateInvestmentProfit(investment);
+                totalProfit += currentProfit;
+            }
+        });
+        
+        // Update the DOM element
+        const totalProfitElement = document.getElementById('total-profit');
+        if (totalProfitElement) {
+            totalProfitElement.textContent = formatNumber(totalProfit);
+        }
+        
+        console.log(`Total Profit: TZS ${formatNumber(totalProfit)}`);
+        return totalProfit;
+        
+    } catch (error) {
+        console.error('Error loading total profit:', error);
+        return 0;
+    }
+}
+
+// Calculate profit for a single investment
+function calculateInvestmentProfit(investment) {
+    if (investment.completed) {
+        return investment.finalProfit || 0;
+    }
+    
+    const startDate = new Date(investment.startTime);
+    const now = new Date();
+    const daysElapsed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+    
+    if (daysElapsed <= 0) return 0;
+    
+    // Calculate based on investment type
+    let profit = 0;
+    
+    if (investment.type === 'vip') {
+        // VIP investment with daily rate
+        const dailyRate = investment.daily_rate || 0.04;
+        profit = investment.amount * dailyRate * daysElapsed;
+    } else {
+        // Regular mineral investment with weekday/weekend rates
+        const weeks = Math.floor(daysElapsed / 7);
+        const remainingDays = daysElapsed % 7;
+        const weekdays = (weeks * 5) + Math.min(remainingDays, 5);
+        const weekends = (weeks * 2) + Math.max(0, remainingDays - 5);
+        
+        const weekdayProfit = investment.cost * 0.03 * weekdays;
+        const weekendProfit = investment.cost * 0.04 * weekends;
+        profit = weekdayProfit + weekendProfit;
+    }
+    
+    // Cap at expected total profit
+    const maxProfit = investment.totalExpectedProfit || (investment.cost * 0.035 * investment.days);
+    return Math.min(profit, maxProfit);
+}
+
+// Format number with commas
+function formatNumber(num) {
+    if (num === undefined || num === null) return '0';
+    return Math.round(num).toLocaleString('en-TZ');
+}
+
+// ==============================================
+// AUTO-REFRESH TOTAL PROFIT
+// ==============================================
+
+let profitUpdateInterval = null;
+
+function startProfitAutoRefresh() {
+    // Clear existing interval
+    if (profitUpdateInterval) {
+        clearInterval(profitUpdateInterval);
+    }
+    
+    // Update every 30 seconds
+    profitUpdateInterval = setInterval(() => {
+        if (db && db.currentUser) {
+            loadTotalProfit();
+        }
+    }, 30000);
+}
+
+function stopProfitAutoRefresh() {
+    if (profitUpdateInterval) {
+        clearInterval(profitUpdateInterval);
+        profitUpdateInterval = null;
+    }
+}
+
+// ==============================================
+// UPDATE TOTAL PROFIT AFTER INVESTMENT ACTIONS
+// ==============================================
+
+async function updateTotalProfitAfterAction() {
+    await loadTotalProfit();
+}
+
+// Call this after:
+// - Creating a new investment
+// - Canceling an investment
+// - Completing an investment
+// - Deleting an investment
+
+// ==============================================
+// INTEGRATE WITH EXISTING FUNCTIONS
+// ==============================================
+
+// Modify your existing functions to update total profit
+
+// After creating investment
+async function createInvestmentWithProfitUpdate(investmentData) {
+    const result = await createInvestment(investmentData);
+    await loadTotalProfit();
+    return result;
+}
+
+// After canceling investment
+async function cancelInvestmentWithProfitUpdate(investmentId) {
+    const result = await cancelInvestment(investmentId);
+    await loadTotalProfit();
+    return result;
+}
+
+// After completing investment
+async function completeInvestmentWithProfitUpdate(investmentId) {
+    const result = await completeInvestment(investmentId);
+    await loadTotalProfit();
+    return result;
+}
+
+// ==============================================
+// INITIALIZE ON DASHBOARD LOAD
+// ==============================================
+
+// Call this when user dashboard loads
+function initDashboardProfit() {
+    loadTotalProfit();
+    startProfitAutoRefresh();
+}
+
+// Update the showUserDashboard function
+const originalShowUserDashboard = window.showUserDashboard;
+if (originalShowUserDashboard) {
+    window.showUserDashboard = function() {
+        originalShowUserDashboard();
+        setTimeout(() => {
+            initDashboardProfit();
+        }, 1000);
+    };
+}
+
+// Also load when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    if (db && db.currentUser) {
+        setTimeout(() => {
+            initDashboardProfit();
+        }, 1500);
+    }
+});
+
+// ==============================================
+// MANUAL REFRESH BUTTON (Optional)
+// ==============================================
+
+// Add this to your HTML if you want a refresh button
+// <button onclick="refreshTotalProfit()" class="btn-refresh"><i class="fas fa-sync-alt"></i></button>
+
+async function refreshTotalProfit() {
+    const refreshBtn = document.querySelector('.btn-refresh');
+    if (refreshBtn) {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        refreshBtn.disabled = true;
+    }
+    
+    await loadTotalProfit();
+    
+    if (refreshBtn) {
+        setTimeout(() => {
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            refreshBtn.disabled = false;
+        }, 1000);
+    }
+}
+
+// ==============================================
+// EVENT LISTENERS FOR INVESTMENT CHANGES
+// ==============================================
+
+// Listen for investment changes in Firebase
+function listenForInvestmentChanges() {
+    if (!db || !db.db || !db.currentUser) return;
+    
+    const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+    
+    userRef.onSnapshot((doc) => {
+        if (doc.exists) {
+            // Investment data changed, update total profit
+            loadTotalProfit();
+        }
+    });
+}
+
+// Call this after login
+function startInvestmentListener() {
+    listenForInvestmentChanges();
+}
+
+// ==============================================
+// EXPORT FUNCTIONS
+// ==============================================
+
+window.loadTotalProfit = loadTotalProfit;
+window.refreshTotalProfit = refreshTotalProfit;
+window.initDashboardProfit = initDashboardProfit;
+window.startProfitAutoRefresh = startProfitAutoRefresh;
+window.stopProfitAutoRefresh = stopProfitAutoRefresh;
+window.updateTotalProfitAfterAction = updateTotalProfitAfterAction;
+
+console.log('✅ Total Profit loader initialized');
+
+// ==============================================
+// SOCIAL LINKS MANAGEMENT SYSTEM
+// ==============================================
+
+let socialLinks = [];
+let currentSocialLinkId = null;
+let pendingFollowId = null;
+
+// ========== INITIALIZATION ==========
+async function initSocialLinksSystem() {
+    console.log('🔗 Initializing Social Links System...');
+    await loadSocialLinks();
+    setupSocialEventListeners();
+}
+
+async function loadSocialLinks() {
+    try {
+        if (!db || !db.db) {
+            setTimeout(loadSocialLinks, 1000);
+            return;
+        }
+        
+        const snapshot = await db.db.collection('social_links').orderBy('order', 'asc').get();
+        socialLinks = [];
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            socialLinks.push({
+                id: doc.id,
+                platform: data.platform,
+                name: data.name,
+                url: data.url,
+                icon: data.icon,
+                description: data.description,
+                required_action: data.required_action || 'follow',
+                order: data.order || 0,
+                status: data.status || 'active',
+                created_at: data.created_at?.toDate() || new Date()
+            });
+        });
+        
+        console.log(`Loaded ${socialLinks.length} social links`);
+        
+        // Render based on user role
+        if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+            renderAdminSocialGrid();
+            updateSocialStats();
+        } else {
+            renderUserSocialGrid();
+        }
+        
+    } catch (error) {
+        console.error('Error loading social links:', error);
+        socialLinks = [];
+        if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+            renderAdminSocialGrid();
+        } else {
+            renderUserSocialGrid();
+        }
+    }
+}
+
+// ========== ADMIN RENDER FUNCTIONS ==========
+function renderAdminSocialGrid() {
+    const container = document.getElementById('socialLinksGrid');
+    if (!container) return;
+    
+    if (socialLinks.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-share-alt"></i>
+                <h3>No Social Links</h3>
+                <p>Click "Add Social Link" to create links for users to follow.</p>
+                <button class="btn btn-primary" onclick="openSocialLinkModal()">Add Link</button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = socialLinks.map(link => `
+        <div class="social-link-card ${link.status === 'inactive' ? 'inactive' : ''}" data-id="${link.id}">
+            <div class="card-header">
+                <div class="social-icon">
+                    <i class="${link.icon || getPlatformIcon(link.platform)}"></i>
+                </div>
+                <div>
+                    <div class="platform-name">${escapeHtml(link.name)}</div>
+                    <span class="platform-type ${link.platform}">${link.platform.toUpperCase()}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="url">${escapeHtml(link.url)}</div>
+                ${link.description ? `<div class="description">${escapeHtml(link.description)}</div>` : ''}
+                <div class="required-action">
+                    <i class="fas fa-info-circle"></i> ${getRequiredActionText(link.required_action)}
+                </div>
+                <div class="order-info" style="margin-top: 10px; font-size: 11px; color: #7f8c8d;">
+                    Order: ${link.order}
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-warning" onclick="editSocialLink('${link.id}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn ${link.status === 'active' ? 'btn-danger' : 'btn-success'}" 
+                        onclick="toggleSocialLinkStatus('${link.id}')">
+                    <i class="fas fa-${link.status === 'active' ? 'ban' : 'check-circle'}"></i>
+                    ${link.status === 'active' ? 'Deactivate' : 'Activate'}
+                </button>
+                <button class="btn btn-danger" onclick="deleteSocialLink('${link.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ========== USER RENDER FUNCTIONS ==========
+async function renderUserSocialGrid() {
+    const container = document.getElementById('userSocialLinksGrid');
+    if (!container) return;
+    
+    // Get user's followed links from localStorage or database
+    const followedLinks = await getUserFollowedLinks();
+    const activeLinks = socialLinks.filter(l => l.status === 'active');
+    
+    if (activeLinks.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-share-alt"></i>
+                <h3>No Social Links Available</h3>
+                <p>Check back soon for social media links to follow.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const completedCount = activeLinks.filter(l => followedLinks.includes(l.id)).length;
+    const totalCount = activeLinks.length;
+    const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+    
+    // Update progress bar
+    updateSocialProgress(progressPercent, completedCount, totalCount);
+    
+    container.innerHTML = activeLinks.map(link => {
+        const isCompleted = followedLinks.includes(link.id);
+        return `
+            <div class="social-link-user-card ${isCompleted ? 'completed' : ''}">
+                ${isCompleted ? '<div class="complete-badge"><i class="fas fa-check-circle"></i> Completed</div>' : ''}
+                <div class="social-icon-large">
+                    <i class="${link.icon || getPlatformIcon(link.platform)}"></i>
+                </div>
+                <h4>${escapeHtml(link.name)}</h4>
+                <span class="platform-type ${link.platform}">${link.platform.toUpperCase()}</span>
+                ${link.description ? `<p style="font-size: 12px; color: #7f8c8d; margin: 10px 0;">${escapeHtml(link.description)}</p>` : ''}
+                <div class="action-required">
+                    <i class="fas fa-hand-pointer"></i> ${getRequiredActionText(link.required_action)}
+                </div>
+                <button class="follow-btn ${isCompleted ? 'completed' : ''}" 
+                        onclick="${isCompleted ? '' : `openFollowModal('${link.id}', '${escapeHtml(link.name)}', '${link.url}')`}"
+                        ${isCompleted ? 'disabled' : ''}>
+                    <i class="fas fa-${isCompleted ? 'check-circle' : 'external-link-alt'}"></i>
+                    ${isCompleted ? 'Completed' : getRequiredActionText(link.required_action)}
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+// ========== SOCIAL LINK CRUD OPERATIONS ==========
+function openSocialLinkModal() {
+    document.getElementById('socialModalTitle').textContent = 'Add Social Link';
+    document.getElementById('socialLinkId').value = '';
+    document.getElementById('socialLinkForm').reset();
+    document.getElementById('socialPlatform').value = '';
+    document.getElementById('socialStatus').value = 'active';
+    document.getElementById('socialOrder').value = socialLinks.length;
+    document.getElementById('socialIcon').value = '';
+    updatePlatformIcon();
+    openModal('socialLinkModal');
+}
+
+function updatePlatformIcon() {
+    const platform = document.getElementById('socialPlatform').value;
+    const iconInput = document.getElementById('socialIcon');
+    const iconPreview = document.getElementById('iconPreview');
+    
+    const defaultIcons = {
+        facebook: 'fab fa-facebook',
+        twitter: 'fab fa-twitter',
+        instagram: 'fab fa-instagram',
+        whatsapp: 'fab fa-whatsapp',
+        telegram: 'fab fa-telegram',
+        youtube: 'fab fa-youtube',
+        tiktok: 'fab fa-tiktok',
+        linkedin: 'fab fa-linkedin',
+        website: 'fas fa-globe',
+        group: 'fas fa-users',
+        other: 'fas fa-link'
+    };
+    
+    if (platform && defaultIcons[platform] && !iconInput.value) {
+        iconInput.value = defaultIcons[platform];
+        iconPreview.className = defaultIcons[platform];
+    }
+}
+
+async function editSocialLink(id) {
+    const link = socialLinks.find(l => l.id === id);
+    if (!link) return;
+    
+    document.getElementById('socialModalTitle').textContent = 'Edit Social Link';
+    document.getElementById('socialLinkId').value = link.id;
+    document.getElementById('socialPlatform').value = link.platform;
+    document.getElementById('socialName').value = link.name;
+    document.getElementById('socialUrl').value = link.url;
+    document.getElementById('socialIcon').value = link.icon || '';
+    document.getElementById('socialDescription').value = link.description || '';
+    document.getElementById('socialRequiredAction').value = link.required_action || 'follow';
+    document.getElementById('socialOrder').value = link.order || 0;
+    document.getElementById('socialStatus').value = link.status;
+    
+    const iconPreview = document.getElementById('iconPreview');
+    iconPreview.className = link.icon || getPlatformIcon(link.platform);
+    
+    openModal('socialLinkModal');
+}
+
+async function saveSocialLink(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('socialLinkId').value;
+    const platform = document.getElementById('socialPlatform').value;
+    const name = document.getElementById('socialName').value.trim();
+    const url = document.getElementById('socialUrl').value.trim();
+    const icon = document.getElementById('socialIcon').value.trim();
+    const description = document.getElementById('socialDescription').value.trim();
+    const required_action = document.getElementById('socialRequiredAction').value;
+    const order = parseInt(document.getElementById('socialOrder').value) || 0;
+    const status = document.getElementById('socialStatus').value;
+    
+    if (!platform || !name || !url) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+    
+    const data = {
+        platform, name, url, icon, description, required_action, order, status,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    try {
+        if (!id) {
+            data.created_at = firebase.firestore.FieldValue.serverTimestamp();
+            await db.db.collection('social_links').add(data);
+            showToast('Social link added successfully!', 'success');
+        } else {
+            await db.db.collection('social_links').doc(id).update(data);
+            showToast('Social link updated successfully!', 'success');
+        }
+        closeSocialLinkModal();
+        await loadSocialLinks();
+    } catch (error) {
+        console.error('Error saving social link:', error);
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function toggleSocialLinkStatus(id) {
+    const link = socialLinks.find(l => l.id === id);
+    if (!link) return;
+    
+    const newStatus = link.status === 'active' ? 'inactive' : 'active';
+    if (!confirm(` ${newStatus === 'active' ? 'Activate' : 'Deactivate'} "${link.name}"?`)) return;
+    
+    try {
+        await db.db.collection('social_links').doc(id).update({ status: newStatus });
+        showToast(`Link ${newStatus === 'active' ? 'activated' : 'deactivated'}!`, 'success');
+        await loadSocialLinks();
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+async function deleteSocialLink(id) {
+    const link = socialLinks.find(l => l.id === id);
+    if (!link) return;
+    if (!confirm(`Delete "${link.name}"? This cannot be undone!`)) return;
+    
+    try {
+        await db.db.collection('social_links').doc(id).delete();
+        showToast('Link deleted!', 'success');
+        await loadSocialLinks();
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+// ========== USER FOLLOW FUNCTIONS ==========
+async function getUserFollowedLinks() {
+    if (!db.currentUser) return [];
+    
+    try {
+        const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+        const userDoc = await userRef.get();
+        if (userDoc.exists) {
+            return userDoc.data().followed_links || [];
+        }
+        return [];
+    } catch (error) {
+        console.error('Error getting followed links:', error);
+        return [];
+    }
+}
+
+async function saveUserFollowedLinks(followedLinks) {
+    if (!db.currentUser) return;
+    
+    try {
+        const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+        await userRef.update({
+            followed_links: followedLinks,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Update local user object
+        if (db.currentUser) {
+            db.currentUser.followed_links = followedLinks;
+        }
+    } catch (error) {
+        console.error('Error saving followed links:', error);
+    }
+}
+
+function openFollowModal(linkId, linkName, linkUrl) {
+    pendingFollowId = linkId;
+    document.getElementById('followPlatformName').textContent = linkName;
+    document.getElementById('followConfirmationContent').innerHTML = `
+        <p>Please visit and ${getRequiredActionTextForLink(linkId)}:</p>
+        <p><strong>${escapeHtml(linkName)}</strong></p>
+        <a href="${linkUrl}" target="_blank" class="btn btn-primary" style="display: block; text-align: center; margin: 15px 0;">
+            <i class="fas fa-external-link-alt"></i> Open Page
+        </a>
+        <p>After completing, click "Yes, I've Completed" below.</p>
+        <div class="follow-buttons" style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn btn-secondary" onclick="closeFollowModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="confirmFollow()">Yes, I've Completed</button>
+        </div>
+    `;
+    openModal('followConfirmationModal');
+}
+
+function getRequiredActionTextForLink(linkId) {
+    const link = socialLinks.find(l => l.id === linkId);
+    if (!link) return 'follow';
+    return getRequiredActionText(link.required_action);
+}
+
+async function confirmFollow() {
+    if (!pendingFollowId) return;
+    
+    const followedLinks = await getUserFollowedLinks();
+    if (!followedLinks.includes(pendingFollowId)) {
+        followedLinks.push(pendingFollowId);
+        await saveUserFollowedLinks(followedLinks);
+        
+        // Check if all links are completed
+        const activeLinks = socialLinks.filter(l => l.status === 'active');
+        const allCompleted = activeLinks.every(l => followedLinks.includes(l.id));
+        
+        if (allCompleted) {
+            await awardSocialCompletionReward();
+        }
+        
+        showToast('Thank you for following!', 'success');
+        await renderUserSocialGrid();
+    }
+    
+    closeFollowModal();
+    pendingFollowId = null;
+}
+
+async function awardSocialCompletionReward() {
+    try {
+        const rewardAmount = 5000; // Reward amount in TZS
+        
+        // Update user balance
+        if (db.currentUser) {
+            db.currentUser.balance += rewardAmount;
+            
+            // Save to Firebase
+            const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+            await userRef.update({
+                balance: db.currentUser.balance,
+                social_reward_claimed: true,
+                social_reward_amount: rewardAmount,
+                social_reward_date: new Date().toISOString(),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Update displays
+            if (typeof updateAllBalanceDisplays === 'function') updateAllBalanceDisplays();
+            
+            showToast(`🎉 Congratulations! You earned TZS ${rewardAmount.toLocaleString()} for completing all social follows!`, 'success');
+        }
+    } catch (error) {
+        console.error('Error awarding social reward:', error);
+    }
+}
+
+function updateSocialProgress(percent, completed, total) {
+    const progressFill = document.getElementById('socialProgressFill');
+    const progressPercent = document.getElementById('socialProgressPercent');
+    const rewardStatus = document.getElementById('socialRewardStatus');
+    
+    if (progressFill) progressFill.style.width = `${percent}%`;
+    if (progressPercent) progressPercent.textContent = `${Math.round(percent)}%`;
+    
+    if (rewardStatus) {
+        if (percent === 100) {
+            rewardStatus.innerHTML = `
+                <div class="reward-status completed">
+                    <i class="fas fa-trophy"></i>
+                    <strong>Completed! You've earned your reward!</strong>
+                </div>
+            `;
+        } else {
+            rewardStatus.innerHTML = `
+                <div class="reward-status pending">
+                    <i class="fas fa-info-circle"></i>
+                    Complete all ${total} social links to earn a reward!
+                    (${completed}/${total} completed)
+                </div>
+            `;
+        }
+    }
+}
+
+// ========== FILTER FUNCTIONS ==========
+function filterSocialLinks() {
+    const searchTerm = document.getElementById('searchSocialLink')?.value.toLowerCase() || '';
+    const typeFilter = document.getElementById('filterSocialType')?.value || 'all';
+    const statusFilter = document.getElementById('filterSocialStatus')?.value || 'all';
+    
+    let filtered = [...socialLinks];
+    
+    if (searchTerm) {
+        filtered = filtered.filter(l => l.name.toLowerCase().includes(searchTerm) || l.platform.toLowerCase().includes(searchTerm));
+    }
+    if (typeFilter !== 'all') {
+        filtered = filtered.filter(l => l.platform === typeFilter);
+    }
+    if (statusFilter !== 'all') {
+        filtered = filtered.filter(l => l.status === statusFilter);
+    }
+    
+    const container = document.getElementById('socialLinksGrid');
+    if (!container) return;
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><h3>No matching links</h3></div>`;
+        return;
+    }
+    
+    container.innerHTML = filtered.map(link => `
+        <div class="social-link-card ${link.status === 'inactive' ? 'inactive' : ''}">
+            <div class="card-header">
+                <div class="social-icon"><i class="${link.icon || getPlatformIcon(link.platform)}"></i></div>
+                <div><div class="platform-name">${escapeHtml(link.name)}</div><span class="platform-type ${link.platform}">${link.platform.toUpperCase()}</span></div>
+            </div>
+            <div class="card-body">
+                <div class="url">${escapeHtml(link.url)}</div>
+                ${link.description ? `<div class="description">${escapeHtml(link.description)}</div>` : ''}
+                <div class="required-action"><i class="fas fa-info-circle"></i> ${getRequiredActionText(link.required_action)}</div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-warning" onclick="editSocialLink('${link.id}')"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn ${link.status === 'active' ? 'btn-danger' : 'btn-success'}" onclick="toggleSocialLinkStatus('${link.id}')"><i class="fas fa-${link.status === 'active' ? 'ban' : 'check-circle'}"></i> ${link.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                <button class="btn btn-danger" onclick="deleteSocialLink('${link.id}')"><i class="fas fa-trash"></i> Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ========== STATS FUNCTIONS ==========
+async function updateSocialStats() {
+    const total = socialLinks.length;
+    const active = socialLinks.filter(l => l.status === 'active').length;
+    
+    document.getElementById('totalSocialLinks').textContent = total;
+    document.getElementById('activeSocialLinks').textContent = active;
+    
+    // Count total follows from users
+    try {
+        const users = await db.getUsers();
+        let totalFollows = 0;
+        users.forEach(user => {
+            if (user.followed_links) {
+                totalFollows += user.followed_links.length;
+            }
+        });
+        document.getElementById('totalFollows').textContent = totalFollows;
+    } catch (error) {
+        console.error('Error counting follows:', error);
+    }
+}
+
+// ========== HELPER FUNCTIONS ==========
+function getPlatformIcon(platform) {
+    const icons = {
+        facebook: 'fab fa-facebook',
+        twitter: 'fab fa-twitter',
+        instagram: 'fab fa-instagram',
+        whatsapp: 'fab fa-whatsapp',
+        telegram: 'fab fa-telegram',
+        youtube: 'fab fa-youtube',
+        tiktok: 'fab fa-tiktok',
+        linkedin: 'fab fa-linkedin',
+        website: 'fas fa-globe',
+        group: 'fas fa-users',
+        other: 'fas fa-link'
+    };
+    return icons[platform] || 'fas fa-link';
+}
+
+function getRequiredActionText(action) {
+    const actions = {
+        follow: 'Follow/Subscribe',
+        join: 'Join Group',
+        like: 'Like Page',
+        visit: 'Visit Website',
+        share: 'Share Post'
+    };
+    return actions[action] || 'Follow';
+}
+
+
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<div class="toast-content"><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i><span>${message}</span></div>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeSocialLinkModal() {
+    const modal = document.getElementById('socialLinkModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function closeFollowModal() {
+    const modal = document.getElementById('followConfirmationModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    pendingFollowId = null;
+}
+
+// ========== EVENT LISTENERS ==========
+function setupSocialEventListeners() {
+    const searchInput = document.getElementById('searchSocialLink');
+    if (searchInput) searchInput.addEventListener('keyup', filterSocialLinks);
+    
+    const typeFilter = document.getElementById('filterSocialType');
+    if (typeFilter) typeFilter.addEventListener('change', filterSocialLinks);
+    
+    const statusFilter = document.getElementById('filterSocialStatus');
+    if (statusFilter) statusFilter.addEventListener('change', filterSocialLinks);
+    
+    const platformSelect = document.getElementById('socialPlatform');
+    if (platformSelect) platformSelect.addEventListener('change', updatePlatformIcon);
+}
+
+// ========== INITIALIZATION ==========
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initSocialLinksSystem, 1500);
+});
+
+// Make functions global
+window.initSocialLinksSystem = initSocialLinksSystem;
+window.openSocialLinkModal = openSocialLinkModal;
+window.editSocialLink = editSocialLink;
+window.toggleSocialLinkStatus = toggleSocialLinkStatus;
+window.deleteSocialLink = deleteSocialLink;
+window.filterSocialLinks = filterSocialLinks;
+window.closeSocialLinkModal = closeSocialLinkModal;
+window.closeFollowModal = closeFollowModal;
+window.confirmFollow = confirmFollow;
+
+console.log('✅ Social Links System Loaded');
+
+// ==============================================
+// AUTOMATIC SOCIAL LINKS POPUP SYSTEM
+// USER DASHBOARD ONLY - NO ADMIN
+// ==============================================
+
+let popupInterval = null;
+let popupTimerInterval = null;
+let popupTimeout = null;
+let isPopupShowing = false;
+let popupSecondsRemaining = 30;
+
+// ========== INITIALIZE POPUP SYSTEM ==========
+function initSocialPopupSystem() {
+    console.log('🎯 Initializing Social Popup System...');
+    
+    // CRITICAL: Only run for regular users, NOT for admin or super admin
+    if (!db || !db.currentUser) return;
+    if (db.currentUser.is_admin || db.currentUser.is_super_admin) {
+        console.log('Admin user detected - Social popup system disabled');
+        return;
+    }
+    
+    // Check if user needs to complete social tasks
+    checkAndShowPopup();
+    
+    // Start checking every minute
+    if (popupInterval) clearInterval(popupInterval);
+    popupInterval = setInterval(() => {
+        checkAndShowPopup();
+    }, 60000); // Check every minute
+}
+
+async function checkAndShowPopup() {
+    // Don't show if popup is already showing
+    if (isPopupShowing) return;
+    
+    // Don't show if no user logged in
+    if (!db || !db.currentUser) return;
+    
+    // CRITICAL: Don't show for admin or super admin
+    if (db.currentUser.is_admin || db.currentUser.is_super_admin) {
+        console.log('Admin user - skipping social popup');
+        return;
+    }
+    
+    // Check if user has completed all social tasks
+    const hasCompletedAll = await hasUserCompletedAllSocialTasks();
+    
+    if (!hasCompletedAll) {
+        showSocialPopup();
+    }
+}
+
+async function hasUserCompletedAllSocialTasks() {
+    try {
+        // Get active social links
+        const activeLinks = socialLinks.filter(l => l.status === 'active');
+        if (activeLinks.length === 0) return true;
+        
+        // Get user's followed links
+        const followedLinks = await getUserFollowedLinks();
+        
+        // Check if all are completed
+        const allCompleted = activeLinks.every(link => followedLinks.includes(link.id));
+        
+        return allCompleted;
+    } catch (error) {
+        console.error('Error checking social tasks:', error);
+        return false;
+    }
+}
+
+// ========== SHOW POPUP ==========
+async function showSocialPopup() {
+    // Don't show for admin
+    if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+        console.log('Admin user - not showing social popup');
+        return;
+    }
+    
+    if (isPopupShowing) return;
+    
+    // Refresh social links first
+    await loadSocialLinks();
+    
+    const activeLinks = socialLinks.filter(l => l.status === 'active');
+    if (activeLinks.length === 0) return;
+    
+    const followedLinks = await getUserFollowedLinks();
+    const completedCount = activeLinks.filter(l => followedLinks.includes(l.id)).length;
+    const totalCount = activeLinks.length;
+    const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+    
+    // Update popup content
+    updatePopupContent(activeLinks, followedLinks, progressPercent, completedCount, totalCount);
+    
+    // Show popup
+    const popup = document.getElementById('socialFollowPopup');
+    if (popup) {
+        popup.style.display = 'flex';
+        isPopupShowing = true;
+        
+        // Start timer
+        startPopupTimer();
+        
+        // Auto-close after 30 seconds
+        if (popupTimeout) clearTimeout(popupTimeout);
+        popupTimeout = setTimeout(() => {
+            closeSocialPopup();
+        }, 30000);
+    }
+}
+
+function updatePopupContent(activeLinks, followedLinks, progressPercent, completedCount, totalCount) {
+    const container = document.getElementById('popupSocialLinks');
+    const progressFill = document.getElementById('popupProgressFill');
+    const progressPercentEl = document.getElementById('popupProgressPercent');
+    
+    if (!container) return;
+    
+    // Update progress
+    if (progressFill) progressFill.style.width = `${progressPercent}%`;
+    if (progressPercentEl) progressPercentEl.textContent = `${Math.round(progressPercent)}%`;
+    
+    // Generate social links HTML
+    container.innerHTML = activeLinks.map(link => {
+        const isCompleted = followedLinks.includes(link.id);
+        return `
+            <div class="popup-social-item ${isCompleted ? 'completed' : ''}">
+                <div class="popup-social-info">
+                    <div class="popup-social-icon ${link.platform}">
+                        <i class="${link.icon || getPlatformIcon(link.platform)}"></i>
+                    </div>
+                    <div class="popup-social-details">
+                        <div class="popup-social-name">${escapeHtml(link.name)}</div>
+                        <div class="popup-social-action">${getRequiredActionText(link.required_action)}</div>
+                    </div>
+                </div>
+                <div class="popup-social-status ${isCompleted ? 'completed' : 'pending'}">
+                    ${isCompleted ? 
+                        '<i class="fas fa-check-circle"></i> Completed' : 
+                        `<button class="verify-btn" onclick="openVerifyModal('${link.id}', '${escapeHtml(link.name)}', '${link.url}', '${link.required_action}')">
+                            <i class="fas fa-check"></i> Verify
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Show completion message if all done
+    if (progressPercent === 100) {
+        const rewardMessage = document.createElement('div');
+        rewardMessage.className = 'reward-complete-message';
+        rewardMessage.innerHTML = `
+            <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <i class="fas fa-trophy" style="color: #27ae60; font-size: 24px;"></i>
+                <p style="margin: 10px 0 0; color: #155724;">
+                    Congratulations! You've completed all tasks and earned TZS 5,000!
+                </p>
+            </div>
+        `;
+        container.appendChild(rewardMessage);
+    }
+}
+
+// ========== POPUP TIMER ==========
+function startPopupTimer() {
+    popupSecondsRemaining = 30;
+    const timerText = document.getElementById('popupTimer');
+    const timerProgress = document.getElementById('timerProgress');
+    
+    if (popupTimerInterval) clearInterval(popupTimerInterval);
+    
+    popupTimerInterval = setInterval(() => {
+        popupSecondsRemaining--;
+        
+        if (timerText) {
+            timerText.textContent = `This popup will auto-close in ${popupSecondsRemaining} seconds`;
+        }
+        
+        if (timerProgress) {
+            const percent = (popupSecondsRemaining / 30) * 100;
+            timerProgress.style.width = `${percent}%`;
+        }
+        
+        if (popupSecondsRemaining <= 0) {
+            clearInterval(popupTimerInterval);
+            popupTimerInterval = null;
+        }
+    }, 1000);
+}
+
+function stopPopupTimer() {
+    if (popupTimerInterval) {
+        clearInterval(popupTimerInterval);
+        popupTimerInterval = null;
+    }
+}
+
+// ========== VERIFY MODAL ==========
+function openVerifyModal(linkId, linkName, linkUrl, requiredAction) {
+    // Don't open for admin
+    if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+        showToast('Admin users do not need to complete social tasks', 'info');
+        return;
+    }
+    
+    // Close popup temporarily
+    closeSocialPopup();
+    
+    // Store current link for verification
+    window.pendingVerifyLinkId = linkId;
+    
+    const modal = document.getElementById('verifyFollowModal');
+    const platformName = document.getElementById('verifyPlatformName');
+    const verifyLink = document.getElementById('verifyLink');
+    
+    if (platformName) platformName.textContent = linkName;
+    if (verifyLink) {
+        verifyLink.href = linkUrl;
+        verifyLink.innerHTML = `<i class="fas fa-external-link-alt"></i> ${getRequiredActionText(requiredAction)}`;
+    }
+    
+    if (modal) modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+async function verifyFollow() {
+    const linkId = window.pendingVerifyLinkId;
+    if (!linkId) return;
+    
+    // Don't verify for admin
+    if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+        showToast('Admin users do not need to complete social tasks', 'info');
+        closeVerifyModal();
+        return;
+    }
+    
+    try {
+        // Get current followed links
+        const followedLinks = await getUserFollowedLinks();
+        
+        // Add if not already added
+        if (!followedLinks.includes(linkId)) {
+            followedLinks.push(linkId);
+            await saveUserFollowedLinks(followedLinks);
+            
+            showToast('Thank you for verifying!', 'success');
+            
+            // Check if all are completed
+            const activeLinks = socialLinks.filter(l => l.status === 'active');
+            const allCompleted = activeLinks.every(link => followedLinks.includes(link.id));
+            
+            if (allCompleted) {
+                await awardSocialCompletionReward();
+                // Close popup permanently since all tasks are done
+                if (popupInterval) clearInterval(popupInterval);
+                popupInterval = null;
+            } else {
+                // Show popup again after 5 seconds for remaining tasks
+                setTimeout(() => {
+                    if (!isPopupShowing) {
+                        showSocialPopup();
+                    }
+                }, 3000);
+            }
+            
+            // Refresh user social grid if visible
+            if (document.getElementById('userSocialLinksGrid') && 
+                document.getElementById('user-social-links').classList.contains('active')) {
+                renderUserSocialGrid();
+            }
+        }
+        
+        closeVerifyModal();
+        window.pendingVerifyLinkId = null;
+        
+    } catch (error) {
+        console.error('Error verifying follow:', error);
+        showToast('Error verifying. Please try again.', 'error');
+    }
+}
+
+// ========== POPUP CONTROL FUNCTIONS ==========
+function closeSocialPopup() {
+    const popup = document.getElementById('socialFollowPopup');
+    if (popup) {
+        popup.style.display = 'none';
+        isPopupShowing = false;
+        stopPopupTimer();
+        if (popupTimeout) {
+            clearTimeout(popupTimeout);
+            popupTimeout = null;
+        }
+    }
+}
+
+function closeVerifyModal() {
+    const modal = document.getElementById('verifyFollowModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function openFullSocialPage() {
+    // Close popup
+    closeSocialPopup();
+    
+    // Navigate to social links page
+    switchToSection('user-social-links');
+    
+    // Highlight the section
+    const section = document.getElementById('user-social-links');
+    if (section) {
+        section.style.animation = 'highlight 1s ease';
+        setTimeout(() => {
+            section.style.animation = '';
+        }, 1000);
+    }
+}
+
+// Add highlight animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes highlight {
+        0%, 100% { background: transparent; }
+        50% { background: rgba(255, 215, 0, 0.3); }
+    }
+`;
+document.head.appendChild(style);
+
+// ========== UPDATE REWARD FUNCTION ==========
+async function awardSocialCompletionReward() {
+    // Don't award for admin
+    if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+        console.log('Admin user - no reward needed');
+        return;
+    }
+    
+    try {
+        const rewardAmount = 500; // TZS 5,000
+        
+        // Check if already rewarded
+        const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+        const userDoc = await userRef.get();
+        
+        if (userDoc.exists && userDoc.data().social_reward_claimed) {
+            console.log('Reward already claimed');
+            return;
+        }
+        
+        // Update user balance
+        if (db.currentUser) {
+            db.currentUser.balance += rewardAmount;
+            
+            await userRef.update({
+                balance: db.currentUser.balance,
+                social_reward_claimed: true,
+                social_reward_amount: rewardAmount,
+                social_reward_date: new Date().toISOString(),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Update displays
+            if (typeof updateAllBalanceDisplays === 'function') updateAllBalanceDisplays();
+            if (typeof loadTotalProfit === 'function') loadTotalProfit();
+            
+            // Show success message
+            showToast(`🎉 Congratulations! You earned TZS ${rewardAmount.toLocaleString()}!`, 'success');
+            
+            // Show celebration modal
+            showCelebrationModal(rewardAmount);
+        }
+    } catch (error) {
+        console.error('Error awarding social reward:', error);
+    }
+}
+
+function showCelebrationModal(amount) {
+    const modal = document.createElement('div');
+    modal.className = 'modal celebration-modal';
+    modal.style.cssText = 'display: flex; align-items: center; justify-content: center; z-index: 100000;';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 400px; text-align: center; animation: popupSlideIn 0.4s ease;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">
+                <h3><i class="fas fa-trophy"></i> Congratulations!</h3>
+                <button class="close-modal" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <i class="fas fa-gift" style="font-size: 60px; color: #ffd700; margin-bottom: 20px;"></i>
+                <h2>You've Earned!</h2>
+                <p style="font-size: 24px; font-weight: bold; color: #27ae60;">TZS ${amount.toLocaleString()}</p>
+                <p>Thank you for following all our social media pages!</p>
+                <button class="btn btn-primary" onclick="this.closest('.modal').remove()" style="margin-top: 20px;">
+                    <i class="fas fa-check"></i> Great!
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (modal.parentNode) modal.remove();
+    }, 5000);
+}
+
+// ========== UPDATE SOCIAL LINK RENDER FOR USER ==========
+async function renderUserSocialGridWithReminder() {
+    // Don't show reminder for admin
+    if (db.currentUser && (db.currentUser.is_admin || db.currentUser.is_super_admin)) {
+        const badge = document.getElementById('socialFollowBadge');
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+    
+    await renderUserSocialGrid();
+    
+    // Add reminder badge if tasks incomplete
+    const activeLinks = socialLinks.filter(l => l.status === 'active');
+    const followedLinks = await getUserFollowedLinks();
+    const allCompleted = activeLinks.every(l => followedLinks.includes(l.id));
+    
+    const badge = document.getElementById('socialFollowBadge');
+    if (badge && !allCompleted && activeLinks.length > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = '!';
+        badge.classList.add('social-reminder-blink');
+        
+        // Also add blink to sidebar link
+        const socialLink = document.querySelector('.nav-link[data-target="user-social-links"]');
+        if (socialLink) {
+            socialLink.classList.add('social-reminder-blink');
+        }
+    } else if (badge) {
+        badge.style.display = 'none';
+        const socialLink = document.querySelector('.nav-link[data-target="user-social-links"]');
+        if (socialLink) {
+            socialLink.classList.remove('social-reminder-blink');
+        }
+    }
+}
+
+// ========== MODIFY SIGNUP FUNCTION ==========
+// Store original functions
+const originalSignup = window.signup;
+const originalLogin = window.login;
+
+// Override signup - Only initialize for regular users
+window.signup = async function() {
+    if (originalSignup) {
+        await originalSignup();
+    }
+    setTimeout(() => {
+        // Only initialize popup for regular users (not admin)
+        if (db && db.currentUser && !db.currentUser.is_admin && !db.currentUser.is_super_admin) {
+            initSocialPopupSystem();
+        }
+    }, 2000);
+};
+
+// Override login - Only initialize for regular users
+window.login = async function() {
+    if (originalLogin) {
+        await originalLogin();
+    }
+    setTimeout(() => {
+        // Only initialize popup for regular users (not admin)
+        if (db && db.currentUser && !db.currentUser.is_admin && !db.currentUser.is_super_admin) {
+            initSocialPopupSystem();
+        }
+    }, 2000);
+};
+
+// ========== INITIALIZE ON PAGE LOAD ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is already logged in and is regular user
+    setTimeout(() => {
+        if (db && db.currentUser && !db.currentUser.is_admin && !db.currentUser.is_super_admin) {
+            initSocialPopupSystem();
+        }
+    }, 3000);
+});
+
+// ========== EXPORT FUNCTIONS ==========
+window.initSocialPopupSystem = initSocialPopupSystem;
+window.showSocialPopup = showSocialPopup;
+window.closeSocialPopup = closeSocialPopup;
+window.openVerifyModal = openVerifyModal;
+window.closeVerifyModal = closeVerifyModal;
+window.verifyFollow = verifyFollow;
+window.openFullSocialPage = openFullSocialPage;
+window.checkAndShowPopup = checkAndShowPopup;
+
+console.log('✅ Automatic Social Popup System Loaded (User Dashboard Only)');
+
+// ==============================================
+// FIRST DEPOSIT BONUS SYSTEM - COMPLETE FIX
+// ==============================================
+
+class FirstDepositBonus {
+    constructor() {
+        this.db = null;
+    }
+
+    async init(dbInstance) {
+        this.db = dbInstance;
+        console.log('🎁 First Deposit Bonus System Initialized');
+    }
+
+    /**
+     * Check and award first deposit bonus
+     * @param {number} userId - User ID who made the deposit
+     * @param {number} depositAmount - Amount deposited
+     * @param {string} transactionId - Transaction ID
+     * @returns {Promise<Object>} - Bonus details
+     */
+    async checkAndAwardFirstDepositBonus(userId, depositAmount, transactionId) {
+        try {
+            console.log('🎯 Checking first deposit bonus for user:', userId);
+            
+            // Get user data
+            const user = await this.db.findUserById(userId);
+            if (!user) {
+                console.error('User not found');
+                return { awarded: false, reason: 'User not found' };
+            }
+
+            // Check if user already received welcome bonus
+            if (user.has_received_welcome_bonus === true) {
+                console.log('User already received welcome bonus');
+                return { awarded: false, reason: 'Already received welcome bonus' };
+            }
+
+            // Check if this is first deposit
+            const transactions = user.transactions || [];
+            const approvedDeposits = transactions.filter(t => 
+                t.type === 'deposit' && 
+                t.status === 'approved' &&
+                t.id !== transactionId
+            );
+
+            const isFirstDeposit = approvedDeposits.length === 0;
+            
+            if (!isFirstDeposit) {
+                console.log(`Not first deposit. User has ${approvedDeposits.length} previous deposits`);
+                return { awarded: false, reason: 'Not first deposit' };
+            }
+
+            console.log('🎉 FIRST DEPOSIT DETECTED! Awarding bonuses...');
+            
+            // Calculate bonuses
+            const welcomeBonus = depositAmount * 0.05; // 5% welcome bonus
+            let totalBonuses = welcomeBonus;
+            let referralBonusAwarded = false;
+            let referralBonusAmount = 0;
+
+            // Award welcome bonus to depositor
+            const welcomeBonusAwarded = await this.awardWelcomeBonus(userId, welcomeBonus, depositAmount, transactionId);
+            
+            if (welcomeBonusAwarded) {
+                console.log(`✅ Welcome bonus of TZS ${welcomeBonus.toLocaleString()} awarded`);
+            }
+
+            // Award referral bonus to referrer if exists
+            if (user.referred_by) {
+                const referrer = await this.db.findUserByReferralCode(user.referred_by);
+                if (referrer) {
+                    referralBonusAmount = depositAmount * 0.10; // 10% referral commission
+                    referralBonusAwarded = await this.awardReferralBonus(
+                        referrer.id, 
+                        userId, 
+                        user.username, 
+                        referralBonusAmount, 
+                        depositAmount, 
+                        transactionId
+                    );
+                    
+                    if (referralBonusAwarded) {
+                        totalBonuses += referralBonusAmount;
+                        console.log(`✅ Referral bonus of TZS ${referralBonusAmount.toLocaleString()} awarded to ${referrer.username}`);
+                    }
+                } else {
+                    console.log(`Referrer not found for code: ${user.referred_by}`);
+                }
+            }
+
+            // Update user's first deposit status
+            await this.markFirstDepositComplete(userId, depositAmount, transactionId);
+
+            return {
+                awarded: true,
+                welcome_bonus: welcomeBonus,
+                referral_bonus: referralBonusAwarded ? referralBonusAmount : 0,
+                total_bonus: totalBonuses,
+                is_first_deposit: true
+            };
+
+        } catch (error) {
+            console.error('Error in first deposit bonus:', error);
+            return { awarded: false, reason: error.message };
+        }
+    }
+
+    /**
+     * Award welcome bonus to depositor
+     */
+    async awardWelcomeBonus(userId, bonusAmount, depositAmount, transactionId) {
+        try {
+            const currentTimestamp = new Date().toISOString();
+            
+            // Create bonus transaction
+            const bonusTransaction = {
+                id: Date.now(),
+                userId: userId,
+                username: null, // Will be filled
+                email: null, // Will be filled
+                type: 'bonus',
+                amount: bonusAmount,
+                method: 'welcome_bonus',
+                status: 'approved',
+                date: currentTimestamp,
+                details: {
+                    description: `🎉 5% welcome bonus for first deposit of TZS ${depositAmount.toLocaleString()}`,
+                    first_deposit_amount: depositAmount,
+                    bonus_percentage: 5,
+                    bonus_type: 'welcome_bonus',
+                    source_transaction_id: transactionId,
+                    auto_approved: true
+                },
+                adminActionDate: currentTimestamp,
+                adminId: 'system'
+            };
+
+            // Get user to get username and email
+            const user = await this.db.findUserById(userId);
+            if (user) {
+                bonusTransaction.username = user.username;
+                bonusTransaction.email = user.email;
+            }
+
+            // Add to user's transactions and update balance
+            const userRef = this.db.db.collection('users').doc(userId.toString());
+            const userDoc = await userRef.get();
+            const userData = userDoc.data();
+            
+            const transactions = userData.transactions || [];
+            transactions.push(bonusTransaction);
+            
+            await userRef.update({
+                transactions: transactions,
+                balance: firebase.firestore.FieldValue.increment(bonusAmount),
+                has_received_welcome_bonus: true,
+                welcome_bonus_amount: bonusAmount,
+                welcome_bonus_date: currentTimestamp,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Update current user object if it's the same user
+            if (this.db.currentUser && this.db.currentUser.id === userId) {
+                this.db.currentUser.balance += bonusAmount;
+                this.db.currentUser.transactions = transactions;
+                this.db.currentUser.has_received_welcome_bonus = true;
+            }
+
+            return true;
+
+        } catch (error) {
+            console.error('Error awarding welcome bonus:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Award referral bonus to referrer
+     */
+    async awardReferralBonus(referrerId, referredUserId, referredUsername, bonusAmount, depositAmount, transactionId) {
+        try {
+            const currentTimestamp = new Date().toISOString();
+            
+            // Get referrer data
+            const referrer = await this.db.findUserById(referrerId);
+            if (!referrer) return false;
+
+            // Create bonus transaction for referrer
+            const bonusTransaction = {
+                id: Date.now() + 1,
+                userId: referrerId,
+                username: referrer.username,
+                email: referrer.email,
+                type: 'bonus',
+                amount: bonusAmount,
+                method: 'referral_bonus',
+                status: 'approved',
+                date: currentTimestamp,
+                details: {
+                    description: `🎁 10% referral bonus for referring ${referredUsername}`,
+                    referred_user_id: referredUserId,
+                    referred_username: referredUsername,
+                    first_deposit_amount: depositAmount,
+                    bonus_percentage: 10,
+                    bonus_type: 'referrer_bonus',
+                    source_transaction_id: transactionId,
+                    auto_approved: true
+                },
+                adminActionDate: currentTimestamp,
+                adminId: 'system'
+            };
+
+            // Update referrer
+            const referrerRef = this.db.db.collection('users').doc(referrerId.toString());
+            const referrerDoc = await referrerRef.get();
+            const referrerData = referrerDoc.data();
+            
+            const referrerTransactions = referrerData.transactions || [];
+            referrerTransactions.push(bonusTransaction);
+            
+            // Update referral record
+            let referrals = referrerData.referrals || [];
+            const referralIndex = referrals.findIndex(ref => ref.id === referredUserId);
+            
+            if (referralIndex !== -1) {
+                referrals[referralIndex] = {
+                    ...referrals[referralIndex],
+                    bonus_pending: false,
+                    first_deposit_amount: depositAmount,
+                    referrer_bonus_amount: bonusAmount,
+                    referrer_bonus_paid: true,
+                    referrer_bonus_paid_date: currentTimestamp,
+                    referrer_bonus_transaction_id: bonusTransaction.id
+                };
+            }
+
+            await referrerRef.update({
+                transactions: referrerTransactions,
+                referrals: referrals,
+                balance: firebase.firestore.FieldValue.increment(bonusAmount),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Update current user object if it's the referrer
+            if (this.db.currentUser && this.db.currentUser.id === referrerId) {
+                this.db.currentUser.balance += bonusAmount;
+                this.db.currentUser.transactions = referrerTransactions;
+                this.db.currentUser.referrals = referrals;
+            }
+
+            return true;
+
+        } catch (error) {
+            console.error('Error awarding referral bonus:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Mark user as having completed first deposit
+     */
+    async markFirstDepositComplete(userId, depositAmount, transactionId) {
+        try {
+            const userRef = this.db.db.collection('users').doc(userId.toString());
+            
+            await userRef.update({
+                first_deposit_completed: true,
+                first_deposit_amount: depositAmount,
+                first_deposit_date: new Date().toISOString(),
+                first_deposit_transaction_id: transactionId,
+                updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Update current user object
+            if (this.db.currentUser && this.db.currentUser.id === userId) {
+                this.db.currentUser.first_deposit_completed = true;
+                this.db.currentUser.first_deposit_amount = depositAmount;
+                this.db.currentUser.first_deposit_date = new Date().toISOString();
+            }
+
+            return true;
+
+        } catch (error) {
+            console.error('Error marking first deposit:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Debug method to check user bonus status
+     */
+    async debugUserBonusStatus(userId) {
+        try {
+            const user = await this.db.findUserById(userId);
+            if (!user) {
+                console.log('User not found');
+                return;
+            }
+
+            console.log('=== USER BONUS STATUS ===');
+            console.log('User:', user.username);
+            console.log('Has Welcome Bonus:', user.has_received_welcome_bonus);
+            console.log('Welcome Bonus Amount:', user.welcome_bonus_amount);
+            console.log('First Deposit Completed:', user.first_deposit_completed);
+            console.log('First Deposit Amount:', user.first_deposit_amount);
+            console.log('First Deposit Date:', user.first_deposit_date);
+            console.log('Referred By:', user.referred_by);
+            
+            // Count approved deposits
+            const transactions = user.transactions || [];
+            const approvedDeposits = transactions.filter(t => 
+                t.type === 'deposit' && t.status === 'approved'
+            );
+            console.log('Total Approved Deposits:', approvedDeposits.length);
+            
+            // Count bonuses
+            const bonuses = transactions.filter(t => t.type === 'bonus');
+            console.log('Total Bonuses Received:', bonuses.length);
+            
+            bonuses.forEach((bonus, i) => {
+                console.log(`Bonus ${i+1}:`, {
+                    amount: bonus.amount,
+                    method: bonus.method,
+                    date: bonus.date,
+                    description: bonus.details?.description
+                });
+            });
+            
+            console.log('========================');
+            
+        } catch (error) {
+            console.error('Debug error:', error);
+        }
+    }
+}
+
+// Initialize first deposit bonus system
+let firstDepositBonus = null;
+
+async function initFirstDepositBonus() {
+    if (!firstDepositBonus) {
+        firstDepositBonus = new FirstDepositBonus();
+        await firstDepositBonus.init(db);
+    }
+    return firstDepositBonus;
+}
+
+// ==============================================
+// OVERRIDE THE APPROVE TRANSACTION FUNCTION
+// ==============================================
+
+// Store original function
+const originalApproveTransaction = window.approveTransaction;
+
+// Override with bonus integration
+window.approveTransaction = async function(transactionId) {
+    if (!confirm('Una hakika unataka kuidhinisha muamala huu?')) {
+        return;
+    }
+    
+    try {
+        console.log(`✅ Inaidhinisha muamala ${transactionId}...`);
+        
+        const adminId = db.currentUser ? db.currentUser.id : 'admin';
+        
+        // First, update transaction status
+        const success = await db.updateTransactionStatus(transactionId, 'approved', adminId);
+        
+        if (success) {
+            // Get the transaction details to check if it's a deposit
+            const users = await db.getUsers();
+            let transaction = null;
+            let user = null;
+            
+            for (const u of users) {
+                if (u.transactions) {
+                    const found = u.transactions.find(t => t.id == transactionId);
+                    if (found) {
+                        transaction = found;
+                        user = u;
+                        break;
+                    }
+                }
+            }
+            
+            // If it's a deposit, award first deposit bonus
+            if (transaction && transaction.type === 'deposit') {
+                console.log('💰 Deposit approved! Checking for first deposit bonus...');
+                
+                // Initialize bonus system
+                await initFirstDepositBonus();
+                
+                // Award first deposit bonus
+                const bonusResult = await firstDepositBonus.checkAndAwardFirstDepositBonus(
+                    user.id,
+                    transaction.amount,
+                    transactionId
+                );
+                
+                if (bonusResult.awarded) {
+                    let bonusMessage = `✅ Welcome Bonus: TZS ${bonusResult.welcome_bonus.toLocaleString()} awarded!`;
+                    if (bonusResult.referral_bonus > 0) {
+                        bonusMessage += `\n✅ Referral Bonus: TZS ${bonusResult.referral_bonus.toLocaleString()} awarded to your referrer!`;
+                    }
+                    alert(bonusMessage);
+                    console.log('Bonus award result:', bonusResult);
+                } else {
+                    console.log('No bonus awarded:', bonusResult.reason);
+                }
+                
+                // Refresh user data
+                if (db.currentUser && db.currentUser.id === user.id) {
+                    const updatedUser = await db.findUserById(user.id);
+                    db.currentUser = updatedUser;
+                    updateAllBalanceDisplays();
+                }
+            }
+            
+            alert('✅ Muamala umeidhinishwa kikamilifu!');
+            
+            // Refresh the pending transactions list
+            if (typeof loadPendingTransactions === 'function') {
+                loadPendingTransactions();
+            }
+            
+            // Update admin stats if function exists
+            if (typeof loadAdminStats === 'function') {
+                loadAdminStats();
+            }
+            
+            // Update user balance displays
+            if (typeof updateAllBalanceDisplays === 'function') {
+                updateAllBalanceDisplays();
+            }
+        } else {
+            alert('❌ Imeshindwa kuidhinisha muamala. Tafadhali jaribu tena.');
+        }
+    } catch (error) {
+        console.error('❌ Hitilafu ya kuidhinisha muamala:', error);
+        alert('❌ Hitilafu: ' + (error.message || 'Imeshindwa kuidhinisha muamala'));
+    }
+};
+
+// ==============================================
+// DEBUG FUNCTIONS
+// ==============================================
+
+async function debugFirstDepositBonus(userId) {
+    await initFirstDepositBonus();
+    await firstDepositBonus.debugUserBonusStatus(userId);
+}
+
+async function testFirstDepositBonus() {
+    console.log('=== TESTING FIRST DEPOSIT BONUS SYSTEM ===');
+    
+    if (!db.currentUser) {
+        console.log('No user logged in');
+        return;
+    }
+    
+    await initFirstDepositBonus();
+    
+    // Test with current user
+    const result = await firstDepositBonus.checkAndAwardFirstDepositBonus(
+        db.currentUser.id,
+        100000, // Test amount
+        'test_' + Date.now()
+    );
+    
+    console.log('Test result:', result);
+}
+
+// Make functions globally available
+window.initFirstDepositBonus = initFirstDepositBonus;
+window.debugFirstDepositBonus = debugFirstDepositBonus;
+window.testFirstDepositBonus = testFirstDepositBonus;
+
+console.log('✅ First Deposit Bonus System Loaded');
+
+// ==============================================
+// TRIGGER SOCIAL POPUP AFTER DASHBOARD LOAD
+// ==============================================
+
+async function triggerSocialPopupAfterDashboard() {
+    // Only for regular users (not admin)
+    if (!db || !db.currentUser) return;
+    if (db.currentUser.is_admin || db.currentUser.is_super_admin) return;
+    
+    console.log('🎯 Checking if social popup should be shown...');
+    
+    try {
+        // Load social links
+        await loadSocialLinks();
+        
+        // Check if user has completed all social tasks
+        const hasCompletedAll = await hasUserCompletedAllSocialTasks();
+        
+        if (!hasCompletedAll) {
+            console.log('Showing social popup - tasks not completed');
+            setTimeout(() => {
+                showSocialPopup();
+            }, 1500);
+        } else {
+            console.log('All social tasks already completed - no popup needed');
+        }
+    } catch (error) {
+        console.error('Error triggering social popup:', error);
+    }
+}
+
+// ==============================================
+// OVERRIDE SHOW USER DASHBOARD TO TRIGGER POPUP
+// ==============================================
+
+// Store original showUserDashboard function
+
+
+// Override showUserDashboard
+window.showUserDashboard = function() {
+    console.log('Showing user dashboard...');
+    
+    // Call original function
+    if (originalShowUserDashboard) {
+        originalShowUserDashboard();
+    }
+    
+    // Trigger social popup after dashboard is fully loaded
+    setTimeout(() => {
+        triggerSocialPopupAfterDashboard();
+    }, 2000);
+};
+
+// ==============================================
+// COMPLETE ADMIN PERMISSIONS MANAGEMENT
+// For both Super Admin and Admin dashboards
+// ==============================================
+
+// ========== PERMISSIONS CONFIGURATION ==========
+const ADMIN_PERMISSIONS = {
+    user_management: {
+        name: 'User Management',
+        icon: 'fas fa-users',
+        description: 'View, edit, and manage user accounts',
+        category: 'Core'
+    },
+    transaction_approval: {
+        name: 'Transaction Approval',
+        icon: 'fas fa-check-double',
+        description: 'Approve or reject deposits and withdrawals',
+        category: 'Financial'
+    },
+    chat_support: {
+        name: 'Chat Support',
+        icon: 'fas fa-comments',
+        description: 'Access and respond to user chats',
+        category: 'Support'
+    },
+    investment_management: {
+        name: 'Investment Management',
+        icon: 'fas fa-chart-line',
+        description: 'Manage investment plans and packages',
+        category: 'Investment'
+    },
+    report_viewing: {
+        name: 'Report Viewing',
+        icon: 'fas fa-chart-bar',
+        description: 'View system reports and analytics',
+        category: 'Reports'
+    },
+    announcements: {
+        name: 'Announcements',
+        icon: 'fas fa-bullhorn',
+        description: 'Create and manage announcements',
+        category: 'Content'
+    },
+    settings: {
+        name: 'Settings',
+        icon: 'fas fa-cog',
+        description: 'Access system settings',
+        category: 'System'
+    },
+    admin_management: {
+        name: 'Admin Management',
+        icon: 'fas fa-user-shield',
+        description: 'Add, edit, and delete admin accounts',
+        category: 'System'
+    },
+    vip_management: {
+        name: 'VIP Management',
+        icon: 'fas fa-crown',
+        description: 'Manage VIP packages and investments',
+        category: 'Investment'
+    },
+    social_links: {
+        name: 'Social Links',
+        icon: 'fas fa-share-alt',
+        description: 'Manage social media links for users',
+        category: 'Content'
+    },
+    rewards_management: {
+        name: 'Rewards Management',
+        icon: 'fas fa-gift',
+        description: 'Create and manage reward codes',
+        category: 'Financial'
+    },
+    backup_system: {
+        name: 'Backup System',
+        icon: 'fas fa-database',
+        description: 'Access system backup features',
+        category: 'System'
+    }
+};
+
+// Permission categories for UI grouping
+const PERMISSION_CATEGORIES = {
+    Core: 'Core Management',
+    Financial: 'Financial Operations',
+    Investment: 'Investment Management',
+    Support: 'Customer Support',
+    Content: 'Content Management',
+    System: 'System Administration',
+    Reports: 'Reports & Analytics'
+};
+
+// ========== EDIT ADMIN MODAL WITH PERMISSIONS ==========
+async function editAdmin(adminId) {
+    try {
+        const admin = await db.findUserById(adminId);
+        if (!admin) {
+            showNotification('Admin not found', true);
+            return;
+        }
+        
+        // Don't allow editing super admin unless current user is super admin
+        if (admin.is_super_admin && (!db.currentUser || !db.currentUser.is_super_admin)) {
+            showNotification('Cannot edit Super Admin account', 'warning');
+            return;
+        }
+        
+        // Create modal content
+        const modalContent = `
+            <div class="modal-overlay" onclick="closeEditAdminModal()"></div>
+            <div class="modal-container edit-admin-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Edit Admin - ${escapeHtml(admin.username)}</span>
+                    </div>
+                    <button class="modal-close" onclick="closeEditAdminModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <form id="edit-admin-form" onsubmit="return submitEditAdminForm(event, ${admin.id})">
+                        <div class="form-tabs">
+                            <div class="tab-buttons">
+                                <button type="button" class="tab-btn active" data-tab="basic">
+                                    <i class="fas fa-user"></i> Basic Info
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="permissions">
+                                    <i class="fas fa-key"></i> Permissions
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="security">
+                                    <i class="fas fa-lock"></i> Security
+                                </button>
+                            </div>
+                            
+                            <!-- Basic Info Tab -->
+                            <div class="tab-content active" id="basic-tab">
+                                <div class="form-group">
+                                    <label for="edit-admin-username">Username *</label>
+                                    <input type="text" id="edit-admin-username" value="${escapeHtml(admin.username)}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit-admin-email">Email Address *</label>
+                                    <input type="email" id="edit-admin-email" value="${admin.email}" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit-admin-role">Admin Role *</label>
+                                    <select id="edit-admin-role" required>
+                                        <option value="admin" ${admin.admin_role === 'admin' ? 'selected' : ''}>Admin</option>
+                                        <option value="moderator" ${admin.admin_role === 'moderator' ? 'selected' : ''}>Moderator</option>
+                                        <option value="support" ${admin.admin_role === 'support' ? 'selected' : ''}>Support</option>
+                                        <option value="financial" ${admin.admin_role === 'financial' ? 'selected' : ''}>Financial</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit-admin-status">Account Status</label>
+                                    <select id="edit-admin-status">
+                                        <option value="active" ${admin.status === 'active' ? 'selected' : ''}>Active</option>
+                                        <option value="inactive" ${admin.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                                        <option value="suspended" ${admin.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Permissions Tab -->
+                            <div class="tab-content" id="permissions-tab">
+                                <div class="permissions-section">
+                                    <p class="permissions-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        Select which permissions this admin should have. 
+                                        Super Admin has all permissions by default.
+                                    </p>
+                                    
+                                    ${renderPermissionsCheckboxes(admin.permissions || [])}
+                                </div>
+                            </div>
+                            
+                            <!-- Security Tab -->
+                            <div class="tab-content" id="security-tab">
+                                <div class="form-group">
+                                    <label for="edit-admin-password">New Password</label>
+                                    <div class="password-input-group">
+                                        <input type="password" id="edit-admin-password" placeholder="Leave blank to keep current">
+                                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('edit-admin-password', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-hint">Leave empty to keep existing password</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit-admin-admin-password">Admin Password</label>
+                                    <div class="password-input-group">
+                                        <input type="password" id="edit-admin-admin-password" value="${admin.admin_password || ''}" placeholder="Admin access password">
+                                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('edit-admin-admin-password', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-hint">Password for admin-level operations</small>
+                                </div>
+                                
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="edit-force-password-reset" ${admin.force_password_reset ? 'checked' : ''}>
+                                        <span>Force password reset on next login</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="edit-2fa-enabled" ${admin.two_factor_enabled ? 'checked' : ''}>
+                                        <span>Enable Two-Factor Authentication</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="closeEditAdminModal()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        // Create or update modal
+        let modal = document.getElementById('edit-admin-modal-container');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'edit-admin-modal-container';
+            modal.className = 'admin-modal';
+            document.body.appendChild(modal);
+        }
+        
+        modal.innerHTML = modalContent;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Setup tab switching
+        setupAdminModalTabs();
+        
+    } catch (error) {
+        console.error('Error opening edit admin modal:', error);
+        showNotification('Error loading admin data', true);
+    }
+}
+
+// ========== RENDER PERMISSIONS CHECKBOXES ==========
+function renderPermissionsCheckboxes(selectedPermissions = []) {
+    // Group permissions by category
+    const groupedPermissions = {};
+    
+    Object.entries(ADMIN_PERMISSIONS).forEach(([key, perm]) => {
+        if (!groupedPermissions[perm.category]) {
+            groupedPermissions[perm.category] = [];
+        }
+        groupedPermissions[perm.category].push({ key, ...perm });
+    });
+    
+    let html = '';
+    
+    for (const [category, perms] of Object.entries(groupedPermissions)) {
+        html += `
+            <div class="permission-category">
+                <div class="category-header">
+                    <i class="fas fa-folder"></i>
+                    <h4>${PERMISSION_CATEGORIES[category] || category}</h4>
+                </div>
+                <div class="permission-grid">
+        `;
+        
+        perms.forEach(perm => {
+            const isChecked = selectedPermissions.includes(perm.key);
+            html += `
+                <label class="permission-item ${isChecked ? 'checked' : ''}">
+                    <div class="permission-checkbox">
+                        <input type="checkbox" name="permissions" value="${perm.key}" ${isChecked ? 'checked' : ''}>
+                        <div class="permission-info">
+                            <div class="permission-name">
+                                <i class="${perm.icon}"></i>
+                                <span>${perm.name}</span>
+                            </div>
+                            <div class="permission-desc">${perm.description}</div>
+                        </div>
+                    </div>
+                </label>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    return html;
+}
+
+// ========== SETUP ADMIN MODAL TABS ==========
+function setupAdminModalTabs() {
+    const tabBtns = document.querySelectorAll('#edit-admin-form .tab-btn');
+    const tabContents = document.querySelectorAll('#edit-admin-form .tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            
+            // Update active states
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            tabContents.forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+    });
+    
+    // Add permission checkbox listeners for visual feedback
+    document.querySelectorAll('.permission-item input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const parent = this.closest('.permission-item');
+            if (this.checked) {
+                parent.classList.add('checked');
+            } else {
+                parent.classList.remove('checked');
+            }
+        });
+    });
+}
+
+// ========== SUBMIT EDIT ADMIN FORM ==========
+async function submitEditAdminForm(event, adminId) {
+    event.preventDefault();
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    try {
+        // Get form values
+        const username = document.getElementById('edit-admin-username').value.trim();
+        const email = document.getElementById('edit-admin-email').value.trim().toLowerCase();
+        const role = document.getElementById('edit-admin-role').value;
+        const status = document.getElementById('edit-admin-status').value;
+        const password = document.getElementById('edit-admin-password').value;
+        const adminPassword = document.getElementById('edit-admin-admin-password').value;
+        const forcePasswordReset = document.getElementById('edit-force-password-reset')?.checked || false;
+        const twoFactorEnabled = document.getElementById('edit-2fa-enabled')?.checked || false;
+        
+        // Get selected permissions
+        const permissionCheckboxes = document.querySelectorAll('input[name="permissions"]:checked');
+        const permissions = Array.from(permissionCheckboxes).map(cb => cb.value);
+        
+        // Validate
+        if (!username || !email) {
+            showNotification('Username and email are required', true);
+            return;
+        }
+        
+        // Check if email exists for another user
+        const existingUser = await db.findUserByEmail(email);
+        if (existingUser && existingUser.id !== adminId) {
+            showNotification('Email already registered by another user', true);
+            return;
+        }
+        
+        // Prepare update data
+        const updateData = {
+            username: username.toLowerCase(),
+            email: email,
+            admin_role: role,
+            permissions: permissions,
+            status: status,
+            force_password_reset: forcePasswordReset,
+            two_factor_enabled: twoFactorEnabled,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Update password if provided
+        if (password) {
+            updateData.password = password;
+        }
+        
+        if (adminPassword) {
+            updateData.admin_password = adminPassword;
+        }
+        
+        // Update in Firebase
+        await db.updateUser(adminId, updateData);
+        
+        showNotification('Admin updated successfully!', 'success');
+        
+        // Close modal and refresh lists
+        closeEditAdminModal();
+        
+        // Refresh admin list if function exists
+        if (typeof loadAdminsList === 'function') {
+            await loadAdminsList();
+        }
+        if (typeof loadAdminList === 'function') {
+            await loadAdminList();
+        }
+        
+    } catch (error) {
+        console.error('Error updating admin:', error);
+        showNotification('Error updating admin: ' + error.message, true);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+// ========== CLOSE EDIT ADMIN MODAL ==========
+function closeEditAdminModal() {
+    const modal = document.getElementById('edit-admin-modal-container');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// ========== FIXED ADD ADMIN MODAL ==========
+function openAddAdminModal() {
+    const modalContent = `
+        <div class="modal-overlay" onclick="closeAddAdminModal()"></div>
+        <div class="modal-container add-admin-modal">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Add New Administrator</span>
+                </div>
+                <button class="modal-close" onclick="closeAddAdminModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="add-admin-form" onsubmit="return submitAddAdminWithPermissions(event)">
+                    <!-- Basic Info Section -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-user"></i> Basic Information</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="new-admin-username">Username *</label>
+                                <input type="text" id="new-admin-username" name="username" placeholder="Enter username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-admin-email">Email Address *</label>
+                                <input type="email" id="new-admin-email" name="email" placeholder="admin@example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-admin-role">Admin Role *</label>
+                                <select id="new-admin-role" name="role" required>
+                                    <option value="">Select Role</option>
+                                    <option value="admin">Full Admin</option>
+                                    <option value="moderator">Moderator</option>
+                                    <option value="support">Support Admin</option>
+                                    <option value="financial">Financial Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Permissions Section -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-key"></i> Permissions</h4>
+                        <div class="permissions-grid" id="admin-permissions-container">
+                            ${renderPermissionsCheckboxes([])}
+                        </div>
+                    </div>
+                    
+                    <!-- Security Section -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-lock"></i> Security</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="new-admin-password">Password *</label>
+                                <div class="password-input-group">
+                                    <input type="password" id="new-admin-password" name="password" placeholder="Enter password" required>
+                                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-admin-password', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-admin-confirm-password">Confirm Password *</label>
+                                <div class="password-input-group">
+                                    <input type="password" id="new-admin-confirm-password" name="confirm_password" placeholder="Confirm password" required>
+                                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-admin-confirm-password', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-admin-admin-password">Admin Password (Optional)</label>
+                                <div class="password-input-group">
+                                    <input type="password" id="new-admin-admin-password" name="admin_password" placeholder="Admin access password">
+                                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-admin-admin-password', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <small class="form-hint">Password for admin-level operations (optional)</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Section -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-toggle-on"></i> Account Status</h4>
+                        <div class="form-group">
+                            <label for="new-admin-status">Status</label>
+                            <select id="new-admin-status" name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="pending">Pending Approval</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeAddAdminModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-user-plus"></i> Create Admin
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('add-admin-modal-container');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Create new modal
+    const modal = document.createElement('div');
+    modal.id = 'add-admin-modal-container';
+    modal.className = 'admin-modal';
+    modal.innerHTML = modalContent;
+    document.body.appendChild(modal);
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Setup permission checkbox listeners
+    setupPermissionCheckboxListeners();
+}
+
+// ========== FIXED SUBMIT ADD ADMIN WITH PERMISSIONS ==========
+async function submitAddAdminWithPermissions(event) {
+    event.preventDefault();
+    
+    // Get form values with CORRECT IDs
+    const username = document.getElementById('new-admin-username')?.value.trim();
+    const email = document.getElementById('new-admin-email')?.value.trim().toLowerCase();
+    const role = document.getElementById('new-admin-role')?.value;
+    const status = document.getElementById('new-admin-status')?.value || 'active';
+    const password = document.getElementById('new-admin-password')?.value;
+    const confirmPassword = document.getElementById('new-admin-confirm-password')?.value;
+    const adminPassword = document.getElementById('new-admin-admin-password')?.value;
+    
+    // Get selected permissions
+    const permissionCheckboxes = document.querySelectorAll('#admin-permissions-container input[type="checkbox"]:checked');
+    const permissions = Array.from(permissionCheckboxes).map(cb => cb.value);
+    
+    // Debug log
+    console.log('Form values:', { username, email, role, status, permissions, passwordLength: password?.length });
+    
+    // VALIDATION
+    if (!username) {
+        showNotification('❌ Username is required', true);
+        document.getElementById('new-admin-username')?.focus();
+        return false;
+    }
+    
+    if (!email) {
+        showNotification('❌ Email address is required', true);
+        document.getElementById('new-admin-email')?.focus();
+        return false;
+    }
+    
+    if (!role) {
+        showNotification('❌ Please select an admin role', true);
+        document.getElementById('new-admin-role')?.focus();
+        return false;
+    }
+    
+    if (!password) {
+        showNotification('❌ Password is required', true);
+        document.getElementById('new-admin-password')?.focus();
+        return false;
+    }
+    
+    if (password !== confirmPassword) {
+        showNotification('❌ Passwords do not match', true);
+        document.getElementById('new-admin-password')?.focus();
+        return false;
+    }
+    
+    if (password.length < 6) {
+        showNotification('❌ Password must be at least 6 characters', true);
+        document.getElementById('new-admin-password')?.focus();
+        return false;
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showNotification('❌ Please enter a valid email address', true);
+        document.getElementById('new-admin-email')?.focus();
+        return false;
+    }
+    
+    // Show loading state on button
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Admin...';
+    
+    try {
+        // Check if email already exists
+        const existingUser = await db.findUserByEmail(email);
+        if (existingUser) {
+            showNotification('❌ Email already registered', true);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            return false;
+        }
+        
+        // Check if username already exists
+        const existingUsername = await db.findUserByUsername(username);
+        if (existingUsername) {
+            showNotification('❌ Username already taken', true);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            return false;
+        }
+        
+        // Get next user ID
+        const nextId = await db.getNextId();
+        const referralCode = await db.generateUniqueReferralCode();
+        
+        // Create admin object
+        const newAdmin = {
+            id: nextId,
+            username: username.toLowerCase(),
+            email: email,
+            password: password,
+            admin_password: adminPassword || password,
+            referral_code: referralCode,
+            referred_by: null,
+            join_date: new Date().toISOString(),
+            status: status,
+            is_admin: true,
+            is_super_admin: false,
+            admin_role: role,
+            permissions: permissions,
+            balance: 0,
+            investments: [],
+            referrals: [],
+            transactions: [],
+            has_received_referral_bonus: false,
+            created_at: firebase.firestore.FieldValue.serverTimestamp(),
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        console.log('Creating admin:', newAdmin);
+        
+        // Save to Firebase
+        await db.db.collection('users').doc(nextId.toString()).set(newAdmin);
+        
+        showNotification('✅ Admin created successfully!', 'success');
+        
+        // Close modal and refresh lists
+        closeAddAdminModal();
+        
+        // Refresh admin lists
+        if (typeof loadAdminsList === 'function') {
+            await loadAdminsList();
+        }
+        if (typeof loadAdminList === 'function') {
+            await loadAdminList();
+        }
+        
+        // Show credentials
+        alert(`✅ Admin Created Successfully!\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${password}\nRole: ${role}\n\nPlease save these credentials and share them securely with the new admin.`);
+        
+        return true;
+        
+    } catch (error) {
+        console.error('Error creating admin:', error);
+        showNotification('❌ Error creating admin: ' + error.message, true);
+        return false;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+// ========== SETUP PERMISSION CHECKBOX LISTENERS ==========
+function setupPermissionCheckboxListeners() {
+    setTimeout(() => {
+        document.querySelectorAll('#admin-permissions-container .permission-item').forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        item.classList.add('checked');
+                    } else {
+                        item.classList.remove('checked');
+                    }
+                });
+            }
+        });
+    }, 100);
+}
+
+// ========== CLOSE ADD ADMIN MODAL ==========
+function closeAddAdminModal() {
+    const modal = document.getElementById('add-admin-modal-container');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// ========== FIXED EDIT ADMIN MODAL ==========
+async function editAdmin(adminId) {
+    try {
+        const admin = await db.findUserById(adminId);
+        if (!admin) {
+            showNotification('Admin not found', true);
+            return;
+        }
+        
+        // Don't allow editing super admin unless current user is super admin
+        if (admin.is_super_admin && (!db.currentUser || !db.currentUser.is_super_admin)) {
+            showNotification('Cannot edit Super Admin account', 'warning');
+            return;
+        }
+        
+        const modalContent = `
+            <div class="modal-overlay" onclick="closeEditAdminModal()"></div>
+            <div class="modal-container edit-admin-modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Edit Admin - ${escapeHtml(admin.username)}</span>
+                    </div>
+                    <button class="modal-close" onclick="closeEditAdminModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <form id="edit-admin-form" onsubmit="return submitEditAdminForm(event, ${admin.id})">
+                        <!-- Basic Info -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-user"></i> Basic Information</h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="edit-admin-username">Username *</label>
+                                    <input type="text" id="edit-admin-username" value="${escapeHtml(admin.username)}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-admin-email">Email Address *</label>
+                                    <input type="email" id="edit-admin-email" value="${admin.email}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-admin-role">Admin Role *</label>
+                                    <select id="edit-admin-role" required>
+                                        <option value="admin" ${admin.admin_role === 'admin' ? 'selected' : ''}>Full Admin</option>
+                                        <option value="moderator" ${admin.admin_role === 'moderator' ? 'selected' : ''}>Moderator</option>
+                                        <option value="support" ${admin.admin_role === 'support' ? 'selected' : ''}>Support Admin</option>
+                                        <option value="financial" ${admin.admin_role === 'financial' ? 'selected' : ''}>Financial Admin</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-admin-status">Account Status</label>
+                                    <select id="edit-admin-status">
+                                        <option value="active" ${admin.status === 'active' ? 'selected' : ''}>Active</option>
+                                        <option value="inactive" ${admin.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                                        <option value="suspended" ${admin.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Permissions -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-key"></i> Permissions</h4>
+                            <div class="permissions-grid" id="edit-permissions-container">
+                                ${renderPermissionsCheckboxes(admin.permissions || [])}
+                            </div>
+                        </div>
+                        
+                        <!-- Security -->
+                        <div class="form-section">
+                            <h4><i class="fas fa-lock"></i> Security</h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="edit-admin-password">New Password</label>
+                                    <div class="password-input-group">
+                                        <input type="password" id="edit-admin-password" placeholder="Leave blank to keep current">
+                                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('edit-admin-password', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-hint">Leave empty to keep existing password</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-admin-admin-password">Admin Password</label>
+                                    <div class="password-input-group">
+                                        <input type="password" id="edit-admin-admin-password" value="${admin.admin_password || ''}" placeholder="Admin access password">
+                                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('edit-admin-admin-password', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="closeEditAdminModal()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('edit-admin-modal-container');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        const modal = document.createElement('div');
+        modal.id = 'edit-admin-modal-container';
+        modal.className = 'admin-modal';
+        modal.innerHTML = modalContent;
+        document.body.appendChild(modal);
+        
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Setup permission checkbox listeners
+        setupEditPermissionCheckboxListeners();
+        
+    } catch (error) {
+        console.error('Error opening edit admin modal:', error);
+        showNotification('Error loading admin data', true);
+    }
+}
+
+// ========== SETUP EDIT PERMISSION CHECKBOX LISTENERS ==========
+function setupEditPermissionCheckboxListeners() {
+    setTimeout(() => {
+        document.querySelectorAll('#edit-permissions-container .permission-item').forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        item.classList.add('checked');
+                    } else {
+                        item.classList.remove('checked');
+                    }
+                });
+            }
+        });
+    }, 100);
+}
+
+// ========== SUBMIT EDIT ADMIN FORM - NO REQUIRED FIELDS ==========
+async function submitEditAdminForm(event, adminId) {
+    event.preventDefault();
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    try {
+        // Get form values (all optional)
+        const username = document.getElementById('edit-admin-username')?.value.trim();
+        const email = document.getElementById('edit-admin-email')?.value.trim().toLowerCase();
+        const role = document.getElementById('edit-admin-role')?.value;
+        const status = document.getElementById('edit-admin-status')?.value;
+        const password = document.getElementById('edit-admin-password')?.value;
+        const adminPassword = document.getElementById('edit-admin-admin-password')?.value;
+        const forcePasswordReset = document.getElementById('edit-force-password-reset')?.checked || false;
+        const twoFactorEnabled = document.getElementById('edit-2fa-enabled')?.checked || false;
+        
+        // Get selected permissions
+        const permissionCheckboxes = document.querySelectorAll('input[name="permissions"]:checked');
+        const permissions = Array.from(permissionCheckboxes).map(cb => cb.value);
+        
+        // Prepare update data - only include fields that have values
+        const updateData = {
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Only add fields if they have values (not empty)
+        if (username && username !== '') {
+            updateData.username = username.toLowerCase();
+        }
+        
+        if (email && email !== '') {
+            // Optional: Validate email format if provided
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotification('Please enter a valid email address', true);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return;
+            }
+            
+            // Check if email exists for another user (only if email is being changed)
+            const existingUser = await db.findUserByEmail(email);
+            if (existingUser && existingUser.id !== adminId) {
+                showNotification('Email already registered by another user', true);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return;
+            }
+            updateData.email = email;
+        }
+        
+        if (role && role !== '') {
+            updateData.admin_role = role;
+        }
+        
+        if (status && status !== '') {
+            updateData.status = status;
+        }
+        
+        if (permissions && permissions.length > 0) {
+            updateData.permissions = permissions;
+        }
+        
+        if (forcePasswordReset) {
+            updateData.force_password_reset = forcePasswordReset;
+        }
+        
+        if (twoFactorEnabled) {
+            updateData.two_factor_enabled = twoFactorEnabled;
+        }
+        
+        // Update password if provided
+        if (password && password !== '') {
+            if (password.length < 6) {
+                showNotification('Password must be at least 6 characters', true);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return;
+            }
+            updateData.password = password;
+        }
+        
+        // Update admin password if provided
+        if (adminPassword && adminPassword !== '') {
+            updateData.admin_password = adminPassword;
+        }
+        
+        // Only update if there's something to update
+        if (Object.keys(updateData).length === 1) {
+            showNotification('No changes to update', 'info');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            return;
+        }
+        
+        console.log('Updating admin with data:', updateData);
+        
+        // Update in Firebase
+        await db.updateUser(adminId, updateData);
+        
+        showNotification('✅ Admin updated successfully!', 'success');
+        
+        // Close modal and refresh lists
+        closeEditAdminModal();
+        
+        // Refresh admin list if function exists
+        if (typeof loadAdminsList === 'function') {
+            await loadAdminsList();
+        }
+        if (typeof loadAdminList === 'function') {
+            await loadAdminList();
+        }
+        
+    } catch (error) {
+        console.error('Error updating admin:', error);
+        showNotification('Error updating admin: ' + error.message, true);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+// ========== CLOSE EDIT ADMIN MODAL ==========
+function closeEditAdminModal() {
+    const modal = document.getElementById('edit-admin-modal-container');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// ========== TOGGLE PASSWORD VISIBILITY ==========
+function togglePasswordVisibility(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    const icon = button.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// ========== RENDER ADMIN TABLE WITH PERMISSIONS ==========
+async function loadAdminsList() {
+    try {
+        const users = await db.getUsers();
+        const admins = users.filter(user => user.is_admin === true);
+        
+        const tableBody = document.getElementById('admins-table-body');
+        if (!tableBody) return;
+        
+        if (admins.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        <i class="fas fa-user-shield"></i>
+                        <p>No admin accounts found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        // Sort: Super Admin first, then by role
+        admins.sort((a, b) => {
+            if (a.is_super_admin && !b.is_super_admin) return -1;
+            if (!a.is_super_admin && b.is_super_admin) return 1;
+            return (a.admin_role || 'admin').localeCompare(b.admin_role || 'admin');
+        });
+        
+        tableBody.innerHTML = admins.map(admin => `
+            <tr class="admin-row ${admin.status === 'inactive' ? 'inactive' : ''}">
+                <td>${admin.id}</td>
+                <td>
+                    <div class="admin-info-cell">
+                        <div class="admin-avatar ${admin.is_super_admin ? 'super-admin' : ''}">
+                            <i class="fas ${admin.is_super_admin ? 'fa-crown' : 'fa-user-shield'}"></i>
+                        </div>
+                        <div class="admin-details">
+                            <div class="admin-name">${escapeHtml(admin.username)}</div>
+                            <div class="admin-email">${admin.email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="role-badge ${admin.admin_role || 'admin'}">
+                        ${admin.is_super_admin ? 'Super Admin' : (admin.admin_role || 'Admin').toUpperCase()}
+                    </span>
+                </td>
+                <td class="permissions-cell">
+                    <div class="permissions-list">
+                        ${(admin.permissions || []).slice(0, 4).map(p => `
+                            <span class="permission-tag" title="${ADMIN_PERMISSIONS[p]?.description || p}">
+                                <i class="${ADMIN_PERMISSIONS[p]?.icon || 'fas fa-key'}"></i>
+                                ${ADMIN_PERMISSIONS[p]?.name || p.replace(/_/g, ' ')}
+                            </span>
+                        `).join('')}
+                        ${(admin.permissions || []).length > 4 ? 
+                            `<span class="permission-tag more">+${(admin.permissions || []).length - 4} more</span>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge ${admin.status === 'active' ? 'active' : 'inactive'}">
+                        ${admin.status}
+                    </span>
+                </td>
+                <td class="last-active">
+                    ${admin.last_active ? formatTimeAgo(admin.last_active) : 'Never'}
+                </td>
+                <td>
+                    <div class="admin-actions">
+                        <button class="btn-action view" onclick="viewAdminDetails(${admin.id})" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-action edit" onclick="editAdmin(${admin.id})" title="Edit Admin"
+                            ${admin.is_super_admin && (!db.currentUser || !db.currentUser.is_super_admin) ? 'disabled' : ''}>
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-action chat" onclick="chatWithAdmin(${admin.id})" title="Chat">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                        <button class="btn-action delete" onclick="deleteAdminConfirm(${admin.id})" title="Delete Admin"
+                            ${admin.is_super_admin ? 'disabled' : ''}>
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+        
+        // Update stats
+        updateAdminStats(admins);
+        
+    } catch (error) {
+        console.error('Error loading admins list:', error);
+    }
+}
+
+// ========== FORMAT TIME AGO ==========
+function formatTimeAgo(dateString) {
+    if (!dateString) return 'Never';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    
+    return date.toLocaleDateString();
+}
+
+// ========== DELETE ADMIN CONFIRMATION ==========
+async function deleteAdminConfirm(adminId) {
+    const admin = await db.findUserById(adminId);
+    if (!admin) {
+        showNotification('Admin not found', true);
+        return;
+    }
+    
+    if (admin.is_super_admin) {
+        showNotification('Cannot delete Super Admin account', 'warning');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete admin "${admin.username}"? This action cannot be undone.`)) {
+        await deleteAdmin(adminId);
+    }
+}
+
+async function deleteAdmin(adminId) {
+    try {
+        await db.deleteUser(adminId);
+        showNotification('Admin deleted successfully!', 'success');
+        await loadAdminsList();
+    } catch (error) {
+        console.error('Error deleting admin:', error);
+        showNotification('Error deleting admin: ' + error.message, true);
+    }
+}
+
+// ========== ADD ADMIN MANAGEMENT STYLES ==========
+function addAdminManagementStyles() {
+    if (document.getElementById('admin-management-styles')) return;
+    
+    const styles = document.createElement('style');
+    styles.id = 'admin-management-styles';
+    styles.textContent = `
+        /* Admin Management Styles */
+        .admin-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 100000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .admin-modal .modal-container {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        .admin-modal .modal-header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-modal .modal-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .admin-modal .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: white;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        
+        .admin-modal .modal-close:hover {
+            background: #e74c3c;
+            transform: rotate(90deg);
+        }
+        
+        .admin-modal .modal-body {
+            padding: 25px;
+        }
+        
+        /* Form Tabs */
+        .form-tabs {
+            margin-bottom: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tab-btn.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Permission Categories */
+        .permission-category {
+            margin-bottom: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .category-header {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-header h4 {
+            margin: 0;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .permission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            padding: 15px;
+        }
+        
+        .permission-item {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .permission-item:hover {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+        
+        .permission-item.checked {
+            border-color: #27ae60;
+            background: #e8f5e9;
+        }
+        
+        .permission-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .permission-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        
+        .permission-info {
+            flex: 1;
+        }
+        
+        .permission-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .permission-name i {
+            width: 20px;
+            color: #3498db;
+        }
+        
+        .permission-desc {
+            font-size: 11px;
+            color: #7f8c8d;
+        }
+        
+        .permissions-info {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Admin Table Styles */
+        .admin-table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        .admin-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .admin-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+        
+        .admin-info-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .admin-avatar.super-admin {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .role-badge.super_admin { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #333; }
+        .role-badge.admin { background: #3498db; color: white; }
+        .role-badge.moderator { background: #9b59b6; color: white; }
+        .role-badge.support { background: #27ae60; color: white; }
+        .role-badge.financial { background: #e67e22; color: white; }
+        
+        .permissions-cell {
+            max-width: 300px;
+        }
+        
+        .permissions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .permission-tag {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        
+        .permission-tag.more {
+            background: #3498db;
+            color: white;
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-action.view { background: #3498db; color: white; }
+        .btn-action.edit { background: #f39c12; color: white; }
+        .btn-action.chat { background: #27ae60; color: white; }
+        .btn-action.delete { background: #e74c3c; color: white; }
+        
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Animations */
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .permission-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab-buttons {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                justify-content: center;
+            }
+            
+            .admin-modal .modal-container {
+                width: 95%;
+                margin: 10px;
+            }
+        }
+    `;
+    
+    document.head.appendChild(styles);
+}
+
+// ========== UPDATE ADMIN STATS ==========
+function updateAdminStats(admins) {
+    const totalAdmins = admins.length;
+    const activeAdmins = admins.filter(a => a.status === 'active').length;
+    const superAdmins = admins.filter(a => a.is_super_admin).length;
+    
+    const totalEl = document.getElementById('total-admins-count');
+    const activeEl = document.getElementById('active-admins-count');
+    const superEl = document.getElementById('super-admins-count');
+    
+    if (totalEl) totalEl.textContent = totalAdmins;
+    if (activeEl) activeEl.textContent = activeAdmins;
+    if (superEl) superEl.textContent = superAdmins;
+}
+
+// ========== INITIALIZE ADMIN MANAGEMENT ==========
+function initAdminManagementSystem() {
+    addAdminManagementStyles();
+    loadAdminsList();
+}
+
+// ========== UPDATE EXISTING SHOW DASHBOARD FUNCTIONS ==========
+// Store original functions
+const originalShowSuperAdminDashboard = window.showSuperAdminDashboard;
+const originalShowAdminDashboard = window.showAdminDashboard;
+
+// Override showSuperAdminDashboard
+window.showSuperAdminDashboard = function() {
+    if (originalShowSuperAdminDashboard) {
+        originalShowSuperAdminDashboard();
+    }
+    setTimeout(() => {
+        initAdminManagementSystem();
+    }, 1000);
+};
+
+// Override showAdminDashboard (for regular admins with permission)
+window.showAdminDashboard = function() {
+    if (originalShowAdminDashboard) {
+        originalShowAdminDashboard();
+    }
+    setTimeout(() => {
+        // Only show admin management if user has permission
+        if (db.currentUser && db.currentUser.permissions && 
+            (db.currentUser.permissions.includes('admin_management') || 
+             db.currentUser.permissions.includes('all'))) {
+            initAdminManagementSystem();
+            
+            // Show admin management section button
+            const adminManagementNav = document.querySelector('.nav-link[data-target="admin-management"]');
+            if (adminManagementNav) {
+                adminManagementNav.style.display = 'flex';
+            }
+        }
+    }, 1000);
+};
+
+// Make functions globally available
+window.editAdmin = editAdmin;
+window.openAddAdminModal = openAddAdminModal;
+window.closeEditAdminModal = closeEditAdminModal;
+window.closeAddAdminModal = closeAddAdminModal;
+window.deleteAdminConfirm = deleteAdminConfirm;
+window.deleteAdmin = deleteAdmin;
+window.loadAdminsList = loadAdminsList;
+window.initAdminManagementSystem = initAdminManagementSystem;
+
+console.log('✅ Admin Permissions Management System Loaded');
+
+// ========== FIXED CREATE NEW ADMIN WITH PERMISSIONS ==========
+async function createNewAdminWithPermissions() {
+    console.log('Creating new admin with permissions...');
+    
+    // Get form values using CORRECT IDs
+    const username = document.getElementById('add-admin-username')?.value.trim();
+    const email = document.getElementById('add-admin-email')?.value.trim().toLowerCase();
+    const role = document.getElementById('add-admin-role')?.value;
+    const status = document.getElementById('add-admin-status')?.value || 'active';
+    const password = document.getElementById('add-admin-password')?.value;
+    const confirmPassword = document.getElementById('add-admin-confirm-password')?.value;
+    
+    // Get selected permissions
+    const permissionCheckboxes = document.querySelectorAll('#add-admin-permissions-grid input[type="checkbox"]:checked');
+    const permissions = Array.from(permissionCheckboxes).map(cb => cb.value);
+    
+    // Debug log
+    console.log('Form values:', { username, email, role, status, permissions, passwordLength: password?.length });
+    
+    // VALIDATION
+    if (!username) {
+        alert('❌ Username is required');
+        document.getElementById('add-admin-username')?.focus();
+        return;
+    }
+    
+    if (!email) {
+        alert('❌ Email address is required');
+        document.getElementById('add-admin-email')?.focus();
+        return;
+    }
+    
+    if (!role) {
+        alert('❌ Please select an admin role');
+        document.getElementById('add-admin-role')?.focus();
+        return;
+    }
+    
+    if (!password) {
+        alert('❌ Password is required');
+        document.getElementById('add-admin-password')?.focus();
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        alert('❌ Passwords do not match');
+        document.getElementById('add-admin-password')?.focus();
+        return;
+    }
+    
+    if (password.length < 6) {
+        alert('❌ Password must be at least 6 characters');
+        document.getElementById('add-admin-password')?.focus();
+        return;
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('❌ Please enter a valid email address');
+        document.getElementById('add-admin-email')?.focus();
+        return;
+    }
+    
+    // Get the create button and show loading
+    const createBtn = document.querySelector('#add-admin-modal .btn-primary');
+    const originalText = createBtn?.innerHTML;
+    if (createBtn) {
+        createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        createBtn.disabled = true;
+    }
+    
+    try {
+        // Check if email already exists
+        const existingUser = await db.findUserByEmail(email);
+        if (existingUser) {
+            alert('❌ Email already registered');
+            if (createBtn) {
+                createBtn.innerHTML = originalText;
+                createBtn.disabled = false;
+            }
+            return;
+        }
+        
+        // Check if username already exists
+        const existingUsername = await db.findUserByUsername(username);
+        if (existingUsername) {
+            alert('❌ Username already taken');
+            if (createBtn) {
+                createBtn.innerHTML = originalText;
+                createBtn.disabled = false;
+            }
+            return;
+        }
+        
+        // Get next user ID
+        const nextId = await db.getNextId();
+        const referralCode = await db.generateUniqueReferralCode();
+        
+        // Map role to admin_role
+        let adminRole = 'admin';
+        if (role === 'full') adminRole = 'admin';
+        else if (role === 'approval') adminRole = 'approval';
+        else if (role === 'financial') adminRole = 'financial';
+        else if (role === 'support') adminRole = 'support';
+        
+        // Create admin object
+        const newAdmin = {
+            id: nextId,
+            username: username.toLowerCase(),
+            email: email,
+            password: password,
+            admin_password: password,
+            referral_code: referralCode,
+            referred_by: null,
+            join_date: new Date().toISOString(),
+            status: status,
+            is_admin: true,
+            is_super_admin: false,
+            admin_role: adminRole,
+            permissions: permissions,
+            balance: 0,
+            investments: [],
+            referrals: [],
+            transactions: [],
+            has_received_referral_bonus: false,
+            created_at: firebase.firestore.FieldValue.serverTimestamp(),
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        console.log('Creating admin:', newAdmin);
+        
+        // Save to Firebase
+        await db.db.collection('users').doc(nextId.toString()).set(newAdmin);
+        
+        alert(`✅ Admin Created Successfully!\n\nUsername: ${username}\nEmail: ${email}\nPassword: ${password}\nRole: ${role}\n\nPlease save these credentials.`);
+        
+        // Close modal and reset form
+        closeModal('add-admin-modal');
+        resetAddAdminForm();
+        
+        // Refresh admin lists
+        if (typeof loadAdminsList === 'function') {
+            await loadAdminsList();
+        }
+        if (typeof loadAdminList === 'function') {
+            await loadAdminList();
+        }
+        
+    } catch (error) {
+        console.error('Error creating admin:', error);
+        alert('❌ Error creating admin: ' + error.message);
+    } finally {
+        if (createBtn) {
+            createBtn.innerHTML = originalText;
+            createBtn.disabled = false;
+        }
+    }
+}
+
+// ========== RESET ADD ADMIN FORM ==========
+function resetAddAdminForm() {
+    const formFields = ['add-admin-username', 'add-admin-email', 'add-admin-password', 'add-admin-confirm-password'];
+    formFields.forEach(field => {
+        const input = document.getElementById(field);
+        if (input) input.value = '';
+    });
+    
+    const roleSelect = document.getElementById('add-admin-role');
+    if (roleSelect) roleSelect.value = '';
+    
+    const statusSelect = document.getElementById('add-admin-status');
+    if (statusSelect) statusSelect.value = 'active';
+    
+    // Reset permissions checkboxes to default
+    const checkboxes = document.querySelectorAll('#add-admin-permissions-grid input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        const value = cb.value;
+        if (value === 'user_management' || value === 'transaction_approval' || value === 'chat_support' || value === 'reports') {
+            cb.checked = true;
+        } else {
+            cb.checked = false;
+        }
+    });
+}
+
+// ========== TOGGLE PASSWORD FOR ADD ADMIN FORM ==========
+function toggleAddAdminPassword(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    const toggleBtn = input.parentElement.querySelector('.password-toggle-btn');
+    const icon = toggleBtn?.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    } else {
+        input.type = 'password';
+        if (icon) {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+}
+
+// ========== OVERRIDE THE EXISTING createNewAdmin FUNCTION ==========
+// Replace the old function
+window.createNewAdmin = createNewAdminWithPermissions;
+
+// ============================================
+// BANK ACCOUNT MANAGEMENT (ADMIN)
+// ============================================
+
+// Provider data for Tanzania mobile networks
+const tanzaniaProviders = {
+    vodacom: { name: 'Vodacom M-Pesa', icon: 'fab fa-vodacom', color: '#4CAF50', logo: 'https://img.icons8.com/color/48/000000/safaricom.png' },
+    tigo: { name: 'Tigo Pesa', icon: 'fab fa-tigo', color: '#E91E63', logo: 'https://img.icons8.com/color/48/000000/tigo.png' },
+    airtel: { name: 'Airtel Money', icon: 'fab fa-airtel', color: '#FF9800', logo: 'https://img.icons8.com/color/48/000000/airtel.png' },
+    halotel: { name: 'Halotel Halopesa', icon: 'fas fa-wifi', color: '#2196F3', logo: 'https://img.icons8.com/color/48/000000/halotel.png' },
+    ttcl: { name: 'TTCL T-Pesa', icon: 'fas fa-phone', color: '#9C27B0', logo: 'https://img.icons8.com/color/48/000000/ttcl.png' },
+    zantel: { name: 'Zantel Ezy Pesa', icon: 'fas fa-mobile-alt', color: '#00BCD4', logo: 'https://img.icons8.com/color/48/000000/zantel.png' },
+    crdb: { name: 'CRDB Bank', icon: 'fas fa-university', color: '#1E88E5', logo: 'https://img.icons8.com/color/48/000000/crdb.png' },
+    nmb: { name: 'NMB Bank', icon: 'fas fa-university', color: '#E53935', logo: 'https://img.icons8.com/color/48/000000/nmb.png' },
+    nbc: { name: 'NBC Bank', icon: 'fas fa-university', color: '#00897B', logo: 'https://img.icons8.com/color/48/000000/nbc.png' }
+};
+
+let allBankAccounts = [];
+let pendingDeleteId = null;
+
+// Initialize admin bank accounts
+async function initAdminBankAccounts() {
+    console.log('Initializing Admin Bank Accounts...');
+    await loadAllBankAccounts();
+    setupBankEventListeners();
+}
+
+// Load all bank accounts from localStorage
+async function loadAllBankAccounts() {
+    try {
+        const stored = localStorage.getItem('bank_accounts');
+        if (stored) {
+            allBankAccounts = JSON.parse(stored);
+        } else {
+            allBankAccounts = getDefaultBankAccounts();
+            localStorage.setItem('bank_accounts', JSON.stringify(allBankAccounts));
+        }
+        
+        updateBankStats();
+        renderBankAccountsGrid();
+        
+    } catch (error) {
+        console.error('Error loading bank accounts:', error);
+        showNotification('Error loading bank accounts', 'error');
+    }
+}
+
+// Get default bank accounts
+function getDefaultBankAccounts() {
+    return [
+        {
+            id: '1',
+            name: 'TMN INVESTMENT - M-Pesa',
+            accountNumber: '0768616961',
+            accountType: 'mobile',
+            mobileProvider: 'vodacom',
+            providerName: 'Vodacom M-Pesa',
+            description: `1. Piga *150*00# kwenye simu yako
+2. Chagua "Lipa kwa Simu"
+3. Weka namba: 0768616961
+4. Weka kiasi unachotaka
+5. Weka nenosiri lako
+6. Thibitisha muamala
+
+Kumbuka: Hifadhi namba ya muamala utakayopokea kwa SMS.`,
+            isActive: true,
+            order: 1,
+            bankLogo: 'https://img.icons8.com/color/48/000000/safaricom.png',
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: '2',
+            name: 'TMN INVESTMENT - Tigo Pesa',
+            accountNumber: '0768616961',
+            accountType: 'mobile',
+            mobileProvider: 'tigo',
+            providerName: 'Tigo Pesa',
+            description: `1. Piga *150*01# kwenye simu yako
+2. Chagua "Lipa Bidhaa"
+3. Weka namba: 0768616961
+4. Weka kiasi unachotaka
+5. Weka nenosiri lako
+6. Thibitisha muamala
+
+Kumbuka: Hifadhi namba ya muamala utakayopokea kwa SMS.`,
+            isActive: true,
+            order: 2,
+            bankLogo: 'https://img.icons8.com/color/48/000000/tigo.png',
+            createdAt: new Date().toISOString()
+        },
+        {
+            id: '3',
+            name: 'TMN INVESTMENT - CRDB Bank',
+            accountNumber: '01-23456789',
+            accountType: 'bank',
+            bankName: 'CRDB Bank',
+            providerName: 'CRDB Bank',
+            branch: 'Kariakoo',
+            description: `1. Nenda kwenye tawi la CRDB Bank au tumia CRDB SimBanking
+2. Jina la Mpokeaji: TMN INVESTMENT
+3. Namba ya Akaunti: 01-23456789
+4. Weka kiasi unachotaka kuweka
+5. Wasilisha kwa teller au kamilisha kwenye SimBanking
+6. Chukua risiti au namba ya muamala
+
+Kumbuka: Hakikisha jina limeandikwa kwa usahihi.`,
+            isActive: true,
+            order: 3,
+            bankLogo: 'https://img.icons8.com/color/48/000000/crdb.png',
+            createdAt: new Date().toISOString()
+        }
+    ];
+}
+
+// Update statistics
+function updateBankStats() {
+    const mobile = allBankAccounts.filter(a => a.accountType === 'mobile').length;
+    const bank = allBankAccounts.filter(a => a.accountType === 'bank').length;
+    const lipa = allBankAccounts.filter(a => a.accountType === 'lipa').length;
+    const active = allBankAccounts.filter(a => a.isActive).length;
+    
+    document.getElementById('total-mobile').textContent = mobile;
+    document.getElementById('total-bank').textContent = bank;
+    document.getElementById('total-lipa').textContent = lipa;
+    document.getElementById('total-active').textContent = active;
+}
+
+// Render bank accounts grid
+function renderBankAccountsGrid() {
+    const container = document.getElementById('bank-accounts-grid');
+    if (!container) return;
+    
+    let filtered = [...allBankAccounts];
+    const typeFilter = document.getElementById('bank-type-filter')?.value;
+    const statusFilter = document.getElementById('bank-status-filter')?.value;
+    const searchTerm = document.getElementById('bank-search')?.value.toLowerCase();
+    
+    if (typeFilter && typeFilter !== 'all') filtered = filtered.filter(a => a.accountType === typeFilter);
+    if (statusFilter && statusFilter !== 'all') filtered = filtered.filter(a => statusFilter === 'active' ? a.isActive : !a.isActive);
+    if (searchTerm) filtered = filtered.filter(a => a.name.toLowerCase().includes(searchTerm) || a.accountNumber.includes(searchTerm));
+    
+    filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-university"></i><h4>Hakuna Akaunti</h4><p>Bonyeza "Ongeza Akaunti Mpya" kuanza</p></div>`;
+        return;
+    }
+    
+    container.innerHTML = filtered.map(account => createAccountCard(account)).join('');
+}
+
+// Create account card
+function createAccountCard(account) {
+    const typeText = account.accountType === 'mobile' ? 'Mobile Money' : account.accountType === 'bank' ? 'Benki' : 'Lipa Namba';
+    const provider = account.mobileProvider || account.bankName?.toLowerCase();
+    const providerInfo = tanzaniaProviders[provider];
+    
+    return `
+        <div class="bank-account-card ${!account.isActive ? 'inactive' : ''}">
+            <div class="card-header">
+                <div class="bank-logo">
+                    <img src="${account.bankLogo || (providerInfo?.logo || 'https://img.icons8.com/color/48/000000/bank.png')}" 
+                         alt="${account.name}" onerror="this.src='https://img.icons8.com/color/48/000000/bank.png'">
+                </div>
+                <div class="card-header-info">
+                    <h4>${escapeHtml(account.name)}</h4>
+                    <span class="account-type-badge ${account.accountType}">${typeText}</span>
+                    ${providerInfo ? `<div class="provider-name">${providerInfo.name}</div>` : ''}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="account-number">
+                    <strong>Namba:</strong> ${account.accountNumber}
+                    <button class="copy-btn" onclick="copyToClipboard('${account.accountNumber}')"><i class="fas fa-copy"></i></button>
+                </div>
+                <div class="instructions-preview">
+                    <strong><i class="fas fa-info-circle"></i> Maelekezo:</strong><br>
+                    ${account.description ? account.description.substring(0, 100) + '...' : 'No instructions'}
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-sm btn-warning" onclick="editBankAccount('${account.id}')"><i class="fas fa-edit"></i> Hariri</button>
+                <button class="btn btn-sm ${account.isActive ? 'btn-danger' : 'btn-success'}" onclick="toggleBankAccountStatus('${account.id}')">
+                    <i class="fas ${account.isActive ? 'fa-ban' : 'fa-check'}"></i> ${account.isActive ? 'Zima' : 'Washa'}
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="confirmDeleteBankAccount('${account.id}')"><i class="fas fa-trash"></i> Futa</button>
+            </div>
+        </div>
+    `;
+}
+
+// Select account type
+function selectAccountType(type) {
+    document.getElementById('account-type').value = type;
+    document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('active'));
+    document.querySelector(`.type-option[data-type="${type}"]`).classList.add('active');
+    document.querySelectorAll('.type-specific-fields').forEach(field => field.style.display = 'none');
+    document.getElementById(`${type}-fields`).style.display = 'block';
+}
+
+// Open add bank account modal
+function openBankAccountModal() {
+    document.getElementById('bank-modal-title').innerHTML = '<i class="fas fa-plus"></i> Ongeza Akaunti Mpya';
+    document.getElementById('edit-account-id').value = '';
+    document.getElementById('bank-account-form').reset();
+    document.getElementById('account-active').checked = true;
+    document.getElementById('account-order').value = 0;
+    document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('active'));
+    document.querySelectorAll('.type-specific-fields').forEach(field => field.style.display = 'none');
+    document.getElementById('account-type').value = '';
+    openModal('bank-account-modal');
+}
+
+// Edit bank account
+async function editBankAccount(accountId) {
+    const account = allBankAccounts.find(a => a.id === accountId);
+    if (!account) { showNotification('Akaunti haipatikani', 'error'); return; }
+    
+    document.getElementById('bank-modal-title').innerHTML = '<i class="fas fa-edit"></i> Hariri Akaunti';
+    document.getElementById('edit-account-id').value = account.id;
+    document.getElementById('account-name').value = account.name;
+    document.getElementById('account-number').value = account.accountNumber;
+    document.getElementById('account-description').value = account.description || '';
+    document.getElementById('account-order').value = account.order || 0;
+    document.getElementById('account-active').checked = account.isActive;
+    if (account.bankLogo) document.getElementById('bank-logo-url').value = account.bankLogo;
+    
+    selectAccountType(account.accountType);
+    
+    if (account.accountType === 'mobile' && account.mobileProvider) {
+        document.getElementById('mobile-provider').value = account.mobileProvider;
+        updateMobilePreview();
+    } else if (account.accountType === 'bank') {
+        const bankExists = Array.from(document.getElementById('bank-name').options).some(opt => opt.value === account.bankName);
+        if (bankExists) document.getElementById('bank-name').value = account.bankName;
+        else {
+            document.getElementById('bank-name').value = 'Other';
+            document.getElementById('other-bank-group').style.display = 'block';
+            document.getElementById('other-bank-name').value = account.bankName;
+        }
+        if (account.branch) document.getElementById('bank-branch').value = account.branch;
+        updateBankPreview();
+    } else if (account.accountType === 'lipa' && account.lipaProvider) {
+        document.getElementById('lipa-provider').value = account.lipaProvider;
+        updateLipaPreview();
+    }
+    
+    openModal('bank-account-modal');
+}
+
+// Save bank account
+document.getElementById('bank-account-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const editId = document.getElementById('edit-account-id').value;
+    const accountType = document.getElementById('account-type').value;
+    const name = document.getElementById('account-name').value.trim();
+    const number = document.getElementById('account-number').value.trim();
+    const description = document.getElementById('account-description').value.trim();
+    const isActive = document.getElementById('account-active').checked;
+    const order = parseInt(document.getElementById('account-order').value) || 0;
+    const bankLogo = document.getElementById('bank-logo-url').value.trim();
+    
+    if (!accountType || !name || !number || !description) {
+        showNotification('Tafadhali jaza sehemu zote muhimu', 'error');
+        return;
+    }
+    
+    const accountData = { name, accountNumber: number, accountType, description, isActive, order, bankLogo: bankLogo || null };
+    
+    if (accountType === 'mobile') {
+        const provider = document.getElementById('mobile-provider').value;
+        if (!provider) { showNotification('Chagua mtoa huduma', 'error'); return; }
+        accountData.mobileProvider = provider;
+        accountData.providerName = tanzaniaProviders[provider]?.name;
+        if (!accountData.bankLogo) accountData.bankLogo = tanzaniaProviders[provider]?.logo;
+    } else if (accountType === 'bank') {
+        let bankName = document.getElementById('bank-name').value;
+        if (!bankName) { showNotification('Chagua jina la benki', 'error'); return; }
+        if (bankName === 'Other') {
+            const otherBank = document.getElementById('other-bank-name').value;
+            if (!otherBank) { showNotification('Weka jina la benki nyingine', 'error'); return; }
+            bankName = otherBank;
+        }
+        accountData.bankName = bankName;
+        accountData.providerName = bankName;
+        accountData.branch = document.getElementById('bank-branch').value || '';
+        if (!accountData.bankLogo) accountData.bankLogo = tanzaniaProviders[bankName.toLowerCase()]?.logo;
+    } else if (accountType === 'lipa') {
+        const provider = document.getElementById('lipa-provider').value;
+        if (!provider) { showNotification('Chagua mtoa huduma', 'error'); return; }
+        accountData.lipaProvider = provider;
+        accountData.providerName = tanzaniaProviders[provider]?.name;
+        if (!accountData.bankLogo) accountData.bankLogo = tanzaniaProviders[provider]?.logo;
+    }
+    
+    const submitBtn = document.querySelector('#bank-account-form button[type="submit"]');
+    const originalText = submitBtn?.innerHTML;
+    
+    try {
+        if (submitBtn) { submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inahifadhi...'; submitBtn.disabled = true; }
+        
+        if (editId) {
+            const index = allBankAccounts.findIndex(a => a.id === editId);
+            if (index !== -1) {
+                accountData.id = editId;
+                accountData.createdAt = allBankAccounts[index].createdAt;
+                allBankAccounts[index] = accountData;
+                showNotification('Akaunti imesasishwa!', 'success');
+            }
+        } else {
+            accountData.id = Date.now().toString();
+            accountData.createdAt = new Date().toISOString();
+            allBankAccounts.unshift(accountData);
+            showNotification('Akaunti imeongezwa!', 'success');
+        }
+        
+        localStorage.setItem('bank_accounts', JSON.stringify(allBankAccounts));
+        renderBankAccountsGrid();
+        updateBankStats();
+        closeModal('bank-account-modal');
+        
+    } catch (error) {
+        console.error('Error saving:', error);
+        showNotification('Error: ' + error.message, 'error');
+    } finally {
+        if (submitBtn) { submitBtn.innerHTML = originalText; submitBtn.disabled = false; }
+    }
+});
+
+// Toggle status
+async function toggleBankAccountStatus(accountId) {
+    const account = allBankAccounts.find(a => a.id === accountId);
+    if (!account) return;
+    const newStatus = !account.isActive;
+    if (!confirm(`Una hakika unataka ${newStatus ? 'kuwasha' : 'kuzima'} akaunti hii?`)) return;
+    account.isActive = newStatus;
+    localStorage.setItem('bank_accounts', JSON.stringify(allBankAccounts));
+    renderBankAccountsGrid();
+    updateBankStats();
+    showNotification(`Akaunti ime${newStatus ? 'washwa' : 'zimwa'}!`, 'success');
+}
+
+// Confirm delete
+function confirmDeleteBankAccount(accountId) {
+    pendingDeleteId = accountId;
+    openModal('delete-bank-modal');
+}
+
+// Delete account
+async function deleteBankAccount() {
+    if (!pendingDeleteId) return;
+    const index = allBankAccounts.findIndex(a => a.id === pendingDeleteId);
+    if (index !== -1) {
+        allBankAccounts.splice(index, 1);
+        localStorage.setItem('bank_accounts', JSON.stringify(allBankAccounts));
+        renderBankAccountsGrid();
+        updateBankStats();
+        showNotification('Akaunti imefutwa!', 'success');
+    }
+    closeModal('delete-bank-modal');
+    pendingDeleteId = null;
+}
+
+// Setup event listeners
+function setupBankEventListeners() {
+    document.getElementById('bank-search')?.addEventListener('input', () => renderBankAccountsGrid());
+    document.getElementById('bank-type-filter')?.addEventListener('change', () => renderBankAccountsGrid());
+    document.getElementById('bank-status-filter')?.addEventListener('change', () => renderBankAccountsGrid());
+    document.getElementById('confirm-delete-btn')?.addEventListener('click', deleteBankAccount);
+}
+
+// ============================================
+// USER DEPOSIT SECTION
+// ============================================
+
+let currentDepositData = {};
+
+async function loadUserBankAccounts() {
+    const container = document.getElementById('bank-accounts-list');
+    if (!container) return;
+    
+    container.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Inapakia akaunti...</p></div>`;
+    
+    try {
+        const stored = localStorage.getItem('bank_accounts');
+        let accounts = stored ? JSON.parse(stored) : getDefaultBankAccounts();
+        const activeAccounts = accounts.filter(a => a.isActive === true);
+        activeAccounts.sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        if (activeAccounts.length === 0) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-university"></i><h4>Hakuna Akaunti</h4><p>Wasiliana na msaada</p></div>`;
+            return;
+        }
+        
+        container.innerHTML = activeAccounts.map(account => `
+            <div class="bank-option-card" onclick="selectBankAccount('${account.id}')">
+                <div class="bank-option-icon"><i class="fas ${account.accountType === 'mobile' ? 'fa-mobile-alt' : account.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i></div>
+                <div class="bank-option-info">
+                    <div class="bank-option-name">${escapeHtml(account.name)}</div>
+                    <div class="bank-option-number">${account.accountNumber}</div>
+                    <span class="bank-option-badge ${account.accountType}">${account.accountType === 'mobile' ? 'Mobile Money' : account.accountType === 'bank' ? 'Benki' : 'Lipa Namba'}</span>
+                </div>
+                <div class="bank-option-select"><i class="fas fa-chevron-right"></i></div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h4>Hitilafu</h4><button class="btn btn-primary" onclick="loadUserBankAccounts()">Jaribu Tena</button></div>`;
+    }
+}
+
+function selectBankAccount(accountId) {
+    const stored = localStorage.getItem('bank_accounts');
+    const accounts = stored ? JSON.parse(stored) : getDefaultBankAccounts();
+    currentSelectedAccount = accounts.find(a => a.id === accountId);
+    if (!currentSelectedAccount) return;
+    
+    document.getElementById('selected-account-info').innerHTML = `
+        <div class="selected-account-card">
+            <div class="selected-account-icon"><i class="fas ${currentSelectedAccount.accountType === 'mobile' ? 'fa-mobile-alt' : currentSelectedAccount.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i></div>
+            <div class="selected-account-details">
+                <h4>${escapeHtml(currentSelectedAccount.name)}</h4>
+                <p class="account-number">${currentSelectedAccount.accountNumber}</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('payment-instructions').innerHTML = `
+        <div class="instructions-card">
+            <div class="instructions-header"><i class="fas fa-info-circle"></i><h4>Maelekezo ya Malipo</h4></div>
+            <div class="instructions-body">${currentSelectedAccount.description?.replace(/\n/g, '<br>') || 'No instructions'}</div>
+        </div>
+    `;
+    
+    goToDepositStep(2);
+    showToast(`Umechagua ${currentSelectedAccount.name}`, 'success');
+}
+
+function proceedToPayment() {
+    const fullName = document.getElementById('full-name')?.value.trim();
+    const phoneNumber = document.getElementById('phone-number')?.value.trim();
+    const amount = parseFloat(document.getElementById('deposit-amount')?.value);
+    
+    if (!fullName) { showToast('Weka jina lako kamili', 'error'); return; }
+    if (!phoneNumber || phoneNumber.length < 10) { showToast('Weka namba sahihi ya simu', 'error'); return; }
+    if (!amount || amount < 1000) { showToast('Kiasi cha chini ni TZS 1,000', 'error'); return; }
+    if (amount > 10000000) { showToast('Kiasi cha juu ni TZS 10,000,000', 'error'); return; }
+    if (!currentSelectedAccount) { showToast('Chagua akaunti kwanza', 'error'); return; }
+    
+    currentDepositData = { fullName, phoneNumber, amount, accountId: currentSelectedAccount.id, accountName: currentSelectedAccount.name, accountNumber: currentSelectedAccount.accountNumber, accountType: currentSelectedAccount.accountType, bankLogo: currentSelectedAccount.bankLogo, description: currentSelectedAccount.description };
+    
+    updatePaymentDisplays();
+    goToDepositStep(3);
+}
+
+function updatePaymentDisplays() {
+    const paymentLogo = document.getElementById('payment-logo');
+    const paymentAccountName = document.getElementById('payment-account-name');
+    const paymentAccountNumber = document.getElementById('payment-account-number');
+    const paymentAmountDisplay = document.getElementById('payment-amount-display');
+    const paymentInstructionsDetail = document.getElementById('payment-instructions-detail');
+    
+    if (paymentLogo && currentDepositData.bankLogo) paymentLogo.src = currentDepositData.bankLogo;
+    if (paymentAccountName) paymentAccountName.textContent = currentDepositData.accountName;
+    if (paymentAccountNumber) paymentAccountNumber.textContent = currentDepositData.accountNumber;
+    if (paymentAmountDisplay) paymentAmountDisplay.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+    if (paymentInstructionsDetail && currentDepositData.description) paymentInstructionsDetail.innerHTML = `<div class="instructions-body">${currentDepositData.description.replace(/\n/g, '<br>')}</div><div class="payment-summary"><p><strong>Jina:</strong> ${escapeHtml(currentDepositData.fullName)}</p><p><strong>Simu:</strong> ${currentDepositData.phoneNumber}</p><p><strong>Kiasi:</strong> TZS ${currentDepositData.amount.toLocaleString()}</p></div>`;
+    
+    document.getElementById('summary-name-display').textContent = currentDepositData.fullName;
+    document.getElementById('summary-phone-display').textContent = currentDepositData.phoneNumber;
+    document.getElementById('summary-amount-display').textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+    document.getElementById('summary-account-display').textContent = currentDepositData.accountName;
+}
+
+function openPaymentWindow() {
+    if (!currentDepositData) return;
+    const w = window.open('', '_blank', 'width=500,height=650,scrollbars=yes');
+    w.document.write(`
+        <!DOCTYPE html><html><head><title>Malipo - TMN</title><meta charset="UTF-8"><style>
+            body{font-family:Arial;padding:20px;background:#667eea}.payment-card{max-width:450px;margin:0 auto;background:white;border-radius:20px;padding:30px}
+            .amount{text-align:center;font-size:36px;color:#27ae60;margin:20px 0}.info-box{background:#f8f9fa;padding:20px;border-radius:15px;margin:20px 0}
+            .instructions-box{background:#fff3cd;padding:20px;border-radius:15px;margin:20px 0;color:#856404}
+            button{width:100%;padding:15px;background:#27ae60;color:white;border:none;border-radius:10px;cursor:pointer;margin-top:15px}
+        </style></head>
+        <body><div class="payment-card">
+            <h3>${escapeHtml(currentDepositData.accountName)}</h3>
+            <div class="amount">TZS ${currentDepositData.amount.toLocaleString()}</div>
+            <div class="info-box">
+                <p><strong>Jina la Mpokeaji:</strong> ${escapeHtml(currentDepositData.accountName)}</p>
+                <p><strong>Namba ya Akaunti:</strong> ${currentDepositData.accountNumber}</p>
+                <p><strong>Jina la Mtumaji:</strong> ${escapeHtml(currentDepositData.fullName)}</p>
+                <p><strong>Namba ya Simu:</strong> ${currentDepositData.phoneNumber}</p>
+            </div>
+            <div class="instructions-box">${currentDepositData.description?.replace(/\n/g, '<br>') || ''}</div>
+            <button onclick="window.close()">Nimekamilisha Malipo</button>
+            <button onclick="window.close()">Funga</button>
+        </div></body></html>
+    `);
+}
+
+async function submitDepositTransaction() {
+    const transactionId = document.getElementById('transaction-id')?.value.trim();
+    const confirmCheck = document.getElementById('confirm-transaction');
+    
+    if (!transactionId) { showToast('Weka namba ya muamala', 'error'); return; }
+    if (!confirmCheck?.checked) { showToast('Thibitisha kuwa umekamilisha malipo', 'error'); return; }
+    if (!currentDepositData) { showToast('Anza mchakato upya', 'error'); goToDepositStep(1); return; }
+    
+    const submitBtn = document.getElementById('submit-transaction-btn');
+    const originalText = submitBtn?.innerHTML;
+    
+    try {
+        if (submitBtn) { submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inawasilisha...'; submitBtn.disabled = true; }
+        
+        if (!db || !db.currentUser) throw new Error('Ingia kwenye akaunti yako');
+        
+        const transaction = await db.createTransaction(db.currentUser.id, 'deposit', currentDepositData.amount, currentSelectedAccount.accountType, {
+            accountId: currentSelectedAccount.id, accountName: currentSelectedAccount.name, accountNumber: currentSelectedAccount.accountNumber,
+            senderName: currentDepositData.fullName, senderPhone: currentDepositData.phoneNumber, transactionCode: transactionId,
+            description: `Deposit via ${currentSelectedAccount.name}`
+        });
+        
+        if (transaction) {
+            document.getElementById('summary-account-name').textContent = currentSelectedAccount.name;
+            document.getElementById('summary-amount').textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+            document.getElementById('summary-name').textContent = currentDepositData.fullName;
+            document.getElementById('summary-phone').textContent = currentDepositData.phoneNumber;
+            document.getElementById('request-id-final').textContent = transaction.id;
+            document.getElementById('request-date-final').textContent = new Date().toLocaleString();
+            document.getElementById('request-amount-final').textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+            goToDepositStep(5);
+            resetDepositWizardData();
+            showToast('Ombi limewasilishwa!', 'success');
+        }
+    } catch (error) {
+        showToast(error.message, 'error');
+        if (submitBtn) { submitBtn.innerHTML = originalText; submitBtn.disabled = false; }
+    }
+}
+
+function goToDepositStep(step) {
+    for (let i = 1; i <= 5; i++) document.getElementById(`deposit-step-${i}`).style.display = 'none';
+    document.getElementById(`deposit-step-${step}`).style.display = 'block';
+}
+
+function resetDepositWizard() { resetDepositWizardData(); goToDepositStep(1); loadUserBankAccounts(); showToast('Fomu imeanzishwa upya', 'info'); }
+function resetDepositWizardData() { currentSelectedAccount = null; currentDepositData = {}; ['full-name', 'phone-number', 'deposit-amount', 'transaction-id'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); const cb = document.getElementById('confirm-transaction'); if (cb) cb.checked = false; document.querySelectorAll('.quick-amount').forEach(btn => btn.classList.remove('active')); document.getElementById('selected-account-info').innerHTML = ''; document.getElementById('payment-instructions').innerHTML = ''; }
+
+function copyToClipboard(text) { navigator.clipboard.writeText(text); showToast('Namba imenakiliwa!', 'success'); }
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+function showToast(message, type = 'info') { let container = document.getElementById('toast-container'); if (!container) { container = document.createElement('div'); container.id = 'toast-container'; container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;'; document.body.appendChild(container); } const toast = document.createElement('div'); toast.className = `toast toast-${type}`; toast.innerHTML = `<div class="toast-content"><i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i><span>${escapeHtml(message)}</span></div><button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`; container.appendChild(toast); setTimeout(() => toast.remove(), 5000); }
+
+function updateMobilePreview() { const provider = document.getElementById('mobile-provider').value; const preview = document.getElementById('mobile-preview'); if (provider && tanzaniaProviders[provider]) preview.innerHTML = `<i class="${tanzaniaProviders[provider].icon}"></i><span>${tanzaniaProviders[provider].name}</span>`; else preview.innerHTML = ''; }
+function updateBankPreview() { const bank = document.getElementById('bank-name').value; const otherGroup = document.getElementById('other-bank-group'); if (bank === 'Other') otherGroup.style.display = 'block'; else otherGroup.style.display = 'none'; const preview = document.getElementById('bank-preview'); if (bank && bank !== 'Other' && tanzaniaProviders[bank.toLowerCase()]) preview.innerHTML = `<i class="${tanzaniaProviders[bank.toLowerCase()].icon}"></i><span>${tanzaniaProviders[bank.toLowerCase()].name}</span>`; else preview.innerHTML = ''; }
+function updateLipaPreview() { const provider = document.getElementById('lipa-provider').value; const preview = document.getElementById('lipa-preview'); if (provider && tanzaniaProviders[provider]) preview.innerHTML = `<i class="${tanzaniaProviders[provider].icon}"></i><span>${tanzaniaProviders[provider].name}</span>`; else preview.innerHTML = ''; }
+
+function initDepositSection() { if (!db?.currentUser) return; resetDepositWizardData(); loadUserBankAccounts(); goToDepositStep(1); }
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('admin-bank-accounts') && db?.currentUser?.is_admin) setTimeout(initAdminBankAccounts, 500);
+    if (document.getElementById('deposit') && db?.currentUser && !db?.currentUser?.is_admin) setTimeout(initDepositSection, 500);
+});
+
+// Make functions global
+window.openBankAccountModal = openBankAccountModal;
+window.editBankAccount = editBankAccount;
+window.toggleBankAccountStatus = toggleBankAccountStatus;
+window.confirmDeleteBankAccount = confirmDeleteBankAccount;
+window.selectAccountType = selectAccountType;
+window.updateMobilePreview = updateMobilePreview;
+window.updateBankPreview = updateBankPreview;
+window.updateLipaPreview = updateLipaPreview;
+window.selectBankAccount = selectBankAccount;
+window.goToDepositStep = goToDepositStep;
+window.openPaymentWindow = openPaymentWindow;
+window.resetDepositWizard = resetDepositWizard;
+window.copyToClipboard = copyToClipboard;
+
+// ============================================
+// COMPLETE SECTION NAVIGATION SYSTEM
+// ============================================
+
+// Section title mapping
+const sectionTitles = {
+    // User Sections
+    'dashboard': 'Investment Dashboard',
+    'profile': 'Profile Settings',
+    'marketplace': 'Mineral Marketplace',
+    'myinvestment': 'My Investments',
+    'deposit': 'Weka Fedha',
+    'referrals': 'Referral Network',
+    'history': 'Transaction History',
+    'support': 'Contact Support',
+    'about': 'About Us',
+    'faq': 'Frequently Asked Questions',
+    
+    // Admin Sections
+    'admin-approvals': 'Admin Approvals',
+    'admin-history': 'Transaction History',
+    'admin-chat': 'Chat Support',
+    'admin-bank-accounts': 'Bank Account Management',
+    'admin-announcements': 'Announcement Management',
+    'reports': 'Reports & Analytics',
+    'admin-settings': 'Admin Settings',
+    'admin-calculator': 'Admin Calculator',
+    
+    // Super Admin Sections
+    'super-admin-overview': 'System Overview',
+    'admin-management': 'Admin Management',
+    'user-management': 'User Management',
+    'rewards-management': 'Rewards Management',
+    'task-management': 'Task Management',
+    'system-monitoring': 'System Monitoring',
+    'super-admin-settings': 'System Settings',
+    'super-admin-reports': 'Full Reports',
+    'system-backup': 'Backup System'
+};
+
+// Main switchToSection function
+function switchToSection(sectionId) {
+    console.log(`📍 Switching to section: ${sectionId}`);
+    
+    // Show loading indicator
+    showSectionLoading(sectionId);
+    
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
+    });
+    
+    // Show target section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        targetSection.style.display = 'block';
+        
+        // Update page title
+        updatePageTitle(sectionId);
+        
+        // Update active states in navigation
+        updateActiveNavStates(sectionId);
+        
+        // Update URL hash
+        const url = new URL(window.location);
+        url.hash = sectionId;
+        window.history.pushState({}, '', url);
+        
+        // Load section-specific content
+        loadSectionContent(sectionId);
+        
+        // Scroll to top
+        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        console.log(`✅ Section switched to: ${sectionId}`);
+    } else {
+        console.error(`❌ Section not found: ${sectionId}`);
+        showNotification(`Section "${sectionId}" not found`, 'error');
+    }
+    
+    hideSectionLoading();
+}
+
+// Update page title based on section
+function updatePageTitle(sectionId) {
+    const title = sectionTitles[sectionId] || 'TMN Investment';
+    const mainTitle = document.querySelector('.content-title h1');
+    const mainSubtitle = document.querySelector('.content-title p');
+    
+    if (mainTitle) mainTitle.textContent = title;
+    
+    const subtitles = {
+        'dashboard': 'Track your investments and grow your portfolio',
+        'deposit': 'Add funds to your account securely',
+        'marketplace': 'Browse and invest in premium minerals',
+        'myinvestment': 'Monitor your active investments',
+        'referrals': 'Earn commissions by referring friends',
+        'profile': 'Manage your account settings',
+        'history': 'View all your transactions',
+        'admin-bank-accounts': 'Manage payment methods for users'
+    };
+    
+    if (mainSubtitle) mainSubtitle.textContent = subtitles[sectionId] || 'Manage your account';
+}
+
+// Update active states in navigation
+function updateActiveNavStates(sectionId) {
+    // Update sidebar links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('data-target') === sectionId) {
+            link.classList.add('active');
+        }
+    });
+    
+    // Update bottom bar items
+    document.querySelectorAll('.bottom-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('data-target') === sectionId) {
+            item.classList.add('active');
+        }
+    });
+}
+
+// Load section-specific content
+function loadSectionContent(sectionId) {
+    console.log(`📦 Loading content for: ${sectionId}`);
+    
+    switch(sectionId) {
+        case 'dashboard':
+            if (typeof loadDashboardStats === 'function') loadDashboardStats();
+            if (typeof updateUserInfo === 'function') updateUserInfo();
+            break;
+            
+        case 'deposit':
+            if (typeof initDepositSection === 'function') initDepositSection();
+            break;
+            
+        case 'admin-bank-accounts':
+            if (typeof loadAllBankAccounts === 'function') loadAllBankAccounts();
+            break;
+            
+        case 'profile':
+            if (typeof updateProfileInfo === 'function') updateProfileInfo();
+            if (typeof updateUserInfo === 'function') updateUserInfo();
+            break;
+            
+        case 'marketplace':
+            if (typeof loadMarketplaceData === 'function') loadMarketplaceData();
+            break;
+            
+        case 'myinvestment':
+            if (typeof loadUserInvestments === 'function') loadUserInvestments();
+            break;
+            
+        case 'referrals':
+            if (typeof loadReferralData === 'function') loadReferralData();
+            break;
+            
+        case 'history':
+            if (typeof loadTransactionHistory === 'function') loadTransactionHistory();
+            break;
+            
+        case 'admin-approvals':
+            if (typeof loadPendingTransactions === 'function') loadPendingTransactions();
+            break;
+            
+        case 'admin-history':
+            if (typeof loadAdminTransactionHistory === 'function') loadAdminTransactionHistory();
+            break;
+            
+        case 'admin-chat':
+            if (window.chatSystem && typeof window.chatSystem.loadAdminChatList === 'function') {
+                window.chatSystem.loadAdminChatList();
+            }
+            break;
+            
+        case 'user-management':
+            if (typeof loadUsersList === 'function') loadUsersList();
+            break;
+            
+        case 'admin-management':
+            if (typeof loadAdminList === 'function') loadAdminList();
+            break;
+            
+        case 'faq':
+            if (typeof initializeFAQ === 'function') initializeFAQ();
+            break;
+            
+        case 'about':
+            if (typeof loadAboutContent === 'function') loadAboutContent();
+            break;
+    }
+}
+
+// Show loading indicator
+function showSectionLoading(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section && !section.querySelector('.section-loading')) {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'section-loading';
+        loadingDiv.innerHTML = `<div class="loading-spinner"></div><p>Loading ${sectionTitles[sectionId] || 'content'}...</p>`;
+        section.insertBefore(loadingDiv, section.firstChild);
+    }
+}
+
+// Hide loading indicator
+function hideSectionLoading() {
+    document.querySelectorAll('.section-loading').forEach(loading => loading.remove());
+}
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', () => {
+    const hash = window.location.hash.substring(1);
+    if (hash && hash !== window.currentSection) {
+        switchToSection(hash);
+    }
+});
+
+// Quick navigation functions
+function goToDashboard() { switchToSection('dashboard'); }
+function goToDeposit() { switchToSection('deposit'); }
+function goToWithdraw() { openModal('withdraw-modal'); }
+function goToProfile() { switchToSection('profile'); }
+function goToInvestments() { switchToSection('myinvestment'); }
+function goToReferrals() { switchToSection('referrals'); }
+function goToHistory() { switchToSection('history'); }
+function goToSupport() { switchToSection('support'); }
+function goToAdminBankAccounts() { switchToSection('admin-bank-accounts'); }
+
+// Initialize navigation system
+function initNavigationSystem() {
+    console.log('🚀 Initializing Navigation System...');
+    
+    // Setup all navigation links
+    setupNavigationLinks();
+    
+    // Handle initial hash
+    const hash = window.location.hash.substring(1);
+    if (hash && document.getElementById(hash)) {
+        setTimeout(() => switchToSection(hash), 100);
+    } else {
+        // Set default section based on user role
+        if (db && db.currentUser) {
+            if (db.currentUser.is_super_admin) switchToSection('super-admin-overview');
+            else if (db.currentUser.is_admin) switchToSection('admin-approvals');
+            else switchToSection('dashboard');
+        } else {
+            showLanding();
+        }
+    }
+    
+    console.log('✅ Navigation System initialized');
+}
+
+// Setup all navigation links
+function setupNavigationLinks() {
+    // Sidebar links
+    document.querySelectorAll('.nav-link[data-target]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = link.getAttribute('data-target');
+            if (target) switchToSection(target);
+        });
+    });
+    
+    // Bottom bar links
+    document.querySelectorAll('.bottom-item[data-target]').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = item.getAttribute('data-target');
+            if (target) switchToSection(target);
+        });
+    });
+}
+
+// Export functions
+window.switchToSection = switchToSection;
+window.goToDashboard = goToDashboard;
+window.goToDeposit = goToDeposit;
+window.goToWithdraw = goToWithdraw;
+window.goToProfile = goToProfile;
+window.goToInvestments = goToInvestments;
+window.goToReferrals = goToReferrals;
+window.goToHistory = goToHistory;
+window.goToSupport = goToSupport;
+window.goToAdminBankAccounts = goToAdminBankAccounts;
+window.initNavigationSystem = initNavigationSystem;
+
+console.log('✅ Section Navigation System loaded');
+
+// ============================================
+// FIXED DEPOSIT SECTION - STEP 2 TO STEP 3
+// ============================================
+
+// Make sure this runs when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Fix the proceed to payment button
+    fixProceedToPaymentButton();
+    
+    // Also fix after any AJAX content load
+    setInterval(fixProceedToPaymentButton, 1000);
+});
+
+function fixProceedToPaymentButton() {
+    const proceedBtn = document.getElementById('proceed-to-payment-btn');
+    if (!proceedBtn) return;
+    
+    // Remove all existing listeners
+    const newBtn = proceedBtn.cloneNode(true);
+    proceedBtn.parentNode.replaceChild(newBtn, proceedBtn);
+    
+    // Add new click listener
+    newBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Proceed button clicked');
+        proceedToPayment();
+    });
+    
+    console.log('Proceed button fixed');
+}
+
+// The main proceedToPayment function
+function proceedToPayment() {
+    console.log('proceedToPayment function called');
+    
+    // Get values
+    const fullName = document.getElementById('full-name')?.value.trim();
+    const phoneNumber = document.getElementById('phone-number')?.value.trim();
+    const amount = parseFloat(document.getElementById('deposit-amount')?.value);
+    
+    console.log('Values:', { fullName, phoneNumber, amount });
+    
+    // Validate
+    if (!fullName) {
+        showNotification('Tafadhali weka jina lako kamili', 'error');
+        document.getElementById('full-name')?.focus();
+        return;
+    }
+    
+    if (!phoneNumber || phoneNumber.length < 10) {
+        showNotification('Tafadhali weka namba sahihi ya simu (angalau tarakimu 10)', 'error');
+        document.getElementById('phone-number')?.focus();
+        return;
+    }
+    
+    if (!amount || isNaN(amount) || amount < 1000) {
+        showNotification('Tafadhali weka kiasi sahihi (Kiwango cha chini TZS 1,000)', 'error');
+        document.getElementById('deposit-amount')?.focus();
+        return;
+    }
+    
+    if (amount > 10000000) {
+        showNotification('Kiwango cha juu kwa siku ni TZS 10,000,000', 'error');
+        return;
+    }
+    
+    if (!currentSelectedAccount) {
+        showNotification('Tafadhali chagua akaunti ya malipo kwanza', 'error');
+        goToDepositStep(1);
+        return;
+    }
+    
+    // Store deposit data
+    currentDepositData = {
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        amount: amount,
+        accountId: currentSelectedAccount.id,
+        accountName: currentSelectedAccount.name,
+        accountNumber: currentSelectedAccount.accountNumber,
+        accountType: currentSelectedAccount.accountType,
+        bankLogo: currentSelectedAccount.bankLogo,
+        description: currentSelectedAccount.description || currentSelectedAccount.instructions,
+        providerName: currentSelectedAccount.providerName
+    };
+    
+    console.log('Deposit data saved:', currentDepositData);
+    
+    // Update payment displays
+    updatePaymentDisplays();
+    
+    // Go to step 3
+    goToDepositStep(3);
+}
+
+// Update payment displays
+function updatePaymentDisplays() {
+    console.log('Updating payment displays');
+    
+    // Payment logo
+    const paymentLogo = document.getElementById('payment-logo');
+    if (paymentLogo && currentDepositData.bankLogo) {
+        paymentLogo.src = currentDepositData.bankLogo;
+        paymentLogo.onerror = function() { 
+            this.src = 'https://img.icons8.com/color/48/000000/bank.png'; 
+        };
+    }
+    
+    // Account name and number
+    const paymentAccountName = document.getElementById('payment-account-name');
+    const paymentAccountNumber = document.getElementById('payment-account-number');
+    const paymentAccountType = document.getElementById('payment-account-type');
+    const paymentAmountDisplay = document.getElementById('payment-amount-display');
+    
+    if (paymentAccountName) paymentAccountName.textContent = currentDepositData.accountName;
+    if (paymentAccountNumber) paymentAccountNumber.textContent = currentDepositData.accountNumber;
+    if (paymentAccountType) paymentAccountType.textContent = getAccountTypeName(currentDepositData.accountType);
+    if (paymentAmountDisplay) paymentAmountDisplay.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+    
+    // Instructions
+    const paymentInstructionsDetail = document.getElementById('payment-instructions-detail');
+    if (paymentInstructionsDetail && currentDepositData.description) {
+        paymentInstructionsDetail.innerHTML = `
+            <div class="instructions-body">
+                ${currentDepositData.description.replace(/\n/g, '<br>')}
+            </div>
+            <div class="payment-summary" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <p><strong>Jina lako:</strong> ${escapeHtml(currentDepositData.fullName)}</p>
+                <p><strong>Namba ya Simu:</strong> ${currentDepositData.phoneNumber}</p>
+                <p><strong>Kiasi cha Kulipa:</strong> TZS ${currentDepositData.amount.toLocaleString()}</p>
+            </div>
+        `;
+    }
+    
+    // Summary displays for step 4
+    const summaryName = document.getElementById('summary-name-display');
+    const summaryPhone = document.getElementById('summary-phone-display');
+    const summaryAmount = document.getElementById('summary-amount-display');
+    const summaryAccount = document.getElementById('summary-account-display');
+    
+    if (summaryName) summaryName.textContent = currentDepositData.fullName;
+    if (summaryPhone) summaryPhone.textContent = currentDepositData.phoneNumber;
+    if (summaryAmount) summaryAmount.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+    if (summaryAccount) summaryAccount.textContent = currentDepositData.accountName;
+}
+
+// Fixed goToDepositStep function
+function goToDepositStep(step) {
+    console.log('Going to step:', step);
+    
+    // Hide all steps
+    const steps = ['deposit-step-1', 'deposit-step-2', 'deposit-step-3', 'deposit-step-4', 'deposit-step-5'];
+    steps.forEach(stepId => {
+        const element = document.getElementById(stepId);
+        if (element) element.style.display = 'none';
+    });
+    
+    // Show selected step
+    const currentStep = document.getElementById(`deposit-step-${step}`);
+    if (currentStep) {
+        currentStep.style.display = 'block';
+        currentStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        console.error(`Step ${step} not found`);
+    }
+}
+
+// Helper functions
+function getAccountTypeName(type) {
+    const names = {
+        mobile: 'Mobile Money',
+        bank: 'Benki',
+        lipa: 'Lipa Namba'
+    };
+    return names[type] || 'Akaunti';
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function showNotification(message, type = 'info') {
+    console.log('Notification:', message, type);
+    
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <span>${escapeHtml(message)}</span>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+    `;
+    
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// Make sure currentSelectedAccount is defined globally
+let currentSelectedAccount = null;
+
+// Fix selectBankAccount function
+function selectBankAccount(accountId) {
+    console.log('Selecting account:', accountId);
+    
+    try {
+        // Get accounts from localStorage
+        const stored = localStorage.getItem('bank_accounts');
+        let accounts = [];
+        
+        if (stored) {
+            accounts = JSON.parse(stored);
+        } else {
+            accounts = getDefaultBankAccounts();
+        }
+        
+        currentSelectedAccount = accounts.find(a => a.id === accountId);
+        
+        if (!currentSelectedAccount) {
+            showNotification('Akaunti haipatikani', 'error');
+            return;
+        }
+        
+        console.log('Selected account:', currentSelectedAccount);
+        
+        // Show selected account info
+        const selectedInfo = document.getElementById('selected-account-info');
+        if (selectedInfo) {
+            selectedInfo.innerHTML = `
+                <div class="selected-account-card">
+                    <div class="selected-account-icon">
+                        <i class="fas ${currentSelectedAccount.accountType === 'mobile' ? 'fa-mobile-alt' : currentSelectedAccount.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i>
+                    </div>
+                    <div class="selected-account-details">
+                        <h4>${escapeHtml(currentSelectedAccount.name)}</h4>
+                        <p class="account-number">${currentSelectedAccount.accountNumber}</p>
+                        <span class="badge ${currentSelectedAccount.accountType}">${getAccountTypeName(currentSelectedAccount.accountType)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show payment instructions
+        const instructionsDiv = document.getElementById('payment-instructions');
+        if (instructionsDiv && currentSelectedAccount.description) {
+            instructionsDiv.innerHTML = `
+                <div class="instructions-card">
+                    <div class="instructions-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h4>Maelekezo ya Malipo</h4>
+                    </div>
+                    <div class="instructions-body">
+                        ${currentSelectedAccount.description.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Go to step 2
+        goToDepositStep(2);
+        showNotification(`Umechagua ${currentSelectedAccount.name}`, 'success');
+        
+    } catch (error) {
+        console.error('Error selecting bank account:', error);
+        showNotification('Error selecting payment option', 'error');
+    }
+}
+
+// Default bank accounts if none exist
+function getDefaultBankAccounts() {
+    return [
+        {
+            id: '1',
+            name: 'TMN INVESTMENT - M-Pesa',
+            accountNumber: '0768616961',
+            accountType: 'mobile',
+            mobileProvider: 'vodacom',
+            providerName: 'Vodacom M-Pesa',
+            description: `1. Piga *150*00# kwenye simu yako
+2. Chagua "Lipa kwa Simu"
+3. Weka namba: 0768616961
+4. Weka kiasi unachotaka
+5. Weka nenosiri lako
+6. Thibitisha muamala
+
+Kumbuka: Hifadhi namba ya muamala utakayopokea kwa SMS.`,
+            isActive: true,
+            order: 1,
+            bankLogo: 'https://img.icons8.com/color/48/000000/safaricom.png'
+        },
+        {
+            id: '2',
+            name: 'TMN INVESTMENT - Tigo Pesa',
+            accountNumber: '0768616961',
+            accountType: 'mobile',
+            mobileProvider: 'tigo',
+            providerName: 'Tigo Pesa',
+            description: `1. Piga *150*01# kwenye simu yako
+2. Chagua "Lipa Bidhaa"
+3. Weka namba: 0768616961
+4. Weka kiasi unachotaka
+5. Weka nenosiri lako
+6. Thibitisha muamala
+
+Kumbuka: Hifadhi namba ya muamala utakayopokea kwa SMS.`,
+            isActive: true,
+            order: 2,
+            bankLogo: 'https://img.icons8.com/color/48/000000/tigo.png'
+        }
+    ];
+}
+
+// Debug function to test the button
+function testProceedButton() {
+    console.log('Testing proceed button...');
+    const btn = document.getElementById('proceed-to-payment-btn');
+    if (btn) {
+        console.log('Button found:', btn);
+        console.log('Button text:', btn.textContent);
+        // Manually trigger the click
+        btn.click();
+    } else {
+        console.error('Button not found!');
+        // Check if the button exists in DOM
+        const allButtons = document.querySelectorAll('.btn');
+        console.log('All buttons:', allButtons);
+    }
+}
+
+// Run this in console to test
+// testProceedButton();
+
+// ============================================
+// FIXED TRANSACTION SUMMARY DISPLAY
+// ============================================
+
+// This function updates all summary displays
+function updateTransactionSummary() {
+    console.log('Updating transaction summary...');
+    
+    if (!currentDepositData) {
+        console.log('No deposit data available');
+        return;
+    }
+    
+    // Update summary in step 4 (verification)
+    const summaryAccountName = document.getElementById('summary-account-name');
+    const summaryAmount = document.getElementById('summary-amount');
+    const summaryName = document.getElementById('summary-name');
+    const summaryPhone = document.getElementById('summary-phone');
+    
+    if (summaryAccountName) {
+        summaryAccountName.textContent = currentDepositData.accountName || '-';
+        console.log('Updated summary account name:', currentDepositData.accountName);
+    }
+    
+    if (summaryAmount) {
+        summaryAmount.textContent = `TZS ${(currentDepositData.amount || 0).toLocaleString()}`;
+        console.log('Updated summary amount:', currentDepositData.amount);
+    }
+    
+    if (summaryName) {
+        summaryName.textContent = currentDepositData.fullName || '-';
+        console.log('Updated summary name:', currentDepositData.fullName);
+    }
+    
+    if (summaryPhone) {
+        summaryPhone.textContent = currentDepositData.phoneNumber || '-';
+        console.log('Updated summary phone:', currentDepositData.phoneNumber);
+    }
+    
+    // Also update the payment summary in step 3
+    const summaryNameDisplay = document.getElementById('summary-name-display');
+    const summaryPhoneDisplay = document.getElementById('summary-phone-display');
+    const summaryAmountDisplay = document.getElementById('summary-amount-display');
+    const summaryAccountDisplay = document.getElementById('summary-account-display');
+    
+    if (summaryNameDisplay) summaryNameDisplay.textContent = currentDepositData.fullName || '-';
+    if (summaryPhoneDisplay) summaryPhoneDisplay.textContent = currentDepositData.phoneNumber || '-';
+    if (summaryAmountDisplay) summaryAmountDisplay.textContent = `TZS ${(currentDepositData.amount || 0).toLocaleString()}`;
+    if (summaryAccountDisplay) summaryAccountDisplay.textContent = currentDepositData.accountName || '-';
+}
+
+// Fixed proceedToPayment function with summary update
+function proceedToPayment() {
+    console.log('proceedToPayment function called');
+    
+    // Get values
+    const fullName = document.getElementById('full-name')?.value.trim();
+    const phoneNumber = document.getElementById('phone-number')?.value.trim();
+    const amount = parseFloat(document.getElementById('deposit-amount')?.value);
+    
+    console.log('Values:', { fullName, phoneNumber, amount });
+    
+    // Validate
+    if (!fullName) {
+        showNotification('Tafadhali weka jina lako kamili', 'error');
+        document.getElementById('full-name')?.focus();
+        return;
+    }
+    
+    if (!phoneNumber || phoneNumber.length < 10) {
+        showNotification('Tafadhali weka namba sahihi ya simu (angalau tarakimu 10)', 'error');
+        document.getElementById('phone-number')?.focus();
+        return;
+    }
+    
+    if (!amount || isNaN(amount) || amount < 1000) {
+        showNotification('Tafadhali weka kiasi sahihi (Kiwango cha chini TZS 1,000)', 'error');
+        document.getElementById('deposit-amount')?.focus();
+        return;
+    }
+    
+    if (amount > 10000000) {
+        showNotification('Kiwango cha juu kwa siku ni TZS 10,000,000', 'error');
+        return;
+    }
+    
+    if (!currentSelectedAccount) {
+        showNotification('Tafadhali chagua akaunti ya malipo kwanza', 'error');
+        goToDepositStep(1);
+        return;
+    }
+    
+    // Store deposit data
+    currentDepositData = {
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        amount: amount,
+        accountId: currentSelectedAccount.id,
+        accountName: currentSelectedAccount.name,
+        accountNumber: currentSelectedAccount.accountNumber,
+        accountType: currentSelectedAccount.accountType,
+        bankLogo: currentSelectedAccount.bankLogo,
+        description: currentSelectedAccount.description || currentSelectedAccount.instructions,
+        providerName: currentSelectedAccount.providerName
+    };
+    
+    console.log('Deposit data saved:', currentDepositData);
+    
+    // Update ALL displays
+    updatePaymentDisplays();
+    updateTransactionSummary(); // This updates the summary in step 4
+    
+    // Go to step 3
+    goToDepositStep(3);
+}
+
+// Fixed submitDepositTransaction function with proper summary update
+async function submitDepositTransaction() {
+    const transactionId = document.getElementById('transaction-id')?.value.trim();
+    const confirmCheck = document.getElementById('confirm-transaction');
+    
+    if (!transactionId) {
+        showNotification('Tafadhali weka namba ya muamala uliyopokea kwa SMS', 'error');
+        document.getElementById('transaction-id')?.focus();
+        return;
+    }
+    
+    if (!confirmCheck?.checked) {
+        showNotification('Tafadhali thibitisha kuwa umekamilisha malipo', 'error');
+        return;
+    }
+    
+    if (!currentDepositData || !currentSelectedAccount) {
+        showNotification('Tafadhali anza mchakato wa deposit upya', 'error');
+        goToDepositStep(1);
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submit-transaction-btn');
+    const originalText = submitBtn?.innerHTML;
+    
+    try {
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inawasilisha...';
+            submitBtn.disabled = true;
+        }
+        
+        if (!db || !db.currentUser) {
+            throw new Error('Tafadhali ingia kwenye akaunti yako kwanza');
+        }
+        
+        // Create deposit transaction
+        const transaction = await db.createTransaction(
+            db.currentUser.id,
+            'deposit',
+            currentDepositData.amount,
+            currentSelectedAccount.accountType,
+            {
+                accountId: currentSelectedAccount.id,
+                accountName: currentSelectedAccount.name,
+                accountNumber: currentSelectedAccount.accountNumber,
+                senderName: currentDepositData.fullName,
+                senderPhone: currentDepositData.phoneNumber,
+                transactionCode: transactionId,
+                description: `Deposit via ${currentSelectedAccount.name}`
+            }
+        );
+        
+        if (transaction) {
+            // Update final summary in step 5
+            const summaryAccount = document.getElementById('summary-account-name');
+            const summaryAmount = document.getElementById('summary-amount');
+            const summaryName = document.getElementById('summary-name');
+            const summaryPhone = document.getElementById('summary-phone');
+            const requestIdFinal = document.getElementById('request-id-final');
+            const requestDateFinal = document.getElementById('request-date-final');
+            const requestAmountFinal = document.getElementById('request-amount-final');
+            
+            if (summaryAccount) summaryAccount.textContent = currentSelectedAccount.name;
+            if (summaryAmount) summaryAmount.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+            if (summaryName) summaryName.textContent = currentDepositData.fullName;
+            if (summaryPhone) summaryPhone.textContent = currentDepositData.phoneNumber;
+            if (requestIdFinal) requestIdFinal.textContent = transaction.id;
+            if (requestDateFinal) requestDateFinal.textContent = new Date().toLocaleString();
+            if (requestAmountFinal) requestAmountFinal.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+            
+            // Go to step 5
+            goToDepositStep(5);
+            
+            // Reset data
+            resetDepositWizardData();
+            
+            showNotification('Ombi lako limewasilishwa kwa mafanikio!', 'success');
+        } else {
+            throw new Error('Failed to create transaction');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting deposit:', error);
+        showNotification(error.message || 'Error submitting deposit. Please try again.', 'error');
+        
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+}
+
+// Make sure the step 4 HTML has the correct elements
+function verifyStep4Elements() {
+    const elements = {
+        'summary-account-name': 'Akaunti',
+        'summary-amount': 'Kiasi',
+        'summary-name': 'Jina',
+        'summary-phone': 'Simu'
+    };
+    
+    let allFound = true;
+    for (const [id, name] of Object.entries(elements)) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`Element ${id} (${name}) not found in DOM`);
+            allFound = false;
+        } else {
+            console.log(`✅ Found element: ${id}`);
+        }
+    }
+    return allFound;
+}
+
+// Call this when step 4 is shown
+function initStep4() {
+    console.log('Initializing Step 4 - Verification');
+    verifyStep4Elements();
+    updateTransactionSummary();
+}
+
+// Override goToDepositStep to initialize step 4
+const originalGoToStep = window.goToDepositStep;
+window.goToDepositStep = function(step) {
+    console.log('Going to step:', step);
+    
+    // Hide all steps
+    for (let i = 1; i <= 5; i++) {
+        const stepDiv = document.getElementById(`deposit-step-${i}`);
+        if (stepDiv) stepDiv.style.display = 'none';
+    }
+    
+    // Show selected step
+    const currentStep = document.getElementById(`deposit-step-${step}`);
+    if (currentStep) {
+        currentStep.style.display = 'block';
+        currentStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Initialize step-specific content
+        if (step === 4) {
+            setTimeout(() => {
+                initStep4();
+            }, 100);
+        }
+    }
+};
+
+// Also add a manual refresh function for the summary
+function refreshTransactionSummary() {
+    console.log('Refreshing transaction summary...');
+    updateTransactionSummary();
+    showNotification('Muhtasari umeboreshwa', 'info');
+}
+
+// Make sure the summary updates when going back to step 4
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-back') && e.target.closest('#deposit-step-3')) {
+        // Coming back from step 3 to step 2
+        console.log('Going back from step 3 to step 2');
+    }
+    if (e.target.closest('#payment-completed-btn')) {
+        // Going to step 4 from step 3
+        setTimeout(() => {
+            updateTransactionSummary();
+        }, 100);
+    }
+});
+
+// ============================================
+// COMPLETE FIXED DEPOSIT SUBMISSION
+// ============================================
+
+
+
+// Initialize deposit section
+function initDepositSection() {
+    console.log('💰 Initializing deposit section...');
+    
+    if (!db || !db.currentUser) {
+        console.log('User not logged in');
+        return;
+    }
+    
+    resetDepositWizard();
+    loadUserBankAccounts();
+    setupDepositEventListeners();
+    goToDepositStep(1);
+}
+
+// Setup all event listeners
+function setupDepositEventListeners() {
+    // Fix proceed button
+    const proceedBtn = document.getElementById('proceed-to-payment-btn');
+    if (proceedBtn) {
+        const newBtn = proceedBtn.cloneNode(true);
+        proceedBtn.parentNode.replaceChild(newBtn, proceedBtn);
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            proceedToPayment();
+        });
+    }
+    
+    // Fix submit button
+    const submitBtn = document.getElementById('submit-transaction-btn');
+    if (submitBtn) {
+        const newBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newBtn, submitBtn);
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitDepositTransaction();
+        });
+    }
+    
+    // Fix payment completed button
+    const paymentCompletedBtn = document.getElementById('payment-completed-btn');
+    if (paymentCompletedBtn) {
+        const newBtn = paymentCompletedBtn.cloneNode(true);
+        paymentCompletedBtn.parentNode.replaceChild(newBtn, paymentCompletedBtn);
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            goToDepositStep(4);
+            updateTransactionSummary();
+        });
+    }
+    
+    // Confirm checkbox
+    const confirmCheck = document.getElementById('confirm-transaction');
+    if (confirmCheck) {
+        confirmCheck.addEventListener('change', function(e) {
+            const submitTransactionBtn = document.getElementById('submit-transaction-btn');
+            if (submitTransactionBtn) {
+                submitTransactionBtn.disabled = !e.target.checked;
+            }
+        });
+    }
+    
+    // Quick amount buttons
+    document.querySelectorAll('#deposit .quick-amount').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.getAttribute('data-amount');
+            const amountInput = document.getElementById('deposit-amount');
+            if (amountInput) {
+                amountInput.value = amount;
+                document.querySelectorAll('#deposit .quick-amount').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Amount validation
+    const amountInput = document.getElementById('deposit-amount');
+    if (amountInput) {
+        amountInput.addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value)) value = 0;
+            if (value < 1000 && value !== 0) this.value = 1000;
+            if (value > 10000000) this.value = 10000000;
+        });
+    }
+    
+    // Phone validation
+    const phoneInput = document.getElementById('phone-number');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length > 10) value = value.slice(0, 10);
+            this.value = value;
+        });
+    }
+}
+
+// Load bank accounts for user
+async function loadUserBankAccounts() {
+    const container = document.getElementById('bank-accounts-list');
+    if (!container) return;
+    
+    container.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Inapakia akaunti...</p></div>`;
+    
+    try {
+        const stored = localStorage.getItem('bank_accounts');
+        let accounts = stored ? JSON.parse(stored) : getDefaultBankAccounts();
+        const activeAccounts = accounts.filter(a => a.isActive === true);
+        activeAccounts.sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        if (activeAccounts.length === 0) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-university"></i><h4>Hakuna Akaunti</h4><p>Wasiliana na msaada</p></div>`;
+            return;
+        }
+        
+        container.innerHTML = activeAccounts.map(account => `
+            <div class="bank-option-card" onclick="selectBankAccount('${account.id}')">
+                <div class="bank-option-icon">
+                    <i class="fas ${account.accountType === 'mobile' ? 'fa-mobile-alt' : account.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i>
+                </div>
+                <div class="bank-option-info">
+                    <div class="bank-option-name">${escapeHtml(account.name)}</div>
+                    <div class="bank-option-number">${account.accountNumber}</div>
+                    <span class="bank-option-badge ${account.accountType}">${getAccountTypeName(account.accountType)}</span>
+                </div>
+                <div class="bank-option-select"><i class="fas fa-chevron-right"></i></div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h4>Hitilafu</h4><button class="btn btn-primary" onclick="loadUserBankAccounts()">Jaribu Tena</button></div>`;
+    }
+}
+
+// Select bank account
+function selectBankAccount(accountId) {
+    try {
+        const stored = localStorage.getItem('bank_accounts');
+        let accounts = stored ? JSON.parse(stored) : getDefaultBankAccounts();
+        currentSelectedAccount = accounts.find(a => a.id === accountId);
+        
+        if (!currentSelectedAccount) {
+            showNotification('Akaunti haipatikani', 'error');
+            return;
+        }
+        
+        // Show selected account info
+        const selectedInfo = document.getElementById('selected-account-info');
+        if (selectedInfo) {
+            selectedInfo.innerHTML = `
+                <div class="selected-account-card">
+                    <div class="selected-account-icon">
+                        <i class="fas ${currentSelectedAccount.accountType === 'mobile' ? 'fa-mobile-alt' : currentSelectedAccount.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i>
+                    </div>
+                    <div class="selected-account-details">
+                        <h4>${escapeHtml(currentSelectedAccount.name)}</h4>
+                        <p class="account-number">${currentSelectedAccount.accountNumber}</p>
+                        <span class="badge ${currentSelectedAccount.accountType}">${getAccountTypeName(currentSelectedAccount.accountType)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show payment instructions
+        const instructionsDiv = document.getElementById('payment-instructions');
+        if (instructionsDiv && currentSelectedAccount.description) {
+            instructionsDiv.innerHTML = `
+                <div class="instructions-card">
+                    <div class="instructions-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h4>Maelekezo ya Malipo</h4>
+                    </div>
+                    <div class="instructions-body">
+                        ${currentSelectedAccount.description.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        goToDepositStep(2);
+        showNotification(`Umechagua ${currentSelectedAccount.name}`, 'success');
+        
+    } catch (error) {
+        console.error('Error selecting bank account:', error);
+        showNotification('Error selecting payment option', 'error');
+    }
+}
+
+// Proceed to payment (Step 2 -> Step 3)
+function proceedToPayment() {
+    console.log('Proceeding to payment...');
+    
+    const fullName = document.getElementById('full-name')?.value.trim();
+    const phoneNumber = document.getElementById('phone-number')?.value.trim();
+    const amount = parseFloat(document.getElementById('deposit-amount')?.value);
+    
+    // Validation
+    if (!fullName) {
+        showNotification('Tafadhali weka jina lako kamili', 'error');
+        document.getElementById('full-name')?.focus();
+        return;
+    }
+    
+    if (!phoneNumber || phoneNumber.length < 10) {
+        showNotification('Tafadhali weka namba sahihi ya simu (angalau tarakimu 10)', 'error');
+        document.getElementById('phone-number')?.focus();
+        return;
+    }
+    
+    if (!amount || isNaN(amount) || amount < 1000) {
+        showNotification('Tafadhali weka kiasi sahihi (Kiwango cha chini TZS 1,000)', 'error');
+        document.getElementById('deposit-amount')?.focus();
+        return;
+    }
+    
+    if (amount > 10000000) {
+        showNotification('Kiwango cha juu kwa siku ni TZS 10,000,000', 'error');
+        return;
+    }
+    
+    if (!currentSelectedAccount) {
+        showNotification('Tafadhali chagua akaunti ya malipo kwanza', 'error');
+        goToDepositStep(1);
+        return;
+    }
+    
+    // Store deposit data
+    currentDepositData = {
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        amount: amount,
+        accountId: currentSelectedAccount.id,
+        accountName: currentSelectedAccount.name,
+        accountNumber: currentSelectedAccount.accountNumber,
+        accountType: currentSelectedAccount.accountType,
+        bankLogo: currentSelectedAccount.bankLogo,
+        description: currentSelectedAccount.description || currentSelectedAccount.instructions
+    };
+    
+    console.log('Deposit data saved:', currentDepositData);
+    
+    // Update payment displays
+    updatePaymentDisplays();
+    
+    // Go to step 3
+    goToDepositStep(3);
+}
+
+// Update payment displays
+function updatePaymentDisplays() {
+    // Payment logo
+    const paymentLogo = document.getElementById('payment-logo');
+    if (paymentLogo && currentDepositData.bankLogo) {
+        paymentLogo.src = currentDepositData.bankLogo;
+        paymentLogo.onerror = function() { this.src = 'https://img.icons8.com/color/48/000000/bank.png'; };
+    }
+    
+    // Account details
+    const paymentAccountName = document.getElementById('payment-account-name');
+    const paymentAccountNumber = document.getElementById('payment-account-number');
+    const paymentAccountType = document.getElementById('payment-account-type');
+    const paymentAmountDisplay = document.getElementById('payment-amount-display');
+    
+    if (paymentAccountName) paymentAccountName.textContent = currentDepositData.accountName;
+    if (paymentAccountNumber) paymentAccountNumber.textContent = currentDepositData.accountNumber;
+    if (paymentAccountType) paymentAccountType.textContent = getAccountTypeName(currentDepositData.accountType);
+    if (paymentAmountDisplay) paymentAmountDisplay.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+    
+    // Instructions
+    const paymentInstructionsDetail = document.getElementById('payment-instructions-detail');
+    if (paymentInstructionsDetail && currentDepositData.description) {
+        paymentInstructionsDetail.innerHTML = `
+            <div class="instructions-body">
+                ${currentDepositData.description.replace(/\n/g, '<br>')}
+            </div>
+            <div class="payment-summary">
+                <p><strong>Jina lako:</strong> ${escapeHtml(currentDepositData.fullName)}</p>
+                <p><strong>Namba ya Simu:</strong> ${currentDepositData.phoneNumber}</p>
+                <p><strong>Kiasi cha Kulipa:</strong> TZS ${currentDepositData.amount.toLocaleString()}</p>
+            </div>
+        `;
+    }
+    
+    // Summary displays
+    const summaryNameDisplay = document.getElementById('summary-name-display');
+    const summaryPhoneDisplay = document.getElementById('summary-phone-display');
+    const summaryAmountDisplay = document.getElementById('summary-amount-display');
+    const summaryAccountDisplay = document.getElementById('summary-account-display');
+    
+    if (summaryNameDisplay) summaryNameDisplay.textContent = currentDepositData.fullName;
+    if (summaryPhoneDisplay) summaryPhoneDisplay.textContent = currentDepositData.phoneNumber;
+    if (summaryAmountDisplay) summaryAmountDisplay.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+    if (summaryAccountDisplay) summaryAccountDisplay.textContent = currentDepositData.accountName;
+}
+
+// Open payment window
+function openPaymentWindow() {
+    if (!currentDepositData) {
+        showNotification('Tafadhali anza mchakato wa deposit kwanza', 'error');
+        return;
+    }
+    
+    const width = 500;
+    const height = 650;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    
+    const paymentWindow = window.open('', '_blank', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+    
+    if (!paymentWindow) {
+        showNotification('Tafadhali ruhusu pop-ups kwa tovuti hii', 'error');
+        return;
+    }
+    
+    const instructionsHtml = (currentDepositData.description || '').replace(/\n/g, '<br>');
+    
+    paymentWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Malipo - TMN Investment</title>
+            <meta charset="UTF-8">
+            <style>
+                *{margin:0;padding:0;box-sizing:border-box}
+                body{font-family:Arial,sans-serif;padding:20px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh}
+                .payment-card{max-width:450px;margin:0 auto;background:white;border-radius:20px;padding:30px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+                .amount{text-align:center;font-size:36px;color:#27ae60;font-weight:bold;margin:20px 0;padding:15px;background:#f0fdf4;border-radius:15px}
+                .info-box{background:#f8f9fa;padding:20px;border-radius:15px;margin:20px 0}
+                .info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e0e0e0}
+                .info-row:last-child{border-bottom:none}
+                .instructions-box{background:#fff3cd;padding:20px;border-radius:15px;margin:20px 0;color:#856404}
+                button{width:100%;padding:15px;background:#27ae60;color:white;border:none;border-radius:10px;font-size:16px;cursor:pointer;margin-top:15px}
+                button:hover{background:#219653}
+                .close-btn{background:#e74c3c}
+                .close-btn:hover{background:#c0392b}
+            </style>
+        </head>
+        <body>
+            <div class="payment-card">
+                <h3>${escapeHtml(currentDepositData.accountName)}</h3>
+                <div class="amount">TZS ${currentDepositData.amount.toLocaleString()}</div>
+                <div class="info-box">
+                    <div class="info-row"><span>Jina la Mpokeaji:</span><span>${escapeHtml(currentDepositData.accountName)}</span></div>
+                    <div class="info-row"><span>Namba ya Akaunti:</span><span>${currentDepositData.accountNumber}</span></div>
+                    <div class="info-row"><span>Jina la Mtumaji:</span><span>${escapeHtml(currentDepositData.fullName)}</span></div>
+                    <div class="info-row"><span>Namba ya Simu:</span><span>${currentDepositData.phoneNumber}</span></div>
+                </div>
+                <div class="instructions-box">
+                    <h4><i class="fas fa-info-circle"></i> Maelekezo ya Malipo</h4>
+                    ${instructionsHtml}
+                </div>
+                <button onclick="window.close()">Nimekamilisha Malipo</button>
+                <button class="close-btn" onclick="window.close()">Funga</button>
+            </div>
+        </body>
+        </html>
+    `);
+    
+    paymentWindow.document.close();
+}
+
+// Update transaction summary (for step 4)
+function updateTransactionSummary() {
+    console.log('Updating transaction summary...');
+    
+    if (!currentDepositData) {
+        console.log('No deposit data available');
+        return;
+    }
+    
+    const summaryAccountName = document.getElementById('summary-account-name');
+    const summaryAmount = document.getElementById('summary-amount');
+    const summaryName = document.getElementById('summary-name');
+    const summaryPhone = document.getElementById('summary-phone');
+    
+    if (summaryAccountName) summaryAccountName.textContent = currentDepositData.accountName || '-';
+    if (summaryAmount) summaryAmount.textContent = `TZS ${(currentDepositData.amount || 0).toLocaleString()}`;
+    if (summaryName) summaryName.textContent = currentDepositData.fullName || '-';
+    if (summaryPhone) summaryPhone.textContent = currentDepositData.phoneNumber || '-';
+    
+    console.log('Summary updated:', {
+        account: currentDepositData.accountName,
+        amount: currentDepositData.amount,
+        name: currentDepositData.fullName,
+        phone: currentDepositData.phoneNumber
+    });
+}
+
+// Submit deposit transaction (Step 4 -> Step 5)
+async function submitDepositTransaction() {
+    console.log('Submitting deposit transaction...');
+    
+    const transactionId = document.getElementById('transaction-id')?.value.trim();
+    const confirmCheck = document.getElementById('confirm-transaction');
+    
+    if (!transactionId) {
+        showNotification('Tafadhali weka namba ya muamala uliyopokea kwa SMS', 'error');
+        document.getElementById('transaction-id')?.focus();
+        return;
+    }
+    
+    if (!confirmCheck?.checked) {
+        showNotification('Tafadhali thibitisha kuwa umekamilisha malipo', 'error');
+        return;
+    }
+    
+    if (!currentDepositData || !currentSelectedAccount) {
+        showNotification('Tafadhali anza mchakato wa deposit upya', 'error');
+        goToDepositStep(1);
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submit-transaction-btn');
+    const originalText = submitBtn?.innerHTML;
+    
+    try {
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inawasilisha...';
+            submitBtn.disabled = true;
+        }
+        
+        // Check if user is logged in
+        if (!db || !db.currentUser) {
+            throw new Error('Tafadhali ingia kwenye akaunti yako kwanza');
+        }
+        
+        // Create deposit transaction
+        const transaction = await db.createTransaction(
+            db.currentUser.id,
+            'deposit',
+            currentDepositData.amount,
+            currentSelectedAccount.accountType,
+            {
+                accountId: currentSelectedAccount.id,
+                accountName: currentSelectedAccount.name,
+                accountNumber: currentSelectedAccount.accountNumber,
+                senderName: currentDepositData.fullName,
+                senderPhone: currentDepositData.phoneNumber,
+                transactionCode: transactionId,
+                description: `Deposit via ${currentSelectedAccount.name}`
+            }
+        );
+        
+        if (transaction) {
+            console.log('Transaction created:', transaction);
+            
+            // Update final summary in step 5
+            const finalAccount = document.getElementById('summary-account-name');
+            const finalAmount = document.getElementById('summary-amount');
+            const finalName = document.getElementById('summary-name');
+            const finalPhone = document.getElementById('summary-phone');
+            const requestIdFinal = document.getElementById('request-id-final');
+            const requestDateFinal = document.getElementById('request-date-final');
+            const requestAmountFinal = document.getElementById('request-amount-final');
+            
+            if (finalAccount) finalAccount.textContent = currentSelectedAccount.name;
+            if (finalAmount) finalAmount.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+            if (finalName) finalName.textContent = currentDepositData.fullName;
+            if (finalPhone) finalPhone.textContent = currentDepositData.phoneNumber;
+            if (requestIdFinal) requestIdFinal.textContent = transaction.id;
+            if (requestDateFinal) requestDateFinal.textContent = new Date().toLocaleString();
+            if (requestAmountFinal) requestAmountFinal.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+            
+            // Go to step 5 (waiting for approval)
+            goToDepositStep(5);
+            
+            // Reset data
+            resetDepositWizardData();
+            
+            showNotification('Ombi lako limewasilishwa kwa mafanikio!', 'success');
+        } else {
+            throw new Error('Failed to create transaction');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting deposit:', error);
+        showNotification(error.message || 'Error submitting deposit. Please try again.', 'error');
+        
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+}
+
+// Navigation functions
+function goToDepositStep(step) {
+    console.log('Going to step:', step);
+    
+    // Hide all steps
+    for (let i = 1; i <= 5; i++) {
+        const stepDiv = document.getElementById(`deposit-step-${i}`);
+        if (stepDiv) stepDiv.style.display = 'none';
+    }
+    
+    // Show selected step
+    const currentStep = document.getElementById(`deposit-step-${step}`);
+    if (currentStep) {
+        currentStep.style.display = 'block';
+        currentStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // If going to step 4, update the summary
+        if (step === 4) {
+            setTimeout(() => {
+                updateTransactionSummary();
+            }, 100);
+        }
+    }
+}
+
+// Reset deposit wizard
+function resetDepositWizard() {
+    resetDepositWizardData();
+    goToDepositStep(1);
+    loadUserBankAccounts();
+    showNotification('Fomu imeanzishwa upya', 'info');
+}
+
+function resetDepositWizardData() {
+    currentSelectedAccount = null;
+    currentDepositData = null;
+    
+    const fields = ['full-name', 'phone-number', 'deposit-amount', 'transaction-id'];
+    fields.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    
+    const confirmCheck = document.getElementById('confirm-transaction');
+    if (confirmCheck) confirmCheck.checked = false;
+    
+    document.querySelectorAll('#deposit .quick-amount').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const selectedInfo = document.getElementById('selected-account-info');
+    if (selectedInfo) selectedInfo.innerHTML = '';
+    
+    const instructionsDiv = document.getElementById('payment-instructions');
+    if (instructionsDiv) instructionsDiv.innerHTML = '';
+}
+
+// Helper functions
+function getAccountTypeName(type) {
+    const names = { mobile: 'Mobile Money', bank: 'Benki', lipa: 'Lipa Namba' };
+    return names[type] || 'Akaunti';
+}
+
+function getDefaultBankAccounts() {
+    return [
+        {
+            id: '1',
+            name: 'TMN INVESTMENT - M-Pesa',
+            accountNumber: '0768616961',
+            accountType: 'mobile',
+            description: `1. Piga *150*00# kwenye simu yako\n2. Chagua "Lipa kwa Simu"\n3. Weka namba: 0768616961\n4. Weka kiasi unachotaka\n5. Weka nenosiri lako\n6. Thibitisha muamala\n\nKumbuka: Hifadhi namba ya muamala utakayopokea kwa SMS.`,
+            isActive: true,
+            order: 1,
+            bankLogo: 'https://img.icons8.com/color/48/000000/safaricom.png'
+        },
+        {
+            id: '2',
+            name: 'TMN INVESTMENT - Tigo Pesa',
+            accountNumber: '0768616961',
+            accountType: 'mobile',
+            description: `1. Piga *150*01# kwenye simu yako\n2. Chagua "Lipa Bidhaa"\n3. Weka namba: 0768616961\n4. Weka kiasi unachotaka\n5. Weka nenosiri lako\n6. Thibitisha muamala\n\nKumbuka: Hifadhi namba ya muamala utakayopokea kwa SMS.`,
+            isActive: true,
+            order: 2,
+            bankLogo: 'https://img.icons8.com/color/48/000000/tigo.png'
+        }
+    ];
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================
+// FIXED NOTIFICATION FUNCTION
+// ============================================
+
+function showNotification(message, type = 'info') {
+    console.log('Showing notification:', message, type);
+    
+    // Create container if it doesn't exist
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+        console.log('Toast container created');
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Set icon based on type
+    let icon = 'fa-info-circle';
+    if (type === 'success') icon = 'fa-check-circle';
+    if (type === 'error') icon = 'fa-exclamation-circle';
+    if (type === 'warning') icon = 'fa-exclamation-triangle';
+    
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas ${icon}"></i>
+            <span>${escapeHtml(message)}</span>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                if (toast.parentElement) toast.remove();
+            }, 300);
+        }
+    }, 5000);
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Test function to verify notifications work
+function testNotification() {
+    console.log('Testing notification system...');
+    showNotification('This is an info notification', 'info');
+    setTimeout(() => showNotification('This is a success notification!', 'success'), 1000);
+    setTimeout(() => showNotification('This is an error notification!', 'error'), 2000);
+    setTimeout(() => showNotification('This is a warning notification!', 'warning'), 3000);
+}
+
+// Run test in console: testNotification() 
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('deposit') && db?.currentUser && !db?.currentUser?.is_admin) {
+        setTimeout(initDepositSection, 500);
+    }
+});
+
+// Make functions global
+window.initDepositSection = initDepositSection;
+window.selectBankAccount = selectBankAccount;
+window.goToDepositStep = goToDepositStep;
+window.openPaymentWindow = openPaymentWindow;
+window.resetDepositWizard = resetDepositWizard;
+window.proceedToPayment = proceedToPayment;
+window.submitDepositTransaction = submitDepositTransaction;
+window.loadUserBankAccounts = loadUserBankAccounts;
+
+// ============================================
+// COMPLETE WITHDRAWAL SECTION WITH USER BANK ACCOUNTS
+// ============================================
+
+// Global variables
+let userBankAccounts = [];
+let currentEditingAccountId = null;
+let pendingDeleteAccountId = null;
+
+// ============================================
+// LOAD USER BANK ACCOUNTS
+// ============================================
+
+function loadUserBankAccounts() {
+    const container = document.getElementById('user-bank-accounts-list');
+    const withdrawSelect = document.getElementById('withdraw-account');
+    
+    if (!container) return;
+    
+    // Load from localStorage
+    const stored = localStorage.getItem(`user_bank_accounts_${db?.currentUser?.id}`);
+    if (stored) {
+        userBankAccounts = JSON.parse(stored);
+    } else {
+        userBankAccounts = [];
+    }
+    
+    // Update display
+    if (userBankAccounts.length === 0) {
+        container.innerHTML = `
+            <div class="empty-accounts">
+                <i class="fas fa-university"></i>
+                <p>Huna akaunti yoyote iliyoongezwa</p>
+                <button class="btn btn-sm btn-primary" onclick="openUserBankAccountModal()">
+                    <i class="fas fa-plus"></i> Ongeza Akaunti Yako
+                </button>
+            </div>
+        `;
+    } else {
+        container.innerHTML = userBankAccounts.map(account => `
+            <div class="user-bank-card ${account.isDefault ? 'default' : ''}">
+                ${account.isDefault ? '<div class="default-badge">Chaguo-msingi</div>' : ''}
+                <div class="bank-icon">
+                    <i class="fas ${getAccountTypeIcon(account.accountType)}"></i>
+                </div>
+                <div class="bank-name">${escapeHtml(account.accountName)}</div>
+                <div class="bank-details">${getAccountTypeName(account.accountType)}</div>
+                <div class="bank-number">${account.accountNumber}</div>
+                <div class="bank-details">Jina: ${escapeHtml(account.accountHolder)}</div>
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-warning" onclick="editUserBankAccount('${account.id}')">
+                        <i class="fas fa-edit"></i> Hariri
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteUserBankAccount('${account.id}')">
+                        <i class="fas fa-trash"></i> Futa
+                    </button>
+                    ${!account.isDefault ? `
+                        <button class="btn btn-sm btn-success" onclick="setDefaultAccount('${account.id}')">
+                            <i class="fas fa-check"></i> Weka Chaguo-msingi
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Update withdrawal select dropdown
+    if (withdrawSelect) {
+        withdrawSelect.innerHTML = '<option value="">-- Chagua Akaunti --</option>';
+        userBankAccounts.forEach(account => {
+            withdrawSelect.innerHTML += `<option value="${account.id}" ${account.isDefault ? 'selected' : ''}>
+                ${escapeHtml(account.accountName)} - ${account.accountNumber} (${getAccountTypeName(account.accountType)})
+            </option>`;
+        });
+    }
+}
+
+// ============================================
+// OPEN ADD/EDIT BANK ACCOUNT MODAL
+// ============================================
+
+function openUserBankAccountModal() {
+    document.getElementById('user-bank-modal-title').innerHTML = '<i class="fas fa-plus"></i> Ongeza Akaunti Yako';
+    document.getElementById('edit-user-account-id').value = '';
+    document.getElementById('user-bank-account-form').reset();
+    document.getElementById('user-bank-fields').style.display = 'none';
+    document.getElementById('user-other-bank-group').style.display = 'none';
+    document.getElementById('user-account-default').checked = false;
+    openModal('user-bank-account-modal');
+}
+
+function editUserBankAccount(accountId) {
+    const account = userBankAccounts.find(a => a.id === accountId);
+    if (!account) return;
+    
+    currentEditingAccountId = accountId;
+    document.getElementById('user-bank-modal-title').innerHTML = '<i class="fas fa-edit"></i> Hariri Akaunti';
+    document.getElementById('edit-user-account-id').value = account.id;
+    document.getElementById('user-account-name').value = account.accountName;
+    document.getElementById('user-account-type').value = account.accountType;
+    document.getElementById('user-account-number').value = account.accountNumber;
+    document.getElementById('user-account-holder').value = account.accountHolder;
+    document.getElementById('user-account-default').checked = account.isDefault || false;
+    
+    // Show bank fields if account type is bank
+    if (account.accountType === 'bank') {
+        document.getElementById('user-bank-fields').style.display = 'block';
+        if (account.bankName) {
+            const bankSelect = document.getElementById('user-bank-name');
+            if (bankSelect.querySelector(`option[value="${account.bankName}"]`)) {
+                bankSelect.value = account.bankName;
+            } else {
+                bankSelect.value = 'Other';
+                document.getElementById('user-other-bank-group').style.display = 'block';
+                document.getElementById('user-other-bank-name').value = account.bankName;
+            }
+        }
+    }
+    
+    openModal('user-bank-account-modal');
+}
+
+// ============================================
+// SAVE USER BANK ACCOUNT
+// ============================================
+
+document.getElementById('user-bank-account-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const editId = document.getElementById('edit-user-account-id').value;
+    const accountName = document.getElementById('user-account-name').value.trim();
+    const accountType = document.getElementById('user-account-type').value;
+    const accountNumber = document.getElementById('user-account-number').value.trim();
+    const accountHolder = document.getElementById('user-account-holder').value.trim();
+    const isDefault = document.getElementById('user-account-default').checked;
+    
+    if (!accountName || !accountType || !accountNumber || !accountHolder) {
+        showNotification('Tafadhali jaza sehemu zote muhimu', 'error');
+        return;
+    }
+    
+    let bankName = null;
+    if (accountType === 'bank') {
+        bankName = document.getElementById('user-bank-name').value;
+        if (bankName === 'Other') {
+            bankName = document.getElementById('user-other-bank-name').value;
+            if (!bankName) {
+                showNotification('Tafadhali weka jina la benki', 'error');
+                return;
+            }
+        }
+    }
+    
+    const accountData = {
+        id: editId || Date.now().toString(),
+        accountName: accountName,
+        accountType: accountType,
+        accountNumber: accountNumber,
+        accountHolder: accountHolder,
+        bankName: bankName,
+        isDefault: isDefault,
+        createdAt: new Date().toISOString()
+    };
+    
+    if (isDefault) {
+        // Remove default from other accounts
+        userBankAccounts.forEach(acc => {
+            acc.isDefault = false;
+        });
+    }
+    
+    if (editId) {
+        const index = userBankAccounts.findIndex(a => a.id === editId);
+        if (index !== -1) {
+            userBankAccounts[index] = accountData;
+            showNotification('Akaunti imesasishwa!', 'success');
+        }
+    } else {
+        userBankAccounts.push(accountData);
+        showNotification('Akaunti imeongezwa!', 'success');
+    }
+    
+    // Save to localStorage
+    localStorage.setItem(`user_bank_accounts_${db.currentUser.id}`, JSON.stringify(userBankAccounts));
+    
+    // Refresh display
+    loadUserBankAccounts();
+    updateWithdrawalCalculation();
+    
+    closeModal('user-bank-account-modal');
+});
+
+// ============================================
+// DELETE USER BANK ACCOUNT
+// ============================================
+
+function deleteUserBankAccount(accountId) {
+    pendingDeleteAccountId = accountId;
+    openModal('delete-user-account-modal');
+}
+
+document.getElementById('confirm-delete-user-account-btn')?.addEventListener('click', function() {
+    if (!pendingDeleteAccountId) return;
+    
+    const index = userBankAccounts.findIndex(a => a.id === pendingDeleteAccountId);
+    if (index !== -1) {
+        userBankAccounts.splice(index, 1);
+        localStorage.setItem(`user_bank_accounts_${db.currentUser.id}`, JSON.stringify(userBankAccounts));
+        loadUserBankAccounts();
+        updateWithdrawalCalculation();
+        showNotification('Akaunti imefutwa!', 'success');
+    }
+    
+    closeModal('delete-user-account-modal');
+    pendingDeleteAccountId = null;
+});
+
+// ============================================
+// SET DEFAULT ACCOUNT
+// ============================================
+
+function setDefaultAccount(accountId) {
+    userBankAccounts.forEach(acc => {
+        acc.isDefault = (acc.id === accountId);
+    });
+    localStorage.setItem(`user_bank_accounts_${db.currentUser.id}`, JSON.stringify(userBankAccounts));
+    loadUserBankAccounts();
+    showNotification('Akaunti chaguo-msingi imewekwa!', 'success');
+}
+
+// ============================================
+// WITHDRAWAL CALCULATION
+// ============================================
+
+function updateWithdrawalCalculation() {
+    const amount = parseFloat(document.getElementById('withdraw-amount')?.value) || 0;
+    const currentBalance = db?.currentUser?.balance || 0;
+    
+    const serviceCharge = amount * 0.10;
+    const netAmount = amount - serviceCharge;
+    const remainingBalance = currentBalance - amount;
+    
+    document.getElementById('calc-withdraw-amount').textContent = `TZS ${amount.toLocaleString()}`;
+    document.getElementById('calc-service-charge').textContent = `TZS ${serviceCharge.toLocaleString()}`;
+    document.getElementById('calc-net-amount').textContent = `TZS ${netAmount.toLocaleString()}`;
+    document.getElementById('calc-current-balance').textContent = `TZS ${currentBalance.toLocaleString()}`;
+    document.getElementById('calc-remaining-balance').textContent = `TZS ${remainingBalance.toLocaleString()}`;
+    
+    // Enable/disable submit button
+    const submitBtn = document.getElementById('submit-withdraw-btn');
+    const withdrawAccount = document.getElementById('withdraw-account')?.value;
+    if (submitBtn) {
+        submitBtn.disabled = !(amount >= 10000 && amount <= 5000000 && amount <= currentBalance && withdrawAccount);
+    }
+}
+
+// ============================================
+// SUBMIT WITHDRAWAL REQUEST
+// ============================================
+
+async function submitWithdrawalRequest() {
+    const accountId = document.getElementById('withdraw-account')?.value;
+    const amount = parseFloat(document.getElementById('withdraw-amount')?.value);
+    const reason = document.getElementById('withdraw-reason')?.value;
+    
+    if (!accountId) {
+        showNotification('Tafadhali chagua akaunti ya kupokea', 'error');
+        return;
+    }
+    
+    if (!amount || amount < 10000 || amount > 5000000) {
+        showNotification('Tafadhali weka kiasi sahihi (TZS 10,000 - 5,000,000)', 'error');
+        return;
+    }
+    
+    if (amount > db.currentUser.balance) {
+        showNotification('Salio lako halitoshi kwa kutoa fedha hii', 'error');
+        return;
+    }
+    
+    const selectedAccount = userBankAccounts.find(a => a.id === accountId);
+    if (!selectedAccount) {
+        showNotification('Akaunti haipatikani', 'error');
+        return;
+    }
+    
+    // Check withdrawal limits
+    const maxWithdrawal = db.currentUser.balance * 0.5;
+    if (amount > maxWithdrawal) {
+        showNotification(`Unaweza kutoa hadi 50% ya salio lako kwa siku (TZS ${maxWithdrawal.toLocaleString()})`, 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submit-withdraw-btn');
+    const originalText = submitBtn?.innerHTML;
+    
+    try {
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inawasilisha...';
+            submitBtn.disabled = true;
+        }
+        
+        // Check if user has pending withdrawal
+        const hasPending = await hasPendingWithdrawal(db.currentUser.id);
+        if (hasPending) {
+            throw new Error('Una ombi la kutoa fedha linasubiri idhini. Subiri likamilike kwanza.');
+        }
+        
+        // Process withdrawal (deduct amount immediately)
+        const newBalance = db.currentUser.balance - amount;
+        
+        // Update balance in Firebase
+        const userRef = db.db.collection('users').doc(db.currentUser.id.toString());
+        await userRef.update({
+            balance: newBalance,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Update current user balance
+        db.currentUser.balance = newBalance;
+        updateAllBalanceDisplays();
+        
+        // Create withdrawal transaction
+        const transaction = await db.createTransaction(
+            db.currentUser.id,
+            'withdrawal',
+            amount,
+            selectedAccount.accountType,
+            {
+                accountId: selectedAccount.id,
+                accountName: selectedAccount.accountName,
+                accountNumber: selectedAccount.accountNumber,
+                accountHolder: selectedAccount.accountHolder,
+                bankName: selectedAccount.bankName,
+                reason: reason,
+                serviceCharge: amount * 0.1,
+                netAmount: amount - (amount * 0.1)
+            }
+        );
+        
+        if (transaction) {
+            showNotification('Ombi lako la kutoa fedha limewasilishwa kwa mafanikio!', 'success');
+            
+            // Reset form
+            document.getElementById('withdraw-amount').value = '';
+            document.getElementById('withdraw-reason').value = '';
+            document.getElementById('withdraw-account').value = '';
+            updateWithdrawalCalculation();
+            
+            // Refresh dashboard stats
+            if (typeof loadDashboardStats === 'function') {
+                loadDashboardStats();
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error submitting withdrawal:', error);
+        showNotification(error.message || 'Error submitting withdrawal. Please try again.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+}
+
+// Check if user has pending withdrawal
+async function hasPendingWithdrawal(userId) {
+    try {
+        const userRef = db.db.collection('users').doc(userId.toString());
+        const userDoc = await userRef.get();
+        
+        if (!userDoc.exists) return false;
+        
+        const userData = userDoc.data();
+        const transactions = userData.transactions || [];
+        
+        return transactions.some(t => t.type === 'withdrawal' && t.status === 'pending');
+    } catch (error) {
+        console.error('Error checking pending withdrawal:', error);
+        return false;
+    }
+}
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
+
+function initWithdrawalSection() {
+    console.log('Initializing withdrawal section...');
+    
+    if (!db || !db.currentUser) {
+        console.log('User not logged in');
+        return;
+    }
+    
+    // Load user bank accounts
+    loadUserBankAccounts();
+    
+    // Setup withdrawal amount input
+    const withdrawAmount = document.getElementById('withdraw-amount');
+    if (withdrawAmount) {
+        withdrawAmount.addEventListener('input', updateWithdrawalCalculation);
+    }
+    
+    // Setup withdraw account select
+    const withdrawAccount = document.getElementById('withdraw-account');
+    if (withdrawAccount) {
+        withdrawAccount.addEventListener('change', updateWithdrawalCalculation);
+    }
+    
+    // Setup quick amount buttons
+    document.querySelectorAll('#withdraw .quick-amount').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.getAttribute('data-amount');
+            const amountInput = document.getElementById('withdraw-amount');
+            if (amountInput) {
+                amountInput.value = amount;
+                updateWithdrawalCalculation();
+                document.querySelectorAll('#withdraw .quick-amount').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Setup submit button
+    const submitBtn = document.getElementById('submit-withdraw-btn');
+    if (submitBtn) {
+        const newBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newBtn, submitBtn);
+        newBtn.addEventListener('click', submitWithdrawalRequest);
+    }
+    
+    // Account type change handler
+    const accountType = document.getElementById('user-account-type');
+    if (accountType) {
+        accountType.addEventListener('change', function() {
+            const bankFields = document.getElementById('user-bank-fields');
+            if (this.value === 'bank') {
+                bankFields.style.display = 'block';
+            } else {
+                bankFields.style.display = 'none';
+            }
+        });
+    }
+    
+    // Bank name change handler
+    const bankName = document.getElementById('user-bank-name');
+    if (bankName) {
+        bankName.addEventListener('change', function() {
+            const otherGroup = document.getElementById('user-other-bank-group');
+            otherGroup.style.display = this.value === 'Other' ? 'block' : 'none';
+        });
+    }
+}
+
+// Helper functions
+function getAccountTypeIcon(type) {
+    const icons = {
+        mpesa: 'fa-mobile-alt',
+        tigopesa: 'fa-mobile-alt',
+        airtel: 'fa-mobile-alt',
+        halopesa: 'fa-mobile-alt',
+        bank: 'fa-university'
+    };
+    return icons[type] || 'fa-credit-card';
+}
+
+function getAccountTypeName(type) {
+    const names = {
+        mpesa: 'M-Pesa',
+        tigopesa: 'Tigo Pesa',
+        airtel: 'Airtel Money',
+        halopesa: 'Halopesa',
+        bank: 'Benki'
+    };
+    return names[type] || type;
+}
+
+// Update sidebar navigation to include withdraw section
+function updateSidebarWithWithdraw() {
+    const withdrawLink = document.querySelector('.nav-link[data-target="withdraw"]');
+    if (withdrawLink) {
+        withdrawLink.setAttribute('onclick', "switchToSection('withdraw')");
+    }
+}
+
+// Initialize withdrawal section when dashboard loads
+if (typeof showUserDashboard === 'function') {
+    const originalShowUserDashboard = showUserDashboard;
+    window.showUserDashboard = function() {
+        originalShowUserDashboard.apply(this, arguments);
+        setTimeout(() => {
+            if (typeof initWithdrawalSection === 'function') {
+                initWithdrawalSection();
+            }
+        }, 500);
+    };
+}
+
+// Export functions
+window.loadUserBankAccounts = loadUserBankAccounts;
+window.openUserBankAccountModal = openUserBankAccountModal;
+window.editUserBankAccount = editUserBankAccount;
+window.deleteUserBankAccount = deleteUserBankAccount;
+window.setDefaultAccount = setDefaultAccount;
+window.submitWithdrawalRequest = submitWithdrawalRequest;
+window.initWithdrawalSection = initWithdrawalSection;
+window.updateWithdrawalCalculation = updateWithdrawalCalculation;
+
+console.log('✅ Withdrawal section loaded');
+
+
