@@ -11824,12 +11824,12 @@ async function loadTransactionHistory() {
                     </span>
                 </td>
                 <td>${details}</td>
-                <td>
-                    <button class="btn-receipt" onclick="showReceiptModal(${transaction.id})" 
-                            style="display: flex; align-items: center; gap: 5px; padding: 8px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
-                        📄 Risiti
-                    </button>
-                </td>
+
+<td>
+    <button class="btn-receipt" onclick="showReceiptModal('${transaction.id}')">
+        <i class="fas fa-receipt"></i> Risiti
+    </button>
+</td>
             `;
             
             historyBody.appendChild(row);
@@ -12031,10 +12031,12 @@ async function loadAdminTransactionHistory() {
                                 ✗ Kataa
                             </button>
                         ` : ''}
-                        <button class="btn-receipt" onclick="showReceiptModal(${transaction.id})" 
-                                style="background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">
-                            📄 Risiti
-                        </button>
+
+<td>
+    <button class="btn-receipt" onclick="showReceiptModal('${transaction.id}')">
+        <i class="fas fa-receipt"></i> Risiti
+    </button>
+</td>
                     </div>
                 </td>
             `;
@@ -12433,207 +12435,6 @@ function addReceiptCSS() {
     document.head.insertAdjacentHTML('beforeend', styleHTML);
 }
 
-// Show receipt modal
-async function showReceiptModal(transactionId) {
-    console.log('Showing receipt for transaction:', transactionId);
-    
-    // Create modal if it doesn't exist
-    createReceiptModal();
-    
-    // Show loading in modal
-    document.getElementById('receipt-content').innerHTML = `
-        <div style="text-align: center; padding: 40px;">
-            <div style="font-size: 48px; margin-bottom: 10px;">⏳</div>
-            <h4 style="color: #7f8c8d; margin-bottom: 10px;">Inapakia risiti...</h4>
-        </div>
-    `;
-    
-    // Show modal
-    document.getElementById('receipt-modal').style.display = 'block';
-    document.body.style.overflow = 'hidden';
-    
-    try {
-        // Get transaction details
-        const users = await db.getUsers();
-        let transaction = null;
-        let user = null;
-        
-        // Find the transaction
-        for (const u of users) {
-            if (u.transactions && Array.isArray(u.transactions)) {
-                const found = u.transactions.find(t => t.id === transactionId);
-                if (found) {
-                    transaction = found;
-                    user = u;
-                    break;
-                }
-            }
-        }
-        
-        if (!transaction) {
-            throw new Error('Muamala haupatikani');
-        }
-        
-        // Format date and time
-        const transactionDate = transaction.date ? new Date(transaction.date) : new Date();
-        const formattedDate = transactionDate.toLocaleDateString('sw-TZ', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-        const formattedTime = transactionDate.toLocaleTimeString('sw-TZ', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        // Determine status
-        let statusText, statusClass, statusIcon;
-        if (transaction.status === 'approved') {
-            statusText = 'IMEFAULU';
-            statusClass = 'status-approved';
-            statusIcon = '✅';
-        } else if (transaction.status === 'rejected') {
-            statusText = 'IMEKATALIWA';
-            statusClass = 'status-rejected';
-            statusIcon = '❌';
-        } else {
-            statusText = 'INASUBIRI';
-            statusClass = 'status-pending';
-            statusIcon = '⏳';
-        }
-        
-        // Build receipt HTML
-        const receiptHTML = `
-            <div class="receipt">
-                <div class="receipt-header">
-                    <h2>TANZANIA MINING INVESTMENT</h2>
-                    <p><strong>Risiti Ya Muamala Rasmi</strong></p>
-                    <p><em>Namba ya Risiti: #${transaction.id}</em></p>
-                    <p><em>Tarehe ya Kutoa: ${new Date().toLocaleDateString('sw-TZ')}</em></p>
-                </div>
-                
-                <div class="receipt-details">
-                    <div class="receipt-row">
-                        <span><strong>Tarehe ya Muamala:</strong></span>
-                        <span>${formattedDate}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Muda wa Muamala:</strong></span>
-                        <span>${formattedTime}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Jina la Mteja:</strong></span>
-                        <span>${user.username || 'N/A'}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Barua Pepe:</strong></span>
-                        <span>${user.email || 'N/A'}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Aina ya Muamala:</strong></span>
-                        <span>${transaction.type === 'deposit' ? '📥 KUWAWEKA FEDHA' : 
-                                 transaction.type === 'withdrawal' ? '📤 KUTOA FEDHA' : 
-                                 transaction.type === 'investment' ? '💼 UWEKEZAJI' :
-                                 '💳 MUAMALA'}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Kiasi cha Muamala:</strong></span>
-                        <span style="font-size: 18px; font-weight: bold; color: #2c3e50;">${db.formatCurrency(transaction.amount)}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Njia ya Malipo:</strong></span>
-                        <span>${getBankName(transaction.method || transaction.details?.method)}</span>
-                    </div>
-                    
-                    ${transaction.type === 'deposit' ? `
-                    <div class="receipt-row">
-                        <span><strong>Jina la Mtumaji:</strong></span>
-                        <span>${transaction.details?.senderName || 'Haijawekwa'}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Akaunti ya Mtumaji:</strong></span>
-                        <span>${transaction.details?.senderAccount || 'Haijawekwa'}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Msimbo wa Muamala:</strong></span>
-                        <span>${transaction.details?.transactionCode || 'Haijawekwa'}</span>
-                    </div>
-                    ` : transaction.type === 'withdrawal' ? `
-                    <div class="receipt-row">
-                        <span><strong>Jina la Mlipokeaji:</strong></span>
-                        <span>${transaction.details?.accountName || 'Haijawekwa'}</span>
-                    </div>
-                    <div class="receipt-row">
-                        <span><strong>Akaunti ya Mlipokeaji:</strong></span>
-                        <span>${transaction.details?.accountNumber || 'Haijawekwa'}</span>
-                    </div>
-                    ${transaction.details?.reason ? `
-                    <div class="receipt-row">
-                        <span><strong>Sababu ya Kutoa:</strong></span>
-                        <span>${transaction.details.reason}</span>
-                    </div>
-                    ` : ''}
-                    ` : ''}
-                    
-                    <div class="receipt-row">
-                        <span><strong>Hali ya Muamala:</strong></span>
-                        <span class="${statusClass}">${statusIcon} ${statusText}</span>
-                    </div>
-                    
-                    ${transaction.adminActionDate ? `
-                    <div class="receipt-row">
-                        <span><strong>Tarehe ya Idhini:</strong></span>
-                        <span>${new Date(transaction.adminActionDate).toLocaleDateString('sw-TZ')}</span>
-                    </div>
-                    ` : ''}
-                </div>
-                
-                <div class="receipt-footer">
-                    <div class="qr-code">
-                        <div style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">${statusText}</div>
-                        <div style="background: white; padding: 10px; display: inline-block; border: 1px solid #ddd;">
-                            <div style="width: 100px; height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666;">
-                                QR Code<br>#${transaction.id}
-                            </div>
-                        </div>
-                        <p style="margin-top: 5px; font-size: 10px;">Scan for Verification</p>
-                    </div>
-                    <p><strong>ASANTE KWA KUTUMIA HUDUMA ZETU</strong></p>
-                    <p><strong>TANZANIA MINING INVESTMENT</strong></p>
-                    <p>+255768616961 | mining.investment.tanzania@proton.me</p>
-                    <p style="font-size: 12px; color: #7f8c8d; margin-top: 10px;">
-                        Risiti hii ni ushahidi rasmi wa muamala wako. Tafadhali hifadhi kwa usalama.
-                    </p>
-                </div>
-                
-                <div class="instructions">
-                    <h4>📸 Maelekezo ya Kuhifadhi Risiti:</h4>
-                    <ul>
-                        <li><strong>Kuchukua Screenshot:</strong> Bonyeza pamoja Power + Volume Down (simu)</li>
-                        <li><strong>Kupakua:</strong> Bonyeza "Pakua Risiti" hapo juu</li>
-                        <li><strong>Kuchapisha:</strong> Bonyeza "Print Risiti" kwa nakala ya karatasi</li>
-                        <li><strong>Kuhifadhi:</strong> Tuma kwenye barua pepe yako au hifadhi kwenye wavuti</li>
-                    </ul>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('receipt-content').innerHTML = receiptHTML;
-        
-    } catch (error) {
-        console.error('Error loading receipt:', error);
-        document.getElementById('receipt-content').innerHTML = `
-            <div style="text-align: center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
-                <h4 style="color: #7f8c8d; margin-bottom: 10px;">Hitilafu ilitokea</h4>
-                <p style="color: #95a5a6;">${error.message || 'Imeshindwa kupakia risiti'}</p>
-                <button onclick="closeReceiptModal()" style="margin-top: 15px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    Funga
-                </button>
-            </div>
-        `;
-    }
-}
 
 // Close receipt modal
 function closeReceiptModal() {
@@ -12921,10 +12722,9 @@ async function loadTransactionHistory() {
             
             // Receipt button
             const receiptButton = `
-                <button onclick="showReceiptModal(${transaction.id})" 
-                        style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px; transition: all 0.3s;">
-                    📄 Risiti
-                </button>
+  <button class="btn-receipt" onclick="showReceiptModal('${transaction.id}')">
+        <i class="fas fa-receipt"></i> Risiti
+    </button>
             `;
             
             row.innerHTML = `
@@ -13219,202 +13019,6 @@ function addReceiptStyles() {
     document.head.insertAdjacentHTML('beforeend', styleHTML);
 }
 
-// Show receipt modal
-async function showReceiptModal(transactionId) {
-    console.log('Showing receipt for transaction:', transactionId);
-    
-    // Create modal if it doesn't exist
-    createReceiptModal();
-    
-    // Show loading
-    document.getElementById('receipt-content').innerHTML = `
-        <div style="text-align: center; padding: 40px;">
-            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-            <h4 style="color: #2c3e50; margin-bottom: 10px;">Inapakia risiti...</h4>
-        </div>
-    `;
-    
-    // Show modal
-    document.getElementById('receipt-modal').style.display = 'block';
-    document.body.style.overflow = 'hidden';
-    
-    try {
-        // Get transaction data
-        const users = await db.getUsers();
-        let transaction = null;
-        let user = null;
-        
-        for (const u of users) {
-            if (u.transactions) {
-                const found = u.transactions.find(t => t.id === transactionId);
-                if (found) {
-                    transaction = found;
-                    user = u;
-                    break;
-                }
-            }
-        }
-        
-        if (!transaction) throw new Error('Muamala haupatikani');
-        
-        // Format dates
-        const transactionDate = transaction.date ? new Date(transaction.date) : new Date();
-        const formattedDate = transactionDate.toLocaleDateString('sw-TZ', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        const formattedTime = transactionDate.toLocaleTimeString('sw-TZ', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        // Status
-        let statusText, statusClass;
-        if (transaction.status === 'approved') {
-            statusText = 'IMEFAULU';
-            statusClass = 'status-approved';
-        } else if (transaction.status === 'rejected') {
-            statusText = 'IMEKATALIWA';
-            statusClass = 'status-rejected';
-        } else {
-            statusText = 'INASUBIRI';
-            statusClass = 'status-pending';
-        }
-        
-        // Transaction type
-        let typeText = '';
-        if (transaction.type === 'deposit') {
-            typeText = 'KUWAWEKA FEDHA';
-        } else if (transaction.type === 'withdrawal') {
-            typeText = 'KUTOA FEDHA';
-        } else {
-            typeText = 'MUAMALA';
-        }
-        
-        // Build receipt HTML
-        const receiptHTML = `
-            <div class="receipt-container">
-                <div class="receipt-header">
-                    <h1>TANZANIA MINING INVESTMENT</h1>
-                    <p><strong>Huduma za Uwekezaji</strong></p>
-                    <div style="background: #f8f9fa; padding: 8px 16px; border-radius: 20px; display: inline-block; font-weight: bold;">
-                        RISITI: #TMI${transaction.id.toString().padStart(6, '0')}
-                    </div>
-                </div>
-                
-                <div class="receipt-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Tarehe ya Muamala:</span>
-                        <span class="detail-value">${formattedDate}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Muda wa Muamala:</span>
-                        <span class="detail-value">${formattedTime}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Namba ya Mteja:</span>
-                        <span class="detail-value">#${user.id.toString().padStart(6, '0')}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Jina la Mteja:</span>
-                        <span class="detail-value">${user.username || 'N/A'}</span>
-                    </div>
-                    
-                    <div class="detail-row">
-                        <span class="detail-label">Aina ya Muamala:</span>
-                        <span class="detail-value">${typeText}</span>
-                    </div>
-                    
-                    <div class="amount-display">
-                        ${db.formatCurrency(transaction.amount)}
-                    </div>
-                    
-                    <div class="detail-row">
-                        <span class="detail-label">Njia ya Malipo:</span>
-                        <span class="detail-value">${getBankName(transaction.method || transaction.details?.method)}</span>
-                    </div>
-                    
-                    ${transaction.type === 'deposit' ? `
-                    <div class="detail-row">
-                        <span class="detail-label">Jina la Mtumaji:</span>
-                        <span class="detail-value">${transaction.details?.senderName || 'Haijawekwa'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Akaunti ya Mtumaji:</span>
-                        <span class="detail-value">${transaction.details?.senderAccount || 'Haijawekwa'}</span>
-                    </div>
-                    ` : transaction.type === 'withdrawal' ? `
-                    <div class="detail-row">
-                        <span class="detail-label">Jina la Mlipokeaji:</span>
-                        <span class="detail-value">${transaction.details?.accountName || 'Haijawekwa'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Akaunti ya Mlipokeaji:</span>
-                        <span class="detail-value">${transaction.details?.accountNumber || 'Haijawekwa'}</span>
-                    </div>
-                    ` : ''}
-                    
-                    <div class="detail-row">
-                        <span class="detail-label">Hali ya Muamala:</span>
-                        <span class="detail-value ${statusClass}">${statusText}</span>
-                    </div>
-                </div>
-                
-                <!-- QR Code Section -->
-                <div class="qr-section">
-                    <div style="background: #3498db; color: white; padding: 5px 15px; border-radius: 15px; display: inline-block; font-weight: bold; margin-bottom: 15px;">
-                        QR CODE YA UTHIBITISHO
-                    </div>
-                    <div class="fake-qr-code">
-                        <div class="qr-pattern"></div>
-                        <div class="qr-corners">
-                            <div class="qr-corner"></div>
-                            <div class="qr-corner"></div>
-                            <div class="qr-corner"></div>
-                        </div>
-                        <div class="qr-center"></div>
-                        <div class="qr-text">TMI${transaction.id}</div>
-                    </div>
-                    <p style="font-size: 12px; color: #666; margin-top: 15px;">
-                        <strong>Skani kuthibitisha ukweli wa risiti hii</strong><br>
-                        verify.tanzaniamining.co.tz
-                    </p>
-                </div>
-                
-                <div class="receipt-footer">
-                    <p><strong>📞 Huduma za Wateja:</strong>255768616961</p>
-                    <p><strong>📧 Barua Pepe:</strong> mining.investment.tanzania@proton.me</p>
-                    <p style="font-size: 12px; color: #7f8c8d; margin-top: 15px;">
-                        Risiti hii ni ushahidi rasmi. Tafadhali hifadhi kwa usalama.
-                    </p>
-                    <div style="background: #27ae60; color: white; padding: 10px; border-radius: 5px; margin-top: 15px;">
-                        <strong>ASANTE KWA KUWEKEZA NA KUTUAMINI!</strong>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('receipt-content').innerHTML = receiptHTML;
-        
-        // Store transaction data
-        window.currentReceiptData = {
-            id: transaction.id,
-            user: user,
-            transaction: transaction
-        };
-        
-    } catch (error) {
-        console.error('Error loading receipt:', error);
-        document.getElementById('receipt-content').innerHTML = `
-            <div style="text-align: center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-                <h4 style="color: #e74c3c; margin-bottom: 10px;">Hitilafu Ilitokea</h4>
-                <p style="color: #95a5a6;">${error.message || 'Imeshindwa kupakia risiti'}</p>
-            </div>
-        `;
-    }
-}
 
 // Close receipt modal
 function closeReceiptModal() {
@@ -19483,7 +19087,31 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========== DASHBOARD STATISTICS LOADER ==========
+// Quick set functions
+function setQuickGrams(grams) {
+    const input = document.getElementById('investment-grams');
+    if (input) {
+        input.value = grams;
+        if (typeof calculateInvestmentReturn === 'function') calculateInvestmentReturn();
+    }
+}
 
+function setQuickDays(days) {
+    const input = document.getElementById('investment-days');
+    if (input) {
+        input.value = days;
+        if (typeof calculateInvestmentReturn === 'function') calculateInvestmentReturn();
+    }
+}
+
+// Ensure closeInvestmentModal exists
+function closeInvestmentModal() {
+    const modal = document.getElementById('investment-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
 // ========== DASHBOARD STATISTICS LOADER ==========
 
 async function loadDashboardStats() {
@@ -20061,7 +19689,7 @@ class AnnouncementManager {
         this.landingAnnouncements = [];
         this.dashboardAnnouncements = [];
         this.allAnnouncements = [];
-        this.currentSlide = 0; // For landing slideshow
+        this.curruentSlide = 0; // For landing slideshow
         this.dashboardSlide = 0; // For dashboard slideshow
         this.slideInterval = null;
         this.dashboardInterval = null; // Separate interval for dashboard
@@ -29171,7 +28799,7 @@ async function initVIPPackagesSystem() {
         console.log('✅ VIP Packages System Initialized');
         
     } catch (error) {
-        console.error('Error initializing VIP system:', error);
+        
         vipPackages = [...defaultVIPPackages];
         renderVIPPackagesGrid();
     }
@@ -38778,3 +38406,1856 @@ window.updateWithdrawalCalculation = updateWithdrawalCalculation;
 console.log('✅ Withdrawal section loaded');
 
 
+/**
+ * MODAL MANAGER SYSTEM
+ * Handles all modal operations with proper stacking, animations, and cleanup
+ * Prevents multiple modals from opening simultaneously
+ */
+
+class ModalManager {
+    constructor() {
+        this.activeModals = [];
+        this.modalStack = [];
+        this.isAnyModalOpen = false;
+        this.escapeHandlerBound = null;
+        this.zIndexBase = 10000;
+        this.transitionDuration = 300;
+        this.modalConfigs = {
+            'deposit-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'withdraw-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'investment-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'rewards-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'admin-chat-modal': { size: 'large', closeOnOverlay: false, preventBodyScroll: true },
+            'user-chat-modal': { size: 'large', closeOnOverlay: false, preventBodyScroll: true },
+            'terms-modal': { size: 'large', closeOnOverlay: true, preventBodyScroll: true },
+            'contact-support-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'forgot-password-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'add-admin-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'create-task-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'delete-user-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'bulk-delete-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'add-user-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'vip-investment-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'vip-success-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'vip-package-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'vip-cancel-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'vip-investment-details-modal': { size: 'large', closeOnOverlay: true, preventBodyScroll: true },
+            'social-links-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'add-link-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'user-verification-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'followConfirmationModal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'verifyFollowModal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'socialFollowPopup': { size: 'small', closeOnOverlay: false, preventBodyScroll: false },
+            'enhancedAnnouncementModal': { size: 'large', closeOnOverlay: true, preventBodyScroll: true },
+            'receiptModal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'view-user-modal': { size: 'large', closeOnOverlay: true, preventBodyScroll: true },
+            'edit-user-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'user-details-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'rewards-management-modal': { size: 'large', closeOnOverlay: true, preventBodyScroll: true },
+            'bank-account-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'delete-bank-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'user-bank-account-modal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'delete-user-account-modal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true },
+            'socialLinkModal': { size: 'medium', closeOnOverlay: true, preventBodyScroll: true },
+            'vipPackageFormModal': { size: 'large', closeOnOverlay: true, preventBodyScroll: true },
+            'deleteVIPModal': { size: 'small', closeOnOverlay: true, preventBodyScroll: true }
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        this.injectModalStyles();
+        this.bindGlobalEvents();
+        this.setupModalObservers();
+        console.log('✅ Modal Manager initialized');
+    }
+    
+    injectModalStyles() {
+        if (document.getElementById('modal-manager-styles')) return;
+        
+        const styles = document.createElement('style');
+        styles.id = 'modal-manager-styles';
+        styles.textContent = `
+            /* Modal Manager Core Styles */
+            .modal {
+                display: none !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background-color: rgba(0, 0, 0, 0.85) !important;
+                backdrop-filter: blur(5px) !important;
+                z-index: 10000 !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                align-items: center !important;
+                justify-content: center !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                transition: opacity 0.3s ease, visibility 0.3s ease !important;
+            }
+            
+            .modal.show,
+            .modal.active {
+                display: flex !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+            
+            .modal.closing {
+                animation: modalFadeOut 0.2s ease forwards !important;
+            }
+            
+            .modal-content {
+                background: var(--white, #ffffff) !important;
+                border-radius: 24px !important;
+                width: 90% !important;
+                max-width: 550px !important;
+                max-height: 85vh !important;
+                overflow-y: auto !important;
+                position: relative !important;
+                animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+                margin: auto !important;
+                pointer-events: auto !important;
+            }
+            
+            .modal-content.large {
+                max-width: 800px !important;
+            }
+            
+            .modal-content.small {
+                max-width: 400px !important;
+            }
+            
+            .modal-content.full {
+                max-width: 95% !important;
+                width: 95% !important;
+            }
+            
+            .modal-header {
+                background: linear-gradient(135deg, #113745, #256f8a) !important;
+                color: white !important;
+                padding: 1.25rem !important;
+                border-radius: 24px 24px 0 0 !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 10 !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+            }
+            
+            .modal-header h2,
+            .modal-header h3 {
+                margin: 0 !important;
+                font-size: 1.2rem !important;
+                font-weight: 600 !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.5rem !important;
+                color: white !important;
+            }
+            
+            .modal-close-btn,
+            .close-modal {
+                background: (--primary-dark);
+                border: none !important;
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 50% !important;
+                cursor: pointer !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                transition: all 0.3s ease !important;
+                color: white !important;
+                font-size: 1.2rem !important;
+                flex-shrink: 0 !important;
+            }
+            
+            .modal-close-btn:hover,
+            .close-modal:hover {
+                background: #dc3545 !important;
+                transform: rotate(90deg) !important;
+            }
+            
+            .modal-body {
+                padding: 1.5rem !important;
+                max-height: calc(85vh - 140px) !important;
+                overflow-y: auto !important;
+            }
+            
+            .modal-footer {
+                padding: 1rem 1.5rem 1.5rem !important;
+                display: flex !important;
+                justify-content: flex-end !important;
+                gap: 0.75rem !important;
+                border-top: 1px solid #e9ecef !important;
+                background: white !important;
+                border-radius: 0 0 24px 24px !important;
+                flex-wrap: wrap !important;
+            }
+            
+            .modal-footer .btn {
+                margin: 0 !important;
+                padding: 0.75rem 1.5rem !important;
+            }
+            
+            body.modal-open {
+                overflow: hidden !important;
+                position: fixed !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            
+            @keyframes modalSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-30px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            
+            @keyframes modalFadeOut {
+                from {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(30px) scale(0.95);
+                }
+            }
+            
+            @media (max-width: 768px) {
+                .modal-content {
+                    width: 95% !important;
+                    margin: 0.5rem auto !important;
+                    max-height: 90vh !important;
+                }
+                .modal-header {
+                    padding: 1rem !important;
+                }
+                .modal-header h2,
+                .modal-header h3 {
+                    font-size: 1.1rem !important;
+                }
+                .modal-body {
+                    padding: 1rem !important;
+                }
+                .modal-footer {
+                    flex-direction: column !important;
+                    padding: 1rem !important;
+                }
+                .modal-footer .btn {
+                    width: 100% !important;
+                }
+                .close-modal {
+                    width: 32px !important;
+                    height: 32px !important;
+                    font-size: 1rem !important;
+                }
+            }
+            
+            @media (max-width: 480px) {
+                .modal-content {
+                    width: 98% !important;
+                    margin: 0.25rem auto !important;
+                }
+                .modal-body {
+                    padding: 0.75rem !important;
+                }
+                .modal-header {
+                    padding: 0.75rem !important;
+                }
+            }
+            
+            @media (prefers-color-scheme: dark) {
+                .modal-content {
+                    background: #1e1e2e !important;
+                }
+                .modal-footer {
+                    background: #1e1e2e !important;
+                    border-top-color: #3d3d4d !important;
+                }
+                .modal-body {
+                    color: #e0e0e0 !important;
+                }
+            }
+            
+            @media (prefers-reduced-motion: reduce) {
+                .modal-content,
+                .modal,
+                .close-modal {
+                    animation: none !important;
+                    transition: none !important;
+                }
+                .modal.closing {
+                    animation: none !important;
+                }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    bindGlobalEvents() {
+        // Bind escape key handler
+        this.escapeHandlerBound = this.handleEscapeKey.bind(this);
+        document.addEventListener('keydown', this.escapeHandlerBound);
+        
+        // Handle clicks on modal overlays
+        document.addEventListener('click', (e) => {
+            if (e.target.classList && e.target.classList.contains('modal')) {
+                const modalId = e.target.id;
+                const config = this.modalConfigs[modalId];
+                if (config && config.closeOnOverlay !== false) {
+                    this.close(modalId);
+                }
+            }
+        });
+    }
+    
+    setupModalObservers() {
+        // Watch for dynamically added modals
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1 && node.classList && node.classList.contains('modal')) {
+                        this.setupModalCloseButton(node.id);
+                    }
+                });
+            });
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+    
+    setupModalCloseButton(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const closeBtn = modal.querySelector('.close-modal, .modal-close-btn');
+        if (closeBtn && !closeBtn.hasAttribute('data-modal-listener')) {
+            closeBtn.setAttribute('data-modal-listener', 'true');
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.close(modalId);
+            });
+        }
+    }
+    
+    handleEscapeKey(e) {
+        if (e.key === 'Escape' && this.activeModals.length > 0) {
+            const topModal = this.activeModals[this.activeModals.length - 1];
+            this.close(topModal);
+        }
+    }
+    
+    open(modalId, options = {}) {
+        const modal = document.getElementById(modalId);
+        if (!modal) {
+            console.warn(`Modal "${modalId}" not found`);
+            return false;
+        }
+        
+        // Don't open if already open
+        if (this.activeModals.includes(modalId)) {
+            return false;
+        }
+        
+        const config = this.modalConfigs[modalId] || { size: 'medium', closeOnOverlay: true, preventBodyScroll: true };
+        
+        // Apply size class
+        modal.querySelector('.modal-content')?.classList.remove('small', 'medium', 'large', 'full');
+        modal.querySelector('.modal-content')?.classList.add(config.size);
+        
+        // Setup close button listener
+        this.setupModalCloseButton(modalId);
+        
+        // Push to stack
+        this.activeModals.push(modalId);
+        this.modalStack.push(modalId);
+        
+        // Update z-index based on stack position
+        const zIndex = this.zIndexBase + (this.activeModals.length * 10);
+        modal.style.zIndex = zIndex;
+        
+        // Show modal with animation
+        modal.style.display = 'flex';
+        
+        // Force reflow
+        modal.offsetHeight;
+        
+        modal.classList.add('show');
+        
+        // Prevent body scroll if configured
+        if (config.preventBodyScroll && this.activeModals.length === 1) {
+            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        this.isAnyModalOpen = true;
+        
+        // Dispatch event
+        const event = new CustomEvent('modalOpened', { detail: { modalId, activeModals: [...this.activeModals] } });
+        document.dispatchEvent(event);
+        
+        console.log(`✅ Modal opened: ${modalId}`);
+        return true;
+    }
+    
+    close(modalId, options = {}) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return false;
+        
+        const index = this.activeModals.indexOf(modalId);
+        if (index === -1) return false;
+        
+        // Remove from stack
+        this.activeModals.splice(index, 1);
+        this.modalStack = this.modalStack.filter(id => id !== modalId);
+        
+        const config = this.modalConfigs[modalId] || { preventBodyScroll: true };
+        
+        // Animate close
+        modal.classList.add('closing');
+        modal.classList.remove('show');
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.classList.remove('closing');
+            
+            // Restore body scroll if no modals left
+            if (config.preventBodyScroll && this.activeModals.length === 0) {
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+            }
+            
+            // Dispatch event
+            const event = new CustomEvent('modalClosed', { detail: { modalId, activeModals: [...this.activeModals] } });
+            document.dispatchEvent(event);
+            
+            console.log(`✅ Modal closed: ${modalId}`);
+        }, this.transitionDuration);
+        
+        this.isAnyModalOpen = this.activeModals.length > 0;
+        return true;
+    }
+    
+    closeAll() {
+        const modals = [...this.activeModals];
+        modals.forEach(modalId => this.close(modalId));
+    }
+    
+    closeTop() {
+        if (this.modalStack.length > 0) {
+            const topModal = this.modalStack[this.modalStack.length - 1];
+            this.close(topModal);
+        }
+    }
+    
+    isOpen(modalId) {
+        return this.activeModals.includes(modalId);
+    }
+    
+    getActiveModals() {
+        return [...this.activeModals];
+    }
+    
+    getModalStack() {
+        return [...this.modalStack];
+    }
+    
+    getModalConfig(modalId) {
+        return { ...this.modalConfigs[modalId] };
+    }
+    
+    updateModalConfig(modalId, config) {
+        if (this.modalConfigs[modalId]) {
+            this.modalConfigs[modalId] = { ...this.modalConfigs[modalId], ...config };
+        }
+    }
+    
+    setModalContent(modalId, content, options = {}) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return false;
+        
+        const body = modal.querySelector('.modal-body');
+        if (body) {
+            body.innerHTML = content;
+        }
+        
+        if (options.title) {
+            const header = modal.querySelector('.modal-header h2, .modal-header h3');
+            if (header) {
+                header.innerHTML = options.title;
+            }
+        }
+        
+        if (options.footer) {
+            const footer = modal.querySelector('.modal-footer');
+            if (footer) {
+                footer.innerHTML = options.footer;
+            }
+        }
+        
+        return true;
+    }
+    
+    showLoading(modalId, message = 'Loading...') {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const body = modal.querySelector('.modal-body');
+        if (body) {
+            const originalContent = body.innerHTML;
+            body.setAttribute('data-original-content', originalContent);
+            body.innerHTML = `
+                <div class="modal-loading" style="text-align: center; padding: 40px;">
+                    <div class="loading-spinner" style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                    <p>${message}</p>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+        }
+    }
+    
+    hideLoading(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const body = modal.querySelector('.modal-body');
+        if (body && body.hasAttribute('data-original-content')) {
+            body.innerHTML = body.getAttribute('data-original-content');
+            body.removeAttribute('data-original-content');
+        }
+    }
+    
+    showMessage(modalId, message, type = 'info', duration = 3000) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const body = modal.querySelector('.modal-body');
+        if (!body) return;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `modal-message modal-message-${type}`;
+        messageDiv.style.cssText = `
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            ${type === 'success' ? 'background: #d4edda; color: #155724; border-left: 4px solid #28a745;' : 
+              type === 'error' ? 'background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545;' :
+              type === 'warning' ? 'background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;' :
+              'background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8;'}
+        `;
+        
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+        
+        messageDiv.innerHTML = `
+            <i class="fas ${icons[type]}" style="font-size: 18px;"></i>
+            <span style="flex: 1;">${message}</span>
+            <button class="modal-message-close" style="background: none; border: none; cursor: pointer; color: inherit;">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        const closeBtn = messageDiv.querySelector('.modal-message-close');
+        closeBtn.addEventListener('click', () => messageDiv.remove());
+        
+        body.insertBefore(messageDiv, body.firstChild);
+        
+        if (duration > 0) {
+            setTimeout(() => {
+                if (messageDiv.parentNode) messageDiv.remove();
+            }, duration);
+        }
+    }
+    
+    confirm(modalId, message, onConfirm, onCancel = null, options = {}) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const confirmText = options.confirmText || 'Confirm';
+        const cancelText = options.cancelText || 'Cancel';
+        
+        const body = modal.querySelector('.modal-body');
+        if (body) {
+            const originalContent = body.innerHTML;
+            body.innerHTML = `
+                <div class="modal-confirm" style="text-align: center; padding: 20px;">
+                    <div class="confirm-icon" style="font-size: 48px; margin-bottom: 20px; color: #ffc107;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <p style="margin-bottom: 25px; font-size: 16px;">${message}</p>
+                    <div class="confirm-buttons" style="display: flex; gap: 10px; justify-content: center;">
+                        <button class="confirm-cancel-btn btn btn-secondary" style="padding: 10px 20px;">${cancelText}</button>
+                        <button class="confirm-ok-btn btn btn-primary" style="padding: 10px 20px;">${confirmText}</button>
+                    </div>
+                </div>
+            `;
+            
+            const cancelBtn = body.querySelector('.confirm-cancel-btn');
+            const okBtn = body.querySelector('.confirm-ok-btn');
+            
+            const cleanup = () => {
+                body.innerHTML = originalContent;
+            };
+            
+            cancelBtn.addEventListener('click', () => {
+                cleanup();
+                if (onCancel) onCancel();
+            });
+            
+            okBtn.addEventListener('click', () => {
+                cleanup();
+                if (onConfirm) onConfirm();
+            });
+        }
+    }
+    
+    prompt(modalId, message, onConfirm, options = {}) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        const placeholder = options.placeholder || '';
+        const defaultValue = options.defaultValue || '';
+        
+        const body = modal.querySelector('.modal-body');
+        if (body) {
+            const originalContent = body.innerHTML;
+            body.innerHTML = `
+                <div class="modal-prompt" style="padding: 20px;">
+                    <p style="margin-bottom: 15px;">${message}</p>
+                    <input type="text" class="prompt-input" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 20px;" placeholder="${placeholder}" value="${defaultValue}">
+                    <div class="prompt-buttons" style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button class="prompt-cancel-btn btn btn-secondary">Cancel</button>
+                        <button class="prompt-ok-btn btn btn-primary">OK</button>
+                    </div>
+                </div>
+            `;
+            
+            const input = body.querySelector('.prompt-input');
+            const cancelBtn = body.querySelector('.prompt-cancel-btn');
+            const okBtn = body.querySelector('.prompt-ok-btn');
+            
+            const cleanup = () => {
+                body.innerHTML = originalContent;
+            };
+            
+            cancelBtn.addEventListener('click', () => cleanup());
+            
+            okBtn.addEventListener('click', () => {
+                const value = input.value;
+                cleanup();
+                if (onConfirm) onConfirm(value);
+            });
+            
+            input.focus();
+            input.select();
+        }
+    }
+    
+    destroy() {
+        document.removeEventListener('keydown', this.escapeHandlerBound);
+        this.closeAll();
+        console.log('✅ Modal Manager destroyed');
+    }
+}
+
+// ============================================
+// GLOBAL MODAL FUNCTIONS (for backward compatibility)
+// ============================================
+
+let modalManager = null;
+
+function initModalManager() {
+    if (!modalManager) {
+        modalManager = new ModalManager();
+        window.modalManager = modalManager;
+    }
+    return modalManager;
+}
+
+// Legacy openModal function for backward compatibility
+function openModal(modalId) {
+    if (!modalManager) initModalManager();
+    
+    // Auto-create deposit modal if it doesn't exist
+    if (modalId === 'deposit-modal' && !document.getElementById('deposit-modal')) {
+        createDepositModal();
+    }
+    
+    modalManager.open(modalId);
+    
+    // Auto-close hamburger after modal opens (mobile)
+    if (typeof autoCloseHamburgerAfterNav === 'function') {
+        setTimeout(autoCloseHamburgerAfterNav, 100);
+    }
+}
+
+// Legacy closeModal function for backward compatibility
+function closeModal(modalId) {
+    if (!modalManager) initModalManager();
+    modalManager.close(modalId);
+    
+    // Reset body scroll
+    document.body.style.overflow = 'auto';
+    
+    // Auto-close hamburger
+    if (typeof autoCloseHamburgerAfterNav === 'function') {
+        autoCloseHamburgerAfterNav();
+    }
+}
+
+// Create deposit modal if it doesn't exist
+function createDepositModal() {
+    if (document.getElementById('deposit-modal')) return;
+    
+    const modalHTML = `
+        <div id="deposit-modal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-money-bill-wave"></i> Weka Fedha</h3>
+                    <button class="close-modal" onclick="closeModal('deposit-modal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-section">
+                        <div class="form-control">
+                            <label for="amount"><i class="fas fa-money-bill-alt"></i> Kiasi Cha Kuweka (TZS)</label>
+                            <input type="number" id="deposit-amount" placeholder="Weka kiasi" min="1000" max="10000000" required>
+                            <small>Kiwango cha chini: TZS 1,000 | Kiwango cha juu: TZS 10,000,000</small>
+                            <div class="quick-amounts">
+                                <button type="button" class="quick-amount" data-amount="12500">12,500</button>
+                                <button type="button" class="quick-amount" data-amount="125000">125,000</button>
+                                <button type="button" class="quick-amount" data-amount="225000">225,000</button>
+                                <button type="button" class="quick-amount" data-amount="325000">325,000</button>
+                                <button type="button" class="quick-amount" data-amount="500000">500,000</button>
+                                <button type="button" class="quick-amount" data-amount="1000000">1,000,000</button>
+                                <button type="button" class="quick-amount" data-amount="5000000">5,000,000</button>
+                                <button type="button" class="quick-amount" data-amount="10000000">10,000,000</button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label for="deposit-type"><i class="fas fa-wallet"></i> Aina Ya Kuweka Fedha</label>
+                            <select id="deposit-type" required>
+                                <option value="" disabled selected>-- Chagua Aina --</option>
+                                <option value="mpesa">Vodacom M-Pesa</option>
+                                <option value="tigopesa">Tigo Pesa</option>
+                                <option value="airtel">Airtel Money</option>
+                                <option value="halopesa">Halotel Halopesa</option>
+                                <option value="bank">Benki</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label for="sender-name"><i class="fas fa-user"></i> Jina Kamili La Mtumaji</label>
+                            <input type="text" id="sender-name" placeholder="Weka jina lako kamili" required>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label for="sender-account"><i class="fas fa-id-card"></i> Namba Ya Akaunti/Simu Ya Mtumaji</label>
+                            <input type="text" id="sender-account" placeholder="Weka namba yako ya akaunti au simu" required>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn deposit-btn" id="deposit-btn"><i class="fas fa-paper-plane"></i> Endelea Kuweka Fedha</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('deposit-modal')"><i class="fas fa-times"></i> Ghairi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Initialize deposit section after creating modal
+    if (typeof initDepositSection === 'function') {
+        setTimeout(initDepositSection, 100);
+    }
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+// Initialize modal manager when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    initModalManager();
+    
+    // Setup modal close buttons for existing modals
+    document.querySelectorAll('.modal').forEach(modal => {
+        const closeBtn = modal.querySelector('.close-modal, .modal-close-btn');
+        if (closeBtn && !closeBtn.hasAttribute('data-modal-listener')) {
+            closeBtn.setAttribute('data-modal-listener', 'true');
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeModal(modal.id);
+            });
+        }
+    });
+});
+
+// Make functions globally available
+window.ModalManager = ModalManager;
+window.initModalManager = initModalManager;
+window.modalManager = modalManager;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.createDepositModal = createDepositModal;
+
+console.log('✅ Modal Manager System Loaded');
+
+// ============================================
+// ENHANCED SECTION NAVIGATION WITH AUTO-LOAD
+// ============================================
+
+function switchToSection(sectionId) {
+    console.log(`📍 Switching to section: ${sectionId}`);
+    
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
+    });
+    
+    // Show target section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        targetSection.style.display = 'block';
+        
+        // Update active states in navigation
+        updateActiveNavStates(sectionId);
+        
+        // Load section-specific content based on section ID
+        loadSectionContent(sectionId);
+        
+        // Scroll to top
+        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        console.log(`✅ Section switched to: ${sectionId}`);
+    } else {
+        console.error(`❌ Section not found: ${sectionId}`);
+    }
+}
+
+// Load section-specific content
+function loadSectionContent(sectionId) {
+    console.log(`📦 Loading content for: ${sectionId}`);
+    
+    switch(sectionId) {
+        case 'dashboard':
+            if (typeof loadDashboardStats === 'function') loadDashboardStats();
+            if (typeof updateUserInfo === 'function') updateUserInfo();
+            break;
+            
+        case 'deposit':
+            // Initialize deposit section when switching to it
+            console.log('🔄 Loading deposit section...');
+            if (typeof initDepositSection === 'function') {
+                initDepositSection();
+            } else {
+                console.warn('initDepositSection not found, using fallback');
+                loadDepositAccountsFallback();
+            }
+            break;
+            
+        case 'withdraw':
+            if (typeof initWithdrawalSection === 'function') {
+                initWithdrawalSection();
+            }
+            break;
+            
+        case 'admin-bank-accounts':
+            if (typeof loadAllBankAccounts === 'function') loadAllBankAccounts();
+            break;
+            
+        case 'profile':
+            if (typeof updateProfileInfo === 'function') updateProfileInfo();
+            if (typeof updateUserInfo === 'function') updateUserInfo();
+            break;
+            
+        case 'marketplace':
+            if (typeof loadMarketplaceData === 'function') loadMarketplaceData();
+            break;
+            
+        case 'myinvestment':
+            if (typeof loadUserInvestments === 'function') loadUserInvestments();
+            break;
+            
+        case 'referrals':
+            if (typeof loadReferralData === 'function') loadReferralData();
+            break;
+            
+        case 'history':
+            if (typeof loadTransactionHistory === 'function') loadTransactionHistory();
+            break;
+            
+        case 'admin-approvals':
+            if (typeof loadPendingTransactions === 'function') loadPendingTransactions();
+            break;
+            
+        case 'admin-history':
+            if (typeof loadAdminTransactionHistory === 'function') loadAdminTransactionHistory();
+            break;
+            
+        case 'faq':
+            if (typeof initializeFAQ === 'function') initializeFAQ();
+            break;
+    }
+}
+
+// Fallback function to load deposit accounts
+async function loadDepositAccountsFallback() {
+    console.log('🔄 Loading deposit accounts (fallback)...');
+    
+    const container = document.getElementById('bank-accounts-list');
+    if (!container) {
+        console.warn('Bank accounts list container not found');
+        return;
+    }
+    
+    container.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Inapakia akaunti za malipo...</p></div>`;
+    
+    try {
+        // Get accounts from localStorage
+        const stored = localStorage.getItem('bank_accounts');
+        let accounts = stored ? JSON.parse(stored) : getDefaultBankAccounts();
+        const activeAccounts = accounts.filter(a => a.isActive === true);
+        activeAccounts.sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        if (activeAccounts.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-university"></i>
+                    <h4>Hakuna Akaunti Zinazopatikana</h4>
+                    <p>Tafadhali wasiliana na msaada</p>
+                    <button class="btn btn-primary" onclick="loadDepositAccountsFallback()">
+                        <i class="fas fa-redo"></i> Jaribu Tena
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = activeAccounts.map(account => `
+            <div class="bank-option-card" onclick="selectBankAccount('${account.id}')">
+                <div class="bank-option-icon">
+                    <i class="fas ${account.accountType === 'mobile' ? 'fa-mobile-alt' : account.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i>
+                </div>
+                <div class="bank-option-info">
+                    <div class="bank-option-name">${escapeHtml(account.name)}</div>
+                    <div class="bank-option-number">${account.accountNumber}</div>
+                    <span class="bank-option-badge ${account.accountType}">
+                        ${account.accountType === 'mobile' ? 'Mobile Money' : account.accountType === 'bank' ? 'Benki' : 'Lipa Namba'}
+                    </span>
+                </div>
+                <div class="bank-option-select">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        `).join('');
+        
+        console.log('✅ Deposit accounts loaded successfully');
+        
+    } catch (error) {
+        console.error('Error loading deposit accounts:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Hitilafu imetokea</h4>
+                <p>${error.message || 'Tafadhali onyesha upya ukurasa'}</p>
+                <button class="btn btn-primary" onclick="loadDepositAccountsFallback()">
+                    <i class="fas fa-redo"></i> Jaribu Tena
+                </button>
+            </div>
+        `;
+    }
+}
+
+// ============================================
+// COMPLETE DEPOSIT SECTION INITIALIZATION
+// ============================================
+
+// Global variables
+
+function initDepositSection() {
+    console.log('💰 Initializing deposit section...');
+    
+    // Check if user is logged in
+    if (!db || !db.currentUser) {
+        console.log('User not logged in, cannot initialize deposit');
+        showNotification('Tafadhali ingia kwenye akaunti yako kwanza', 'error');
+        return;
+    }
+    
+    // Reset all data
+    resetDepositWizardData();
+    
+    // Load bank accounts
+    loadDepositBankAccounts();
+    
+    // Setup event listeners
+    setupDepositEventListeners();
+    
+    // Show step 1
+    goToDepositStep(1);
+    
+    console.log('✅ Deposit section initialized');
+}
+
+function loadDepositBankAccounts() {
+    const container = document.getElementById('bank-accounts-list');
+    if (!container) {
+        console.warn('Bank accounts list container not found');
+        return;
+    }
+    
+    container.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Inapakia akaunti za malipo...</p></div>`;
+    
+    try {
+        // Get accounts from localStorage (admin added accounts)
+        const stored = localStorage.getItem('bank_accounts');
+        let accounts = [];
+        
+        if (stored) {
+            accounts = JSON.parse(stored);
+            console.log('Loaded accounts from localStorage:', accounts.length);
+        } else {
+            // Use default demo accounts
+            accounts = getDefaultBankAccounts();
+            localStorage.setItem('bank_accounts', JSON.stringify(accounts));
+            console.log('Using default demo accounts');
+        }
+        
+        // Filter only active accounts
+        const activeAccounts = accounts.filter(account => account.isActive === true);
+        activeAccounts.sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        if (activeAccounts.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-university"></i>
+                    <h4>Hakuna Akaunti Zinazopatikana</h4>
+                    <p>Tafadhali wasiliana na msaada kwa maelekezo ya malipo</p>
+                    <button class="btn btn-primary" onclick="loadDepositBankAccounts()">
+                        <i class="fas fa-redo"></i> Jaribu Tena
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = activeAccounts.map(account => `
+            <div class="bank-option-card" onclick="selectBankAccount('${account.id}')">
+                <div class="bank-option-icon">
+                    <i class="fas ${account.accountType === 'mobile' ? 'fa-mobile-alt' : account.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i>
+                </div>
+                <div class="bank-option-info">
+                    <div class="bank-option-name">${escapeHtml(account.name)}</div>
+                    <div class="bank-option-number">${account.accountNumber}</div>
+                    <span class="bank-option-badge ${account.accountType}">
+                        ${account.accountType === 'mobile' ? 'Mobile Money' : account.accountType === 'bank' ? 'Benki' : 'Lipa Namba'}
+                    </span>
+                    ${account.providerName ? `<div class="provider-name small">${escapeHtml(account.providerName)}</div>` : ''}
+                </div>
+                <div class="bank-option-select">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        `).join('');
+        
+        console.log('✅ Deposit bank accounts loaded:', activeAccounts.length);
+        
+    } catch (error) {
+        console.error('Error loading deposit bank accounts:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Hitilafu imetokea</h4>
+                <p>${error.message || 'Tafadhali onyesha upya ukurasa'}</p>
+                <button class="btn btn-primary" onclick="loadDepositBankAccounts()">
+                    <i class="fas fa-redo"></i> Jaribu Tena
+                </button>
+            </div>
+        `;
+    }
+}
+
+function selectBankAccount(accountId) {
+    console.log('Selecting account:', accountId);
+    
+    try {
+        const stored = localStorage.getItem('bank_accounts');
+        let accounts = stored ? JSON.parse(stored) : getDefaultBankAccounts();
+        
+        currentSelectedAccount = accounts.find(a => a.id === accountId);
+        
+        if (!currentSelectedAccount) {
+            showNotification('Akaunti haipatikani', 'error');
+            return;
+        }
+        
+        console.log('Selected account:', currentSelectedAccount.name);
+        
+        // Show selected account info
+        const selectedInfo = document.getElementById('selected-account-info');
+        if (selectedInfo) {
+            selectedInfo.innerHTML = `
+                <div class="selected-account-card">
+                    <div class="selected-account-icon">
+                        <i class="fas ${currentSelectedAccount.accountType === 'mobile' ? 'fa-mobile-alt' : currentSelectedAccount.accountType === 'bank' ? 'fa-university' : 'fa-money-bill-wave'}"></i>
+                    </div>
+                    <div class="selected-account-details">
+                        <h4>${escapeHtml(currentSelectedAccount.name)}</h4>
+                        <p class="account-number">${currentSelectedAccount.accountNumber}</p>
+                        <span class="badge ${currentSelectedAccount.accountType}">
+                            ${currentSelectedAccount.accountType === 'mobile' ? 'Mobile Money' : currentSelectedAccount.accountType === 'bank' ? 'Benki' : 'Lipa Namba'}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show payment instructions
+        const instructionsDiv = document.getElementById('payment-instructions');
+        if (instructionsDiv && currentSelectedAccount.description) {
+            instructionsDiv.innerHTML = `
+                <div class="instructions-card">
+                    <div class="instructions-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h4>Maelekezo ya Malipo</h4>
+                    </div>
+                    <div class="instructions-body">
+                        ${currentSelectedAccount.description.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Go to step 2
+        goToDepositStep(2);
+        showNotification(`Umechagua ${currentSelectedAccount.name}`, 'success');
+        
+    } catch (error) {
+        console.error('Error selecting bank account:', error);
+        showNotification('Error selecting payment option', 'error');
+    }
+}
+
+function goToDepositStep(step) {
+    console.log('Going to step:', step);
+    
+    // Hide all steps
+    for (let i = 1; i <= 5; i++) {
+        const stepDiv = document.getElementById(`deposit-step-${i}`);
+        if (stepDiv) stepDiv.style.display = 'none';
+    }
+    
+    // Show selected step
+    const currentStep = document.getElementById(`deposit-step-${step}`);
+    if (currentStep) {
+        currentStep.style.display = 'block';
+        currentStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function resetDepositWizardData() {
+    currentSelectedAccount = null;
+    currentDepositData = null;
+    
+    const fields = ['full-name', 'phone-number', 'deposit-amount', 'transaction-id'];
+    fields.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    
+    const confirmCheck = document.getElementById('confirm-transaction');
+    if (confirmCheck) confirmCheck.checked = false;
+    
+    document.querySelectorAll('#deposit .quick-amount').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const selectedInfo = document.getElementById('selected-account-info');
+    if (selectedInfo) selectedInfo.innerHTML = '';
+    
+    const instructionsDiv = document.getElementById('payment-instructions');
+    if (instructionsDiv) instructionsDiv.innerHTML = '';
+}
+
+function setupDepositEventListeners() {
+    // Proceed to payment button
+    const proceedBtn = document.getElementById('proceed-to-payment-btn');
+    if (proceedBtn) {
+        const newBtn = proceedBtn.cloneNode(true);
+        proceedBtn.parentNode.replaceChild(newBtn, proceedBtn);
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            proceedToPayment();
+        });
+    }
+    
+    // Quick amount buttons
+    document.querySelectorAll('#deposit .quick-amount').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amount = this.getAttribute('data-amount');
+            const amountInput = document.getElementById('deposit-amount');
+            if (amountInput) {
+                amountInput.value = amount;
+                document.querySelectorAll('#deposit .quick-amount').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+}
+
+function proceedToPayment() {
+    console.log('Proceeding to payment...');
+    
+    const fullName = document.getElementById('full-name')?.value.trim();
+    const phoneNumber = document.getElementById('phone-number')?.value.trim();
+    const amount = parseFloat(document.getElementById('deposit-amount')?.value);
+    
+    if (!fullName) {
+        showNotification('Tafadhali weka jina lako kamili', 'error');
+        return;
+    }
+    
+    if (!phoneNumber || phoneNumber.length < 10) {
+        showNotification('Tafadhali weka namba sahihi ya simu', 'error');
+        return;
+    }
+    
+    if (!amount || amount < 1000) {
+        showNotification('Kiasi cha chini ni TZS 1,000', 'error');
+        return;
+    }
+    
+    if (amount > 10000000) {
+        showNotification('Kiasi cha juu ni TZS 10,000,000', 'error');
+        return;
+    }
+    
+    if (!currentSelectedAccount) {
+        showNotification('Tafadhali chagua akaunti ya malipo kwanza', 'error');
+        goToDepositStep(1);
+        return;
+    }
+    
+    currentDepositData = {
+        fullName, phoneNumber, amount,
+        accountId: currentSelectedAccount.id,
+        accountName: currentSelectedAccount.name,
+        accountNumber: currentSelectedAccount.accountNumber,
+        accountType: currentSelectedAccount.accountType,
+        bankLogo: currentSelectedAccount.bankLogo,
+        description: currentSelectedAccount.description
+    };
+    
+    // Update payment displays
+    updatePaymentDisplays();
+    
+    goToDepositStep(3);
+}
+
+function updatePaymentDisplays() {
+    const paymentAmountDisplay = document.getElementById('payment-amount-display');
+    if (paymentAmountDisplay) {
+        paymentAmountDisplay.textContent = `TZS ${currentDepositData.amount.toLocaleString()}`;
+    }
+    
+    const paymentAccountName = document.getElementById('payment-account-name');
+    if (paymentAccountName) {
+        paymentAccountName.textContent = currentDepositData.accountName;
+    }
+    
+    const paymentAccountNumber = document.getElementById('payment-account-number');
+    if (paymentAccountNumber) {
+        paymentAccountNumber.textContent = currentDepositData.accountNumber;
+    }
+    
+    const paymentInstructionsDetail = document.getElementById('payment-instructions-detail');
+    if (paymentInstructionsDetail && currentDepositData.description) {
+        paymentInstructionsDetail.innerHTML = `
+            <div class="instructions-body">
+                ${currentDepositData.description.replace(/\n/g, '<br>')}
+            </div>
+            <div class="payment-summary">
+                <p><strong>Jina lako:</strong> ${escapeHtml(currentDepositData.fullName)}</p>
+                <p><strong>Namba ya Simu:</strong> ${currentDepositData.phoneNumber}</p>
+                <p><strong>Kiasi cha Kulipa:</strong> TZS ${currentDepositData.amount.toLocaleString()}</p>
+            </div>
+        `;
+    }
+}
+
+function openPaymentWindow() {
+    if (!currentDepositData) {
+        showNotification('Tafadhali anza mchakato wa deposit kwanza', 'error');
+        return;
+    }
+    
+    const w = window.open('', '_blank', 'width=500,height=650,scrollbars=yes');
+    if (!w) {
+        showNotification('Tafadhali ruhusu pop-ups kwa tovuti hii', 'error');
+        return;
+    }
+    
+    w.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Malipo - TMN Investment</title>
+            <meta charset="UTF-8">
+            <style>
+                body{font-family:Arial;padding:20px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+                .payment-card{max-width:450px;margin:0 auto;background:white;border-radius:20px;padding:30px}
+                .amount{text-align:center;font-size:36px;color:#27ae60;margin:20px 0}
+                .info-box{background:#f8f9fa;padding:20px;border-radius:15px;margin:20px 0}
+                .instructions-box{background:#fff3cd;padding:20px;border-radius:15px;margin:20px 0;color:#856404}
+                button{width:100%;padding:15px;background:#27ae60;color:white;border:none;border-radius:10px;cursor:pointer;margin-top:15px}
+            </style>
+        </head>
+        <body>
+            <div class="payment-card">
+                <h3>${escapeHtml(currentDepositData.accountName)}</h3>
+                <div class="amount">TZS ${currentDepositData.amount.toLocaleString()}</div>
+                <div class="info-box">
+                    <p><strong>Jina la Mpokeaji:</strong> ${escapeHtml(currentDepositData.accountName)}</p>
+                    <p><strong>Namba ya Akaunti:</strong> ${currentDepositData.accountNumber}</p>
+                    <p><strong>Jina la Mtumaji:</strong> ${escapeHtml(currentDepositData.fullName)}</p>
+                    <p><strong>Namba ya Simu:</strong> ${currentDepositData.phoneNumber}</p>
+                </div>
+                <div class="instructions-box">${(currentDepositData.description || '').replace(/\n/g, '<br>')}</div>
+                <button onclick="window.close()">Nimekamilisha Malipo</button>
+                <button onclick="window.close()">Funga</button>
+            </div>
+        </body>
+        </html>
+    `);
+}
+
+// Export functions
+window.initDepositSection = initDepositSection;
+window.selectBankAccount = selectBankAccount;
+window.goToDepositStep = goToDepositStep;
+window.openPaymentWindow = openPaymentWindow;
+window.loadDepositBankAccounts = loadDepositBankAccounts;
+
+// Add event listener for deposit button in dashboard header
+document.addEventListener('click', function(e) {
+    const depositBtn = e.target.closest('[onclick*="switchToSection(\'deposit\')"]');
+    if (depositBtn) {
+        e.preventDefault();
+        switchToSection('deposit');
+    }
+});
+
+// ============================================
+// COMPLETE RECEIPT SYSTEM
+// ============================================
+
+// Global variable to store current receipt data
+let currentReceiptData = null;
+
+// Create receipt modal if it doesn't exist
+function createReceiptModal() {
+    if (document.getElementById('receipt-modal')) return;
+    
+    const modalHTML = `
+        <div id="receipt-modal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 650px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-receipt"></i> Risiti ya Muamala</h3>
+                    <button class="close-modal" onclick="closeReceiptModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="receipt-modal-body">
+                    <div id="receipt-content">
+                        <div class="receipt-loading">
+                            <div class="loading-spinner"></div>
+                            <p>Inapakia risiti...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="printReceipt()">
+                        <i class="fas fa-print"></i> Chapisha
+                    </button>
+                    <button class="btn btn-primary" onclick="downloadReceipt()">
+                        <i class="fas fa-download"></i> Pakua
+                    </button>
+                    <button class="btn btn-danger" onclick="closeReceiptModal()">
+                        <i class="fas fa-times"></i> Funga
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('✅ Receipt modal created');
+}
+
+// Main function to show receipt modal
+async function showReceiptModal(transactionId) {
+    console.log('📄 Opening receipt for transaction:', transactionId);
+    
+    // Ensure modal exists
+    createReceiptModal();
+    
+    const modal = document.getElementById('receipt-modal');
+    const contentDiv = document.getElementById('receipt-content');
+    
+    if (!modal || !contentDiv) {
+        console.error('Receipt modal elements missing');
+        alert('Risiti haipatikani. Tafadhali onyesha upya ukurasa.');
+        return;
+    }
+    
+    // Show loading state
+    contentDiv.innerHTML = `
+        <div class="receipt-loading">
+            <div class="loading-spinner"></div>
+            <p>Inapakia risiti...</p>
+        </div>
+    `;
+    
+    // Open modal
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    try {
+        // Convert to string for comparison
+        const searchId = transactionId.toString();
+        
+        // Get all users from database
+        const users = await db.getUsers();
+        let foundTransaction = null;
+        let foundUser = null;
+        
+        // Search for the transaction
+        for (const user of users) {
+            if (user.transactions && Array.isArray(user.transactions)) {
+                const transaction = user.transactions.find(t => 
+                    t.id?.toString() === searchId || 
+                    t.id === transactionId ||
+                    t.id == transactionId
+                );
+                
+                if (transaction) {
+                    foundTransaction = transaction;
+                    foundUser = user;
+                    break;
+                }
+            }
+        }
+        
+        if (!foundTransaction) {
+            throw new Error(`Transaction ${transactionId} not found`);
+        }
+        
+        console.log('✅ Transaction found:', foundTransaction);
+        
+        // Generate receipt HTML
+        const receiptHTML = generateReceiptHTML(foundTransaction, foundUser);
+        contentDiv.innerHTML = receiptHTML;
+        
+        // Store for print/download
+        currentReceiptData = {
+            transaction: foundTransaction,
+            user: foundUser,
+            html: receiptHTML
+        };
+        
+    } catch (error) {
+        console.error('Error loading receipt:', error);
+        contentDiv.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #e74c3c; margin-bottom: 20px;"></i>
+                <h4 style="color: #e74c3c;">Hitilafu Ilitokea</h4>
+                <p style="color: #7f8c8d; margin-bottom: 15px;">${error.message}</p>
+                <button class="btn btn-primary" onclick="showReceiptModal('${transactionId}')">
+                    <i class="fas fa-redo"></i> Jaribu Tena
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Generate receipt HTML
+function generateReceiptHTML(transaction, user) {
+    // Format dates
+    const transactionDate = transaction.date ? new Date(transaction.date) : new Date();
+    const formattedDate = transactionDate.toLocaleDateString('sw-TZ', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = transactionDate.toLocaleTimeString('sw-TZ', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Format amount
+    const amount = transaction.amount || 0;
+    const formattedAmount = `TZS ${Math.round(amount).toLocaleString()}`;
+    
+    // Determine status
+    let statusText = '';
+    let statusClass = '';
+    let statusIcon = '';
+    
+    if (transaction.status === 'approved') {
+        statusText = 'IMEFAULU';
+        statusClass = 'status-approved';
+        statusIcon = '✅';
+    } else if (transaction.status === 'rejected') {
+        statusText = 'IMEKATALIWA';
+        statusClass = 'status-rejected';
+        statusIcon = '❌';
+    } else {
+        statusText = 'INASUBIRI';
+        statusClass = 'status-pending';
+        statusIcon = '⏳';
+    }
+    
+    // Determine transaction type
+    let typeText = '';
+    let typeIcon = '';
+    
+    switch (transaction.type) {
+        case 'deposit':
+            typeText = 'KUWAWEKA FEDHA';
+            typeIcon = '📥';
+            break;
+        case 'withdrawal':
+            typeText = 'KUTOA FEDHA';
+            typeIcon = '📤';
+            break;
+        case 'investment':
+            typeText = 'UWEKEZAJI';
+            typeIcon = '💼';
+            break;
+        case 'bonus':
+            typeText = 'BONUSI';
+            typeIcon = '🎁';
+            break;
+        default:
+            typeText = 'MUAMALA';
+            typeIcon = '💳';
+    }
+    
+    // Get payment method name
+    const paymentMethod = getBankName(transaction.method || transaction.details?.method);
+    
+    // Generate receipt HTML
+    return `
+        <div class="receipt-container">
+            <!-- Header -->
+            <div class="receipt-header">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                    <i class="fas fa-gem" style="font-size: 28px; color: #256f8a;"></i>
+                    <h1 style="margin: 0;">TANZANIA MINING INVESTMENT</h1>
+                    <i class="fas fa-gem" style="font-size: 28px; color: #256f8a;"></i>
+                </div>
+                <p style="margin: 5px 0; color: #7f8c8d;">Huduma za Uwekezaji Madini</p>
+                <div style="background: #f8f9fa; padding: 8px 16px; border-radius: 20px; display: inline-block; margin-top: 10px;">
+                    <strong>RISITI: #TMI${transaction.id.toString().padStart(6, '0')}</strong>
+                </div>
+                <p style="margin: 5px 0; font-size: 12px; color: #95a5a6;">
+                    Tarehe ya Kutoa: ${new Date().toLocaleDateString('sw-TZ')}
+                </p>
+            </div>
+            
+            <!-- Transaction Details -->
+            <div class="receipt-details">
+                <div class="detail-row">
+                    <span class="detail-label">Tarehe ya Muamala:</span>
+                    <span class="detail-value">${formattedDate}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Muda wa Muamala:</span>
+                    <span class="detail-value">${formattedTime}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Namba ya Muamala:</span>
+                    <span class="detail-value">#${transaction.id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Jina la Mteja:</span>
+                    <span class="detail-value">${user.username || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Barua Pepe:</span>
+                    <span class="detail-value">${user.email || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Aina ya Muamala:</span>
+                    <span class="detail-value">${typeIcon} ${typeText}</span>
+                </div>
+                
+                <!-- Amount -->
+                <div class="amount-display">
+                    ${formattedAmount}
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Njia ya Malipo:</span>
+                    <span class="detail-value">${paymentMethod}</span>
+                </div>
+                
+                <!-- Deposit-specific details -->
+                ${transaction.type === 'deposit' && transaction.details ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Jina la Mtumaji:</span>
+                        <span class="detail-value">${escapeHtml(transaction.details.senderName) || 'Haijawekwa'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Akaunti ya Mtumaji:</span>
+                        <span class="detail-value">${transaction.details.senderAccount || 'Haijawekwa'}</span>
+                    </div>
+                    ${transaction.details.transactionCode ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Msimbo wa Muamala:</span>
+                        <span class="detail-value">${transaction.details.transactionCode}</span>
+                    </div>
+                    ` : ''}
+                ` : ''}
+                
+                <!-- Withdrawal-specific details -->
+                ${transaction.type === 'withdrawal' && transaction.details ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Jina la Mlipokeaji:</span>
+                        <span class="detail-value">${escapeHtml(transaction.details.accountName) || 'Haijawekwa'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Akaunti ya Mlipokeaji:</span>
+                        <span class="detail-value">${transaction.details.accountNumber || 'Haijawekwa'}</span>
+                    </div>
+                    ${transaction.details.reason ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Sababu ya Kutoa:</span>
+                        <span class="detail-value">${escapeHtml(transaction.details.reason)}</span>
+                    </div>
+                    ` : ''}
+                ` : ''}
+                
+                <!-- Status -->
+                <div class="detail-row">
+                    <span class="detail-label">Hali ya Muamala:</span>
+                    <span class="detail-value ${statusClass}">${statusIcon} ${statusText}</span>
+                </div>
+                
+                <!-- Admin approval info -->
+                ${transaction.adminActionDate ? `
+                <div class="detail-row">
+                    <span class="detail-label">Tarehe ya Idhini:</span>
+                    <span class="detail-value">${new Date(transaction.adminActionDate).toLocaleString()}</span>
+                </div>
+                ` : ''}
+            </div>
+            
+            <!-- QR Code Section (Verification) -->
+            <div class="qr-section">
+                <div style="background: #3498db; color: white; padding: 5px 15px; border-radius: 15px; display: inline-block; font-weight: bold; margin-bottom: 15px;">
+                    QR CODE YA UTHIBITISHO
+                </div>
+                <div class="fake-qr-code">
+                    <div class="qr-pattern"></div>
+                    <div class="qr-corners">
+                        <div class="qr-corner"></div>
+                        <div class="qr-corner"></div>
+                        <div class="qr-corner"></div>
+                    </div>
+                    <div class="qr-center"></div>
+                    <div class="qr-text">TMI${transaction.id}</div>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-top: 15px;">
+                    <strong>Skani kuthibitisha ukweli wa risiti hii</strong>
+                </p>
+            </div>
+            
+            <!-- Footer -->
+            <div class="receipt-footer">
+                <p><strong>📞 Huduma za Wateja:</strong> +255 768 616 961</p>
+                <p><strong>📧 Barua Pepe:</strong> mining.investment.tanzania@proton.me</p>
+                <p style="font-size: 11px; color: #95a5a6; margin-top: 10px;">
+                    Risiti hii ni ushahidi rasmi wa muamala wako. Tafadhali hifadhi kwa usalama.
+                </p>
+                <div style="background: #27ae60; color: white; padding: 10px; border-radius: 5px; margin-top: 15px;">
+                    <strong>ASANTE KWA KUWEKEZA NA KUTUAMINI!</strong>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Close receipt modal
+function closeReceiptModal() {
+    const modal = document.getElementById('receipt-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        currentReceiptData = null;
+    }
+}
+
+// Print receipt
+function printReceipt() {
+    if (!currentReceiptData) {
+        alert('Tafadhali subiri risiti ipakie kwanza');
+        return;
+    }
+    
+    const printWindow = window.open('', '_blank');
+    const styles = document.getElementById('receipt-styles')?.innerHTML || '';
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Risiti #TMI${currentReceiptData.transaction.id}</title>
+            <meta charset="UTF-8">
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: 'Courier New', monospace;
+                    padding: 20px;
+                    max-width: 600px;
+                    margin: 0 auto;
+                }
+                ${styles}
+                .no-print {
+                    display: none;
+                }
+                @media print {
+                    body {
+                        padding: 0;
+                        margin: 0;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            ${currentReceiptData.html}
+            <div class="no-print" style="text-align: center; margin-top: 20px;">
+                <button onclick="window.print()" style="padding: 10px 20px; margin: 5px;">Chapisha</button>
+                <button onclick="window.close()" style="padding: 10px 20px; margin: 5px;">Funga</button>
+            </div>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+}
+
+// Download receipt as HTML file
+function downloadReceipt() {
+    if (!currentReceiptData) {
+        alert('Tafadhali subiri risiti ipakie kwanza');
+        return;
+    }
+    
+    const htmlContent = `<!DOCTYPE html>
+    <html>
+    <head>
+        <title>Risiti #TMI${currentReceiptData.transaction.id}</title>
+        <meta charset="UTF-8">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Courier New', monospace; padding: 20px; max-width: 600px; margin: 0 auto; }
+            ${document.getElementById('receipt-styles')?.innerHTML || ''}
+        </style>
+    </head>
+    <body>
+        ${currentReceiptData.html}
+    </body>
+    </html>`;
+    
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `risiti_TMI${currentReceiptData.transaction.id}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Risiti imepakuliwa! Fungua faili hii kwenye browser yako.');
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Helper function to get bank name
+function getBankName(method) {
+    if (!method) return 'Haijawekwa';
+    
+    const banks = {
+        'mpesa': 'Vodacom M-Pesa',
+        'vodacom': 'Vodacom M-Pesa',
+        'tigo': 'Tigo Pesa',
+        'tigopesa': 'Tigo Pesa',
+        'airtel': 'Airtel Money',
+        'airtelmoney': 'Airtel Money',
+        'halopesa': 'Halotel Halopesa',
+        'halotel': 'Halotel Halopesa',
+        'bank': 'Benki',
+        'crdb': 'CRDB Bank',
+        'nmb': 'NMB Bank'
+    };
+    
+    return banks[method.toLowerCase()] || method;
+}
+
+// Initialize receipt system
+function initReceiptSystem() {
+    createReceiptModal();
+    console.log('✅ Receipt system initialized');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initReceiptSystem();
+    
+    // Make functions globally available
+    window.showReceiptModal = showReceiptModal;
+    window.closeReceiptModal = closeReceiptModal;
+    window.printReceipt = printReceipt;
+    window.downloadReceipt = downloadReceipt;
+    window.initReceiptSystem = initReceiptSystem;
+});
